@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'COOK' | 'ADMIN'
+export type Role = 'USER' | 'COOK' 
 
 export type OrderStatus =
   | 'PENDING'
@@ -148,4 +148,12 @@ export interface LoginResponse {
   user: User
   accessToken: string
   refreshToken: string
+}
+
+export interface RegisterDto {
+  firstName: string
+  lastName?: string
+  phone: string
+  password: string
+  role: 'USER' | 'COOK'
 }

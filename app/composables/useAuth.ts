@@ -11,7 +11,7 @@ export function useAuth() {
     refreshToken,
     isAuthenticated,
     isCook,
-    isAdmin,
+    // isAdmin,
   } = storeToRefs(authStore)
 
   async function login(credentials: LoginDto) {
@@ -36,7 +36,7 @@ export function useAuth() {
     refreshToken,
     isAuthenticated,
     isCook,
-    isAdmin,
+    // isAdmin,
     login,
     logout,
     refreshAccessToken,

@@ -1,5 +1,5 @@
 import type { User } from '../types'
-import type { LoginDto, LoginResponse } from '../types'
+import type { LoginDto, LoginResponse, RegisterDto } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -8,7 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!accessToken.value)
   const isCook = computed(() => user.value?.role === 'COOK')
-  const isAdmin = computed(() => user.value?.role === 'ADMIN')
+  // const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   async function login(credentials: LoginDto) {
     const nuxtApp = useNuxtApp()
@@ -19,6 +19,14 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = res.accessToken
     refreshToken.value = res.refreshToken
     await fetchMe()
+  }
+
+  async function register(dto: RegisterDto) {
+    const nuxtApp = useNuxtApp()
+    await (nuxtApp.$api as (url: string, opts: { method: string; body: RegisterDto }) => Promise<void>)(
+      '/auth/register',
+      { method: 'POST', body: dto }
+    )
   }
 
   async function refreshAccessToken() {
@@ -52,8 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken,
     isAuthenticated,
     isCook,
-    isAdmin,
+    // isAdmin,
     login,
+    register,
     logout,
     refreshAccessToken,
     fetchMe,
