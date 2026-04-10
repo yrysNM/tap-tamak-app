@@ -1,11 +1,9 @@
 <template>
-  <SectionsMainHome />
+  <NuxtPage />
 </template>
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
+  layout: 'cook',
 })
-
-const auth = useAuthStore();
 </script>

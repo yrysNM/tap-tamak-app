@@ -26,10 +26,10 @@ export type VerificationStatus =
 
 export interface User {
   id: string
-  email: string
+  email?: string
   phone: string
   firstName: string
-  lastName: string
+  lastName?: string
   avatarUrl?: string
   role: Role
   cook?: Cook

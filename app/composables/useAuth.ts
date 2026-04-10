@@ -26,9 +26,6 @@ export function useAuth() {
     await authStore.refreshAccessToken()
   }
 
-  async function fetchMe() {
-    await authStore.fetchMe()
-  }
 
   return {
     user,
@@ -40,6 +37,5 @@ export function useAuth() {
     login,
     logout,
     refreshAccessToken,
-    fetchMe,
   }
 }

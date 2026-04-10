@@ -1,34 +1,46 @@
-import { useAuthStore } from '../stores/auth'
-
-const PUBLIC_PATHS = ['/', '/login', '/register', '/role', '/forgot-password', '/cooks', '/dishes']
-
-function isPublicRoute(path: string): boolean {
-  if (PUBLIC_PATHS.includes(path)) return true
-  if (path.startsWith('/cooks/') || path.startsWith('/dishes/')) return true
-  return false
-}
-
 export default defineNuxtRouteMiddleware((to) => {
-  const auth = useAuthStore()
+  const authStore = useAuthStore()
+  const { isAuthenticated, isCook } = storeToRefs(authStore)
 
-  if (isPublicRoute(to.path)) {
-    // Redirect authenticated users away from auth-only pages
-    if (auth.isAuthenticated && ['/login', '/register', '/role'].includes(to.path)) {
-      return navigateTo(auth.isCook ? '/cook/dashboard' : '/')
-    }
-    // Authenticated cook on home: send to cook dashboard
-    if (to.path === '/' && auth.isAuthenticated && auth.isCook) {
-      return navigateTo('/cook/dashboard')
+  const authFlowPaths = ['/login', '/register', '/forgot-password', '/role']
+
+  if (!isAuthenticated.value) {
+    if (!authFlowPaths.includes(to.path)) {
+      return navigateTo({
+        path: '/login',
+        query: { redirect: to.fullPath },
+      })
     }
     return
   }
 
-  if (!auth.isAuthenticated) {
-    return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
+  const user = authStore.user
+  const cookHome = getCookHomePath(user)
+
+  if (authFlowPaths.includes(to.path)) {
+    return navigateTo(isCook.value ? cookHome : '/')
   }
 
-  // Cook-only routes
-  if (to.path.startsWith('/cook') && !auth.isCook) {
+  if (isCook.value) {
+    if (!to.path.startsWith('/cook')) {
+      return navigateTo(cookHome)
+    }
+
+    const status = user?.cook?.verificationStatus
+    const onVerify = to.path === '/cook/verify'
+
+    if (status !== 'APPROVED' && !onVerify) {
+      return navigateTo('/cook/verify')
+    }
+
+    if (status === 'APPROVED' && onVerify) {
+      return navigateTo('/cook/dashboard')
+    }
+
+    return
+  }
+
+  if (to.path.startsWith('/cook')) {
     return navigateTo('/')
   }
 })

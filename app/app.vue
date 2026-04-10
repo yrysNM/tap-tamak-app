@@ -1,7 +1,9 @@
 <template>
-  <div class="min-h-screen bg-primary-light font-sans text-dark">
+  <div class="min-h-screen font-sans text-dark">
     <NuxtRouteAnnouncer />
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>
 
@@ -22,5 +24,18 @@ useHead({
       href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
     },
   ],
+});
+
+const { isAuthenticated, logout, user } = useAuth();
+
+onMounted(async () => {
+  // console.log(isAuthenticated.value);
+  // if (isAuthenticated.value) {
+  //   try {
+  //     console.log(user);
+  //   } catch {
+  //     logout();
+  //   }
+  // }
 });
 </script>

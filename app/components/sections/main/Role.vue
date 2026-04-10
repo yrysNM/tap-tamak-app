@@ -49,13 +49,8 @@
               Заказывать
             </span>
             <div
-              class="h-6 w-6 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
-            >
-              <i
-                class="fi fi-rr-check flex text-sm"
-                v-show="selectedRole === 'client'"
-              />
-            </div>
+              class="h-6 w-6 rounded-full border border-white/20 bg-white/10"
+            />
           </div>
 
           <div class="mt-6 space-y-3">
@@ -63,7 +58,11 @@
               <div
                 class="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/25 bg-white/10"
               >
-                <i class="fi fi-rr-user text-[29px]" />
+                <img
+                  :src="imgCustomer2"
+                  alt=""
+                  class="h-[29px] w-[29px] object-cover"
+                />
               </div>
             </div>
 
@@ -113,13 +112,8 @@
               Готовить
             </span>
             <div
-              class="h-6 w-6 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
-            >
-              <i
-                class="fi fi-rr-check flex text-sm"
-                v-show="selectedRole === 'cook'"
-              />
-            </div>
+              class="h-6 w-6 rounded-full border border-white/20 bg-white/10"
+            />
           </div>
 
           <div class="mt-6 space-y-3">
@@ -127,7 +121,11 @@
               <div
                 class="flex h-12 w-12 items-center justify-center rounded-[18px] border border-white/25 bg-white/10"
               >
-                <i class="fi fi-rr-hat-chef text-[29px]" />
+                <img
+                  :src="imgChefHat1"
+                  alt=""
+                  class="h-[29px] w-[29px] object-cover"
+                />
               </div>
             </div>
 
@@ -171,6 +169,11 @@
 
 <script setup lang="ts">
 const selectedRole = ref<"client" | "cook" | null>(null);
+
+const imgCustomer2 =
+  "https://www.figma.com/api/mcp/asset/aa4237ec-f4e3-440e-b1af-2c63815b9fed";
+const imgChefHat1 =
+  "https://www.figma.com/api/mcp/asset/33534ac3-33bb-4a98-b3bb-61d00e696625";
 
 const customerCardStyle = {
   backgroundImage:

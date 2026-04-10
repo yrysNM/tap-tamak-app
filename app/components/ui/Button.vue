@@ -57,11 +57,11 @@ const sizeClasses = computed(() => {
 const variantClasses = computed(() => {
   const map: Record<Variant, string> = {
     primary:
-      'bg-[#F47B20] text-white hover:bg-[#D4611A] active:bg-[#D4611A]',
+      'bg-primary text-white hover:bg-primary-hover active:bg-primary-hover',
     outline:
-      'border-2 border-[#F47B20] bg-transparent text-[#F47B20] hover:bg-[#FFF8F3] active:bg-[#FFF8F3]',
+      'border-2 border-primary bg-transparent text-primary hover:bg-primary-light active:bg-primary-light',
     ghost:
-      'bg-transparent text-[#1A1A1A] hover:bg-[#FFF8F3] active:bg-[#FFF8F3]',
+      'bg-transparent text-dark hover:bg-primary-light active:bg-primary-light',
   }
   return map[props.variant]
 })

@@ -24,11 +24,11 @@ const props = withDefaults(
 
 const variantClasses = computed(() => {
   const map: Record<Variant, string> = {
-    success: 'bg-[#22C55E]/15 text-[#22C55E]',
-    warning: 'bg-[#F59E0B]/15 text-[#F59E0B]',
-    error: 'bg-[#EF4444]/15 text-[#EF4444]',
-    info: 'bg-[#F47B20]/15 text-[#F47B20]',
-    default: 'bg-[#E8E8E8] text-[#666666]',
+    success: 'bg-success/15 text-success',
+    warning: 'bg-warning/15 text-warning',
+    error: 'bg-error/15 text-error',
+    info: 'bg-primary/15 text-primary',
+    default: 'bg-border text-muted',
   }
   return map[props.variant]
 })

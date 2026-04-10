@@ -32,6 +32,7 @@
           <UiInput
             label="Телефон"
             placeholder="+7 (___) ___-__-__"
+            phone-mask
             v-model="phone"
           />
 
@@ -89,6 +90,7 @@
 const props = defineProps<{ role: "USER" | "COOK" }>();
 
 const auth = useAuthStore();
+const { normalizePhone } = useNormalizationPhone();
 
 const name = ref("");
 const phone = ref("");
@@ -103,11 +105,12 @@ async function onSubmit() {
   try {
     await auth.register({
       firstName: name.value,
-      phone: phone.value,
+      phone: normalizePhone(phone.value).e164,
       password: password.value,
       role: props.role,
     });
-    await navigateTo({ path: "/login", query: { redirect: "/" } });
+    const redirect = props.role === "COOK" ? "/cook/verify" : "/";
+    await navigateTo({ path: "/login", query: { redirect } });
   } catch (e: any) {
     error.value = e?.data?.message ?? "Ошибка регистрации";
   } finally {

@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'inline-flex items-center gap-0.5 text-[#F47B20]',
+      'inline-flex items-center gap-0.5 text-primary',
       size === 'sm' ? 'text-sm' : 'text-base',
     ]"
     role="img"
@@ -20,7 +20,7 @@
         aria-hidden
       />
     </span>
-    <span v-if="showValue" class="ml-1 font-medium text-[#1A1A1A]">
+    <span v-if="showValue" class="ml-1 font-medium text-dark">
       {{ displayValue }}
     </span>
   </div>

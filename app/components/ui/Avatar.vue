@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F47B20] font-semibold text-white',
+      'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary font-semibold text-white',
       sizeClasses,
     ]"
   >

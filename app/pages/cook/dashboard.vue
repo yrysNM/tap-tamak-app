@@ -8,9 +8,5 @@
 <script setup lang="ts">
 import { useAuthStore } from '../../stores/auth'
 
-definePageMeta({
-  layout: 'cook',
-})
-
 const auth = useAuthStore()
 </script>

@@ -15,6 +15,7 @@
         <UiInput
           label="Телефон"
           placeholder="+7 (___) ___-__-__"
+          phone-mask
           v-model="phone"
         />
 
@@ -59,6 +60,7 @@
 const props = defineProps<{ redirectTo?: string }>();
 
 const auth = useAuthStore();
+const { normalizePhone } = useNormalizationPhone();
 
 const phone = ref("");
 const password = ref("");
@@ -70,12 +72,23 @@ async function onSubmit() {
   loading.value = true;
   error.value = "";
   try {
-    await auth.login({ phone: phone.value, password: password.value });
+    await auth.login({
+      phone: normalizePhone(phone.value).e164,
+      password: password.value,
+    });
+    let next: string
     if (auth.isCook) {
-      await navigateTo("/cook/dashboard");
+      const r = props.redirectTo
+      next =
+        r?.startsWith("/cook") && r.length > "/cook".length
+          ? r
+          : getCookHomePath(auth.user)
     } else {
-      await navigateTo(props.redirectTo || "/");
+      const r = props.redirectTo
+      next =
+        r && !r.startsWith("/cook") ? r : "/"
     }
+    await navigateTo(next);
   } catch (e: any) {
     error.value = e?.data?.message ?? "Неверный телефон или пароль";
   } finally {
