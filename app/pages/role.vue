@@ -170,6 +170,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: "auth",
+});
+
 const selectedRole = ref<"client" | "cook" | null>(null);
 
 const customerCardStyle = {

@@ -24,6 +24,21 @@ export type VerificationStatus =
   | 'APPROVED'
   | 'REJECTED'
 
+/** GET /cooks/me/verification — `businessName` exists on the payload but must not be shown on the verification screen. */
+export interface CookVerificationDocuments {
+  kitchenPhotoUrls?: string[]
+  certificateUrl?: string
+  rejectionReason?: string
+  submittedAt?: string
+  [key: string]: unknown
+}
+
+export interface CookVerificationGetResponse {
+  verificationStatus: VerificationStatus
+  businessName?: string
+  documents: CookVerificationDocuments | null
+}
+
 export interface User {
   id: string
   email?: string
@@ -32,7 +47,6 @@ export interface User {
   lastName?: string
   avatarUrl?: string
   role: Role
-  cook?: Cook
 }
 
 export interface Cook {

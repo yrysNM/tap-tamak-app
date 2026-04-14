@@ -82,7 +82,7 @@ async function onSubmit() {
       next =
         r?.startsWith("/cook") && r.length > "/cook".length
           ? r
-          : getCookHomePath(auth.user)
+          : getCookHomePath(auth.user, auth.verificationStatus)
     } else {
       const r = props.redirectTo
       next =

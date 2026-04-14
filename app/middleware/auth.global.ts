@@ -1,6 +1,6 @@
 export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
-  const { isAuthenticated, isCook } = storeToRefs(authStore)
+  const { isAuthenticated, isCook, verificationStatus } = storeToRefs(authStore)
 
   const authFlowPaths = ['/login', '/register', '/forgot-password', '/role']
 
@@ -15,7 +15,7 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   const user = authStore.user
-  const cookHome = getCookHomePath(user)
+  const cookHome = getCookHomePath(user, verificationStatus.value)
 
   if (authFlowPaths.includes(to.path)) {
     return navigateTo(isCook.value ? cookHome : '/')
@@ -26,7 +26,7 @@ export default defineNuxtRouteMiddleware((to) => {
       return navigateTo(cookHome)
     }
 
-    const status = user?.cook?.verificationStatus
+    const status = verificationStatus.value
     const onVerify = to.path === '/cook/verify'
 
     if (status !== 'APPROVED' && !onVerify) {

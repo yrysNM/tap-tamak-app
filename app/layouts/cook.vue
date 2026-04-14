@@ -63,7 +63,7 @@
         <h1 class="text-lg font-semibold text-dark">
           {{ pageTitle }}
         </h1>
-        <div class="flex items-center gap-3">
+        <!-- <div class="flex items-center gap-3">
           <span class="text-sm text-muted">{{ cookName }}</span>
           <button
             type="button"
@@ -82,7 +82,7 @@
               ]"
             />
           </button>
-        </div>
+        </div> -->
       </header>
 
       <main class="flex-1 overflow-auto p-4">

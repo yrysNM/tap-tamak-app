@@ -1,10 +1,18 @@
-import type { ApiResponse, LoginDto, LoginResponse, RegisterDto, User } from '../types'
+import type {
+  ApiResponse,
+  LoginDto,
+  LoginResponse,
+  RegisterDto,
+  User,
+  VerificationStatus,
+} from '../types'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
     accessToken: null as string | null,
     refreshToken: null as string | null,
+    verificationStatus: null as VerificationStatus | null,
   }),
 
   getters: {
@@ -22,6 +30,10 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = res.data.accessToken
       this.refreshToken = res.data.refreshToken
       this.user = res.data.user
+      const loginUser = res.data.user as User & {
+        cook?: { verificationStatus?: VerificationStatus }
+      }
+      this.verificationStatus = loginUser.cook?.verificationStatus ?? null
     },
 
     async register(dto: RegisterDto) {
@@ -49,6 +61,11 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.accessToken = null
       this.refreshToken = null
+      this.verificationStatus = null
+    },
+
+    setVerificationStatus(status: VerificationStatus | null) {
+      this.verificationStatus = status
     },
   },
 
@@ -56,6 +73,6 @@ export const useAuthStore = defineStore('auth', {
   // see the same session after refresh. localStorage-only breaks isAuthenticated on the server.
   persist: {
     key: 'auth',
-    pick: ['user', 'accessToken', 'refreshToken'],
+    pick: ['user', 'accessToken', 'refreshToken', 'verificationStatus'],
   },
 })
