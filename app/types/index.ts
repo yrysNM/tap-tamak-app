@@ -67,6 +67,23 @@ export interface Cook {
   totalReviews: number
 }
 
+export type PreparationType = 'FAST' | 'LOGN'
+
+/** Dish payload from cook APIs: GET/POST `/dishes`, GET `/dishes/:id`. */
+export interface CookDish {
+  id: string
+  name: string
+  description?: string
+  price: number
+  cookingTime: number
+  preparationType: PreparationType
+  imageUrl?: string
+  category?: string
+  isAvailable?: boolean
+  calories?: number
+  [key: string]: unknown
+}
+
 export interface Dish {
   id: string
   cookId: string
@@ -82,6 +99,8 @@ export interface Dish {
   weight?: number
   rating: number
   orderCount: number
+  /** Present on some public list/detail payloads */
+  cook?: Pick<Cook, 'id' | 'businessName'>
 }
 
 export interface OrderItem {

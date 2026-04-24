@@ -31,10 +31,7 @@
           class="flex items-center gap-3 rounded-xl px-4 py-3 text-muted transition-colors hover:bg-primary-light"
           active-class="!bg-primary !text-white"
         >
-          <Icon
-            name="material-symbols:restaurant-menu-outline"
-            class="size-6"
-          />
+          <Icon name="material-symbols:menu-book-2" class="size-6" />
           <span>Меню</span>
         </NuxtLink>
         <NuxtLink
@@ -119,10 +116,7 @@
           class="flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
           active-class="!text-primary"
         >
-          <Icon
-            name="material-symbols:restaurant-menu-outline"
-            class="size-6"
-          />
+          <Icon name="material-symbols:menu-book-2" class="size-6" />
           <span class="text-xs">Меню</span>
         </NuxtLink>
         <NuxtLink
@@ -184,10 +178,15 @@ async function toggleAvailability() {
 
 onMounted(() => {
   const authStore = useAuthStore();
-  if (authStore.user?.cook?.businessName) {
-    cookName.value = authStore.user.cook.businessName;
-  } else if (authStore.user?.firstName) {
-    cookName.value = `${authStore.user.firstName}`;
+  const user = authStore.user;
+  const cookBusinessName = (
+    user as { cook?: { businessName?: string } } | null | undefined
+  )?.cook?.businessName;
+
+  if (cookBusinessName) {
+    cookName.value = cookBusinessName;
+  } else if (user?.firstName) {
+    cookName.value = user.firstName;
   }
 });
 </script>

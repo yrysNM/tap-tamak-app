@@ -65,6 +65,8 @@
       </button>
     </div>
 
+    <p v-if="listError" class="mt-3 text-[13px] text-red-600">{{ listError }}</p>
+
     <!-- <div class="mt-5 flex items-center justify-between">
       <h2 class="text-[15px] font-bold text-heading">Категории кухни</h2>
       <NuxtLink to="/cooks" class="text-xs font-bold text-primary"
@@ -104,19 +106,44 @@
         >
       </div>
 
-      <div class="mt-3 grid grid-cols-2 gap-3">
+      <div
+        v-if="pending"
+        class="mt-3 grid grid-cols-2 gap-3"
+        aria-busy="true"
+      >
+        <div
+          v-for="n in 4"
+          :key="n"
+          class="overflow-hidden rounded-[16px] border border-black/8 bg-black/5"
+        >
+          <div class="h-[104px] animate-pulse bg-black/10" />
+          <div class="space-y-2 p-2.5">
+            <div class="h-3.5 w-2/3 animate-pulse rounded bg-black/10" />
+            <div class="h-3 w-full animate-pulse rounded bg-black/10" />
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="mt-3 grid grid-cols-2 gap-3">
         <Card
-          v-for="chef in popularChefs"
-          :key="chef.name"
+          v-for="chef in filteredCookCards"
+          :key="chef.id"
           padding="sm"
           class="overflow-hidden rounded-[16px] border border-black/8 p-0!"
         >
           <div class="relative">
             <img
+              v-if="chef.image"
               :src="chef.image"
               :alt="chef.name"
               class="h-[104px] w-full object-cover"
             />
+            <div
+              v-else
+              class="flex h-[104px] w-full items-center justify-center bg-surface-muted text-[11px] font-semibold text-muted"
+            >
+              Нет фото
+            </div>
             <div
               class="absolute left-2 top-2 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-dark"
             >
@@ -164,19 +191,44 @@
         Рекомендации для дня
       </h2>
 
-      <div class="mt-3 grid grid-cols-2 gap-3 pb-24">
+      <div
+        v-if="pending"
+        class="mt-3 grid grid-cols-2 gap-3 pb-24"
+        aria-busy="true"
+      >
+        <div
+          v-for="n in 4"
+          :key="n"
+          class="overflow-hidden rounded-[16px] border border-black/8 bg-black/5"
+        >
+          <div class="h-[100px] animate-pulse bg-black/10" />
+          <div class="space-y-2 p-2.5">
+            <div class="h-3.5 w-full animate-pulse rounded bg-black/10" />
+            <div class="h-4 w-1/2 animate-pulse rounded bg-black/10" />
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="mt-3 grid grid-cols-2 gap-3 pb-24">
         <Card
-          v-for="dish in recommendations"
-          :key="dish.name"
+          v-for="dish in filteredDishCards"
+          :key="dish.id"
           padding="sm"
           class="overflow-hidden rounded-[16px] border border-black/8 p-0!"
         >
           <div class="relative">
             <img
+              v-if="dish.image"
               :src="dish.image"
               :alt="dish.name"
               class="h-[100px] w-full object-cover"
             />
+            <div
+              v-else
+              class="flex h-[100px] w-full items-center justify-center bg-surface-muted text-[11px] font-semibold text-muted"
+            >
+              Нет фото
+            </div>
             <div
               class="absolute left-2 top-2 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-dark"
             >
@@ -226,89 +278,112 @@
 </template>
 
 <script setup lang="ts">
+import type { Cook, CookDish, Dish } from "~/types";
+import { fetchCooksPage } from "~/utils/cookApi";
+import { dishImageSrc, fetchDishesPage } from "~/utils/dishApi";
+
 type HomeTab = "cookers" | "foods";
 
 const search = ref("");
 const homeTab = ref<HomeTab>("cookers");
 
-const categories = [
-  { id: 1, name: "Все", emoji: "🍽️", active: true },
-  { id: 2, name: "Десерты", emoji: "🍰", active: false },
-  { id: 3, name: "Супы", emoji: "🍲", active: false },
-  { id: 4, name: "Гриль", emoji: "🥩", active: false },
-];
+const { $api } = useNuxtApp();
+const config = useRuntimeConfig();
+const api = $api as (url: string, opts?: object) => Promise<unknown>;
+const apiBase = computed(() => config.public.apiBaseUrl as string);
 
-const popularChefs = [
-  {
-    name: "Султан",
-    rating: "4,8",
-    image:
-      "https://www.figma.com/api/mcp/asset/e7673242-e878-4b35-8d4f-fbf7df20a5d7",
-    meta: "Европейская • Десерт",
-    tags: "Паста, круассаны, крем-",
+const { data: feed, pending, error } = useAsyncData(
+  "home-cooks-dishes",
+  async () => {
+    const [cooksPack, dishesPack] = await Promise.all([
+      fetchCooksPage(api, 1, 20),
+      fetchDishesPage(api, 1, 20),
+    ]);
+    return {
+      cooks: cooksPack.items,
+      dishes: dishesPack.items as Array<Dish | CookDish>,
+    };
   },
   {
-    name: "Бекиру",
-    rating: "4,9",
-    image:
-      "https://www.figma.com/api/mcp/asset/63debf57-b978-42cb-830b-111a5c2c9107",
-    meta: "Азиатская • Вок",
-    tags: "Вок, Том Ям, роллы",
+    default: () => ({
+      cooks: [] as Cook[],
+      dishes: [] as Array<Dish | CookDish>,
+    }),
   },
-  {
-    name: "Али",
-    rating: "4,6",
-    image:
-      "https://www.figma.com/api/mcp/asset/d5be6e6a-1026-453e-b7b0-d9f3fa4bf834",
-    meta: "Домашняя • Супы",
-    tags: "Борщ, пельмени, супы",
-  },
-  {
-    name: "Айдана",
-    rating: "4,7",
-    image:
-      "https://www.figma.com/api/mcp/asset/cd34ceaf-bc86-49f8-a59e-ccf124081b44",
-    meta: "Завтраки • Гриль",
-    tags: "Омлет, стейк, салаты",
-  },
-];
+);
 
-const recommendations = [
-  {
-    name: "Паста с курицей и грибами",
-    price: 3230,
-    rating: 4.8,
-    chef: "Сахнур",
-    tag: "Хит дня",
-    image:
-      "https://www.figma.com/api/mcp/asset/76d796d3-4780-4b53-ae5c-b3f097fdae9b",
-  },
-  {
-    name: "Борщ домашний",
-    price: 2350,
-    rating: 4.6,
-    chef: "Али",
-    tag: "Топ",
-    image:
-      "https://www.figma.com/api/mcp/asset/9f694c71-cc4d-4332-b147-2a3d60f0467d",
-  },
-  {
-    name: "Лапша вок с курицей",
-    price: 3400,
-    rating: 4.9,
-    chef: "Бекиру",
-    tag: "Новинка",
-    image:
-      "https://www.figma.com/api/mcp/asset/2db53155-3907-4169-995b-efe6428e8411",
-  },
-  {
-    name: 'Десерт "Крем-брюле"',
-    price: 2290,
-    rating: 4.7,
-    chef: "Султан",
-    tag: "Сладкое",
-    image:
-      "https://www.figma.com/api/mcp/asset/3fc1c188-881f-4d59-b54d-ee3103b39b07",
-  },
-];
+const listError = computed(() =>
+  error.value ? "Не удалось загрузить данные. Попробуйте позже." : "",
+);
+
+function formatRating(r: number): string {
+  if (!Number.isFinite(r)) return "—";
+  return r.toFixed(1).replace(".", ",");
+}
+
+function specialtiesLine(s: string[] | undefined): string {
+  if (!s?.length) return "—";
+  return s.slice(0, 2).join(" • ");
+}
+
+function specialtiesTags(s: string[] | undefined): string {
+  if (!s?.length) return "";
+  return s.join(", ");
+}
+
+const cookCards = computed(() => {
+  const base = apiBase.value;
+  return (feed.value?.cooks ?? []).map((c) => ({
+    id: c.id,
+    name: c.businessName,
+    rating: formatRating(c.rating),
+    image: dishImageSrc(c.kitchenPhotoUrls?.[0], base) ?? "",
+    meta: specialtiesLine(c.specialties),
+    tags: specialtiesTags(c.specialties),
+  }));
+});
+
+const filteredCookCards = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return cookCards.value;
+  return cookCards.value.filter((c) =>
+    [c.name, c.meta, c.tags].some((x) => x.toLowerCase().includes(q)),
+  );
+});
+
+const dishCards = computed(() => {
+  const base = apiBase.value;
+  return (feed.value?.dishes ?? []).map((d) => {
+    const dish = d as Dish | CookDish;
+    const tags = "tags" in dish && Array.isArray(dish.tags) ? dish.tags : [];
+    const rating =
+      "rating" in dish &&
+      typeof dish.rating === "number" &&
+      Number.isFinite(dish.rating)
+        ? dish.rating
+        : 0;
+    const tag = tags[0] || dish.category || "";
+    const cookName = (dish as Dish).cook?.businessName ?? "—";
+    return {
+      id: dish.id,
+      name: dish.name,
+      price: dish.price,
+      rating,
+      chef: cookName,
+      tag,
+      image: dishImageSrc(dish.imageUrl, base) ?? "",
+    };
+  });
+});
+
+const filteredDishCards = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return dishCards.value;
+  return dishCards.value.filter(
+    (d) =>
+      d.name.toLowerCase().includes(q) ||
+      d.chef.toLowerCase().includes(q) ||
+      d.tag.toLowerCase().includes(q),
+  );
+});
 </script>
