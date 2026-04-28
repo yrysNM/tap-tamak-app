@@ -20,79 +20,8 @@
         {{ error }}
       </div>
 
-      <article
-        v-else-if="dish && !editing"
-        class="overflow-hidden rounded-[20px] border border-border bg-white shadow-soft"
-      >
-        <div class="aspect-4/3 bg-primary-light">
-          <img
-            v-if="heroSrc"
-            :src="heroSrc"
-            :alt="dish.name"
-            class="size-full object-cover"
-          />
-          <div
-            v-else
-            class="flex size-full items-center justify-center text-icon-muted"
-          >
-            <Icon name="material-symbols:restaurant-outline" class="size-16" />
-          </div>
-        </div>
-        <div class="p-5">
-          <div class="flex flex-wrap items-center gap-2">
-            <h1 class="text-xl font-bold text-dark">{{ dish.name }}</h1>
-            <Icon
-              v-if="dish.preparationType === 'FAST'"
-              name="material-symbols:bolt"
-              class="size-7 text-primary"
-              aria-label="Быстрое приготовление"
-            />
-          </div>
-          <p class="mt-2 text-2xl font-bold text-primary">{{ dish.price }} ₸</p>
-          <p class="mt-3 text-sm text-muted">
-            {{ dish.cookingTime }} мин ·
-            {{ dish.preparationType === "FAST" ? "быстрое" : "долгое" }}
-            приготовление
-          </p>
-          <p
-            v-if="dish.description"
-            class="mt-4 text-[15px] leading-relaxed text-body"
-          >
-            {{ dish.description }}
-          </p>
-          <dl class="mt-4 space-y-2 text-sm text-muted">
-            <div v-if="dish.category" class="flex gap-2">
-              <dt class="shrink-0 font-medium text-dark">Категория</dt>
-              <dd>{{ dish.category }}</dd>
-            </div>
-            <div class="flex gap-2">
-              <dt class="shrink-0 font-medium text-dark">В наличии</dt>
-              <dd>{{ dish.isAvailable !== false ? "да" : "нет" }}</dd>
-            </div>
-          </dl>
-
-          <div class="mt-6 flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              class="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
-              @click="startEdit"
-            >
-              Редактировать
-            </button>
-            <button
-              type="button"
-              class="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-error/30 text-sm font-semibold text-error transition hover:bg-error/5 disabled:opacity-45"
-              :disabled="deleting"
-              @click="onDelete"
-            >
-              {{ deleting ? "Удаление…" : "Удалить" }}
-            </button>
-          </div>
-        </div>
-      </article>
-
       <div
-        v-else-if="dish && editing"
+        v-else-if="dish"
         class="overflow-hidden rounded-[20px] border border-border bg-white p-5 shadow-soft"
       >
         <h2 class="text-lg font-bold text-dark">Редактирование</h2>
@@ -154,14 +83,59 @@
             </label>
             <label class="block">
               <span class="text-[13px] font-medium text-dark">Тип *</span>
-              <select
-                v-model="form.preparationType"
-                required
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
+              <div
+                ref="prepSelectRef"
+                class="relative mt-1.5"
+                @keydown.esc.prevent="closePrepSelect"
               >
-                <option value="FAST">Быстрое</option>
-                <option value="LOGN">Долгое</option>
-              </select>
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-dark outline-none ring-primary transition focus:ring-2"
+                  :aria-expanded="prepSelectOpen ? 'true' : 'false'"
+                  aria-haspopup="listbox"
+                  @click="togglePrepSelect"
+                >
+                  <span>{{ selectedPrepLabel }}</span>
+                  <Icon
+                    name="material-symbols:expand-more-rounded"
+                    class="size-5 text-muted transition-transform"
+                    :class="prepSelectOpen ? 'rotate-180' : ''"
+                  />
+                </button>
+                <Transition
+                  enter-active-class="transition duration-150 ease-out"
+                  enter-from-class="translate-y-1 opacity-0"
+                  enter-to-class="translate-y-0 opacity-100"
+                  leave-active-class="transition duration-100 ease-in"
+                  leave-from-class="translate-y-0 opacity-100"
+                  leave-to-class="translate-y-1 opacity-0"
+                >
+                  <div
+                    v-if="prepSelectOpen"
+                    class="absolute left-0 z-30 w-full overflow-hidden rounded-xl border border-border bg-white shadow-soft"
+                    :class="
+                      prepSelectDirection === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+                    "
+                    role="listbox"
+                    aria-label="Тип приготовления"
+                  >
+                    <button
+                      v-for="option in prepOptions"
+                      :key="option.value"
+                      type="button"
+                      class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-dark transition hover:bg-primary-light/40"
+                      @click="selectPrep(option.value)"
+                    >
+                      <span>{{ option.label }}</span>
+                      <Icon
+                        v-if="form.preparationType === option.value"
+                        name="material-symbols:check-rounded"
+                        class="size-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </Transition>
+              </div>
             </label>
             <label class="block">
               <span class="text-[13px] font-medium text-dark">Калории</span>
@@ -255,7 +229,6 @@ import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import {
   deleteDishById,
-  dishImageSrc,
   unwrapDishPayload,
   updateDishById,
   type UpdateDishBody,
@@ -277,7 +250,6 @@ const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const dish = ref<CookDish | null>(null);
 const loading = ref(true);
 const error = ref("");
-const editing = ref(false);
 const deleting = ref(false);
 const saving = ref(false);
 const formError = ref("");
@@ -295,17 +267,27 @@ const form = reactive({
 const imageFile = ref<File | null>(null);
 const imagePreviewUrl = ref<string | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const prepSelectRef = ref<HTMLElement | null>(null);
+const prepSelectOpen = ref(false);
+const prepSelectDirection = ref<"top" | "bottom">("bottom");
 let editBaseline = "";
+const prepOptions: Array<{ value: PreparationType; label: string }> = [
+  { value: "FAST", label: "Быстрое" },
+  { value: "LONG", label: "Долгое" },
+];
 
-const heroSrc = computed(() =>
-  dishImageSrc(dish.value?.imageUrl, apiBase.value),
-);
+const selectedPrepLabel = computed(() => {
+  return (
+    prepOptions.find((option) => option.value === form.preparationType)?.label ??
+    "Выберите тип"
+  );
+});
 
 function normPrep(
   v: CookDish["preparationType"] | string | undefined,
 ): PreparationType {
   if (v === "FAST" || v === "Fast") return "FAST";
-  return "LOGN";
+  return "LONG";
 }
 
 function snapshotForm(): string {
@@ -330,6 +312,47 @@ function clearImagePick() {
   if (fileInputRef.value) fileInputRef.value.value = "";
 }
 
+function updatePrepSelectDirection() {
+  if (!prepSelectRef.value) return;
+  const rect = prepSelectRef.value.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const dropdownApproxHeight = 124;
+  const spaceBelow = viewportHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  prepSelectDirection.value =
+    spaceBelow < dropdownApproxHeight && spaceAbove > spaceBelow
+      ? "top"
+      : "bottom";
+}
+
+function openPrepSelect() {
+  updatePrepSelectDirection();
+  prepSelectOpen.value = true;
+}
+
+function closePrepSelect() {
+  prepSelectOpen.value = false;
+}
+
+function togglePrepSelect() {
+  if (prepSelectOpen.value) {
+    closePrepSelect();
+    return;
+  }
+  openPrepSelect();
+}
+
+function selectPrep(value: PreparationType) {
+  form.preparationType = value;
+  closePrepSelect();
+}
+
+function onClickOutsidePrepSelect(ev: MouseEvent) {
+  const target = ev.target as Node | null;
+  if (!target || !prepSelectRef.value) return;
+  if (!prepSelectRef.value.contains(target)) closePrepSelect();
+}
+
 function fillFormFromDish(d: CookDish) {
   form.name = d.name;
   form.description = d.description ?? "";
@@ -344,14 +367,6 @@ function fillFormFromDish(d: CookDish) {
   clearImagePick();
 }
 
-function startEdit() {
-  if (!dish.value) return;
-  fillFormFromDish(dish.value);
-  editBaseline = snapshotForm();
-  formError.value = "";
-  editing.value = true;
-}
-
 function isDirty(): boolean {
   return snapshotForm() !== editBaseline;
 }
@@ -359,9 +374,11 @@ function isDirty(): boolean {
 function cancelEdit() {
   if (saving.value) return;
   if (isDirty() && !confirm("Отменить изменения?")) return;
-  editing.value = false;
+  if (dish.value) {
+    fillFormFromDish(dish.value);
+    editBaseline = snapshotForm();
+  }
   formError.value = "";
-  clearImagePick();
 }
 
 function onImageChange(ev: Event) {
@@ -426,7 +443,6 @@ async function onSave() {
       await updateDishById(api, dish.value.id, body);
     }
     toast.show("Блюдо обновлено.", "success");
-    editing.value = false;
     clearImagePick();
     await load();
   } catch (err) {
@@ -469,6 +485,8 @@ async function load() {
       dish.value = null;
     } else {
       dish.value = parsed;
+      fillFormFromDish(parsed);
+      editBaseline = snapshotForm();
     }
   } catch (err) {
     error.value = apiMessage(err, "Не удалось загрузить блюдо.");
@@ -479,19 +497,25 @@ async function load() {
 }
 
 onMounted(() => {
+  document.addEventListener("mousedown", onClickOutsidePrepSelect);
+  window.addEventListener("resize", updatePrepSelectDirection);
+  window.addEventListener("scroll", updatePrepSelectDirection, true);
   void load();
 });
 
 watch(
   () => route.params.id,
   () => {
-    editing.value = false;
+    closePrepSelect();
     clearImagePick();
     void load();
   },
 );
 
 onBeforeUnmount(() => {
+  document.removeEventListener("mousedown", onClickOutsidePrepSelect);
+  window.removeEventListener("resize", updatePrepSelectDirection);
+  window.removeEventListener("scroll", updatePrepSelectDirection, true);
   if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
 });
 </script>

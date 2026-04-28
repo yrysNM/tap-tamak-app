@@ -56,7 +56,7 @@
         </p>
         <button
           type="button"
-          class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/[0.02]"
+          class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2"
           @click="editingDocuments = true"
         >
           Редактировать документы
@@ -65,7 +65,7 @@
 
       <!-- Статус: на проверке -->
       <div
-        v-else-if="status === 'UNDER_REVIEW' || status === 'PENDING'"
+        v-else-if="status === 'UNDER_REVIEW'"
         class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
         role="status"
       >
@@ -104,7 +104,7 @@
           </div>
 
           <div
-            class="mt-2.5 rounded-[18px] border border-dashed border-black/15 bg-gradient-to-b from-white to-peach-wash p-3"
+            class="mt-2.5 rounded-[18px] border border-dashed border-black/15 bg-linear-to-b from-white to-peach-wash p-3"
             data-node-id="178:776"
           >
             <div class="flex gap-3">
@@ -154,7 +154,7 @@
                   <div
                     v-for="(slot, i) in photoSlots"
                     :key="i"
-                    class="relative flex h-[78px] w-full items-center justify-center overflow-hidden rounded-[14px] border border-black/10 bg-black/[0.03]"
+                    class="relative flex h-[78px] w-full items-center justify-center overflow-hidden rounded-[14px] border border-black/10 bg-black/3"
                     data-node-id="178:791"
                   >
                     <template v-if="slot">
@@ -213,7 +213,7 @@
           </div>
 
           <div
-            class="mt-2.5 rounded-[18px] border border-dashed border-blue-500/25 bg-gradient-to-b from-white to-sky-50 p-3"
+            class="mt-2.5 rounded-[18px] border border-dashed border-blue-500/25 bg-linear-to-b from-white to-sky-50 p-3"
             data-node-id="178:806"
           >
             <div class="flex gap-3">
@@ -385,11 +385,7 @@ const showDocumentsIntro = computed(
 );
 
 const showUploadForm = computed(() => {
-  if (
-    status.value === "APPROVED" ||
-    status.value === "UNDER_REVIEW" ||
-    status.value === "PENDING"
-  )
+  if (status.value === "APPROVED" || status.value === "UNDER_REVIEW")
     return false;
   if (status.value === "REJECTED") return true;
   if (documentsFromApi.value === null && !editingDocuments.value) return false;

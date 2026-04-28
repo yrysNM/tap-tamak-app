@@ -67,7 +67,7 @@ export interface Cook {
   totalReviews: number
 }
 
-export type PreparationType = 'FAST' | 'LOGN'
+export type PreparationType = 'FAST' | 'LONG'
 
 /** Dish payload from cook APIs: GET/POST `/dishes`, GET `/dishes/:id`. */
 export interface CookDish {

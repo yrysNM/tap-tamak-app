@@ -1,4 +1,6 @@
 # Nuxt dev/build outputs
+android/
+ios/
 .output
 .data
 .nuxt

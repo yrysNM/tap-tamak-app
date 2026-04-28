@@ -26,7 +26,7 @@
         Сначала выбираем роль, потом вводим пару данных — и можно пользоваться.
       </p>
 
-      <div class="mt-8 grid grid-cols-2 gap-3">
+      <div class="mt-8 grid grid-cols-1 gap-3">
         <!-- Клиент -->
         <button
           type="button"
@@ -42,14 +42,14 @@
           data-node-id="178:310"
           @click="selectedRole = 'client'"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <span
-              class="rounded-full border border-white/25 bg-white/20 px-3 py-1 text-[11px] font-bold backdrop-blur-sm"
+              class="inline-flex min-h-7 items-center rounded-full border border-white/25 bg-white/20 px-3 py-1 text-[11px] font-bold leading-none whitespace-nowrap backdrop-blur-sm"
             >
               Заказывать
             </span>
             <div
-              class="h-6 w-6 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
+              class="h-6 w-6 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
             >
               <i
                 class="fi fi-rr-check flex text-sm"
@@ -106,14 +106,14 @@
           data-node-id="178:332"
           @click="selectedRole = 'cook'"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <span
-              class="rounded-full border border-white/25 bg-white/20 px-3 py-1 text-[11px] font-bold backdrop-blur-sm"
+              class="inline-flex min-h-7 items-center rounded-full border border-white/25 bg-white/20 px-3 py-1 text-[11px] font-bold leading-none whitespace-nowrap backdrop-blur-sm"
             >
               Готовить
             </span>
             <div
-              class="h-6 w-6 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
+              class="h-6 w-6 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center"
             >
               <i
                 class="fi fi-rr-check flex text-sm"
