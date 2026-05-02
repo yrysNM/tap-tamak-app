@@ -35,6 +35,7 @@
     </main>
 
     <nav
+    v-if="showBottomNav"
       class="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around border-t border-border bg-white py-2 shadow-bottom pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
       <NuxtLink
@@ -86,5 +87,8 @@
 import { useCartStore } from "../stores/cart";
 
 const cartStore = useCartStore();
+const route = useRoute(); 
+
 const cartCount = computed(() => cartStore.totalItems);
+const showBottomNav = computed(() => !route.meta.hideBottomNav);
 </script>

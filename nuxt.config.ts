@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss() as any],
   },
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', 'leaflet/dist/leaflet.css'],
   runtimeConfig: {
     public: {
       apiBaseUrl: defaultApiBaseUrl,
@@ -27,9 +27,9 @@ export default defineNuxtConfig({
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
     },
   },
-  ssr: process.env.NUXT_SSR !== 'false',
+  ssr: false,
   nitro: {
-    preset: process.env.NUXT_SSR === 'false' ? 'static' : 'node-server',
+    preset: 'static',
   },
   app: {
     head: {

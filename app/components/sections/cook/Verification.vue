@@ -56,7 +56,7 @@
         </p>
         <button
           type="button"
-          class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/[0.02]"
+          class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2"
           @click="editingDocuments = true"
         >
           Редактировать документы
@@ -65,7 +65,7 @@
 
       <!-- Статус: на проверке -->
       <div
-        v-else-if="status === 'UNDER_REVIEW' || status === 'PENDING'"
+        v-else-if="status === 'UNDER_REVIEW'"
         class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
         role="status"
       >
@@ -104,7 +104,7 @@
           </div>
 
           <div
-            class="mt-2.5 rounded-[18px] border border-dashed border-black/15 bg-gradient-to-b from-white to-peach-wash p-3"
+            class="mt-2.5 rounded-[18px] border border-dashed border-black/15 bg-linear-to-b from-white to-peach-wash p-3"
             data-node-id="178:776"
           >
             <div class="flex gap-3">
@@ -154,7 +154,7 @@
                   <div
                     v-for="(slot, i) in photoSlots"
                     :key="i"
-                    class="relative flex h-[78px] w-full items-center justify-center overflow-hidden rounded-[14px] border border-black/10 bg-black/[0.03]"
+                    class="relative flex h-[78px] w-full items-center justify-center overflow-hidden rounded-[14px] border border-black/10 bg-black/3"
                     data-node-id="178:791"
                   >
                     <template v-if="slot">
@@ -213,7 +213,7 @@
           </div>
 
           <div
-            class="mt-2.5 rounded-[18px] border border-dashed border-blue-500/25 bg-gradient-to-b from-white to-sky-50 p-3"
+            class="mt-2.5 rounded-[18px] border border-dashed border-blue-500/25 bg-linear-to-b from-white to-sky-50 p-3"
             data-node-id="178:806"
           >
             <div class="flex gap-3">
@@ -280,6 +280,51 @@
           </div>
         </div>
 
+        <div
+          class="mt-4 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold tracking-[-0.2px] text-heading">
+              Адрес кухни на карте
+            </span>
+            <span class="text-[10px] font-bold tracking-[-0.2px] text-caption">
+              {{ selectedLocationLabel }}
+            </span>
+          </div>
+          <p class="mt-1 text-[11px] leading-snug text-caption">
+            Нажмите на карту, чтобы выбрать точку кухни (Алматы).
+          </p>
+          <ClientOnly>
+            <div class="h-[240px]">
+              <LMap
+                :zoom="mapZoom"
+                :center="mapCenter"
+                class="mt-3 w-full overflow-hidden rounded-[16px] border border-black/10"
+                @click="onMapClick"
+              >
+                <LTileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  layer-type="base"
+                  name="OpenStreetMap"
+                />
+                <LCircleMarker
+                  v-if="latitude !== null && longitude !== null"
+                  :lat-lng="[latitude, longitude]"
+                  :radius="9"
+                  :weight="2"
+                />
+              </LMap>
+            </div>
+          </ClientOnly>
+          <p
+            v-if="latitude !== null && longitude !== null"
+            class="mt-2 text-[11px] text-caption"
+          >
+            Широта: {{ latitude.toFixed(6) }}, Долгота:
+            {{ longitude.toFixed(6) }}
+          </p>
+        </div>
+
         <p v-if="hint" class="mt-3 text-center text-xs text-red-500">
           {{ hint }}
         </p>
@@ -333,7 +378,12 @@
 </template>
 
 <script setup lang="ts">
-import type { CookVerificationGetResponse, VerificationStatus } from "~/types";
+import { LCircleMarker, LMap, LTileLayer } from "@vue-leaflet/vue-leaflet";
+import type {
+  CookVerificationGetResponse,
+  CookVerificationSubmitPayload,
+  VerificationStatus,
+} from "~/types";
 
 const imgCamera =
   "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/75513deb-b547-4868-9e9a-1ba5ca9c8bdc.png";
@@ -343,6 +393,8 @@ const imgPdf =
 const MAX_KITCHEN = 6;
 const MIN_KITCHEN = 3;
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const ALMATY_CENTER: [number, number] = [43.238949, 76.889709];
+const MAP_DEFAULT_ZOOM = 12;
 
 const authStore = useAuthStore();
 const nuxtApp = useNuxtApp();
@@ -353,6 +405,8 @@ const kitchenPhotos = ref<{ previewUrl: string; file: File }[]>([]);
 const certificatePdf = ref<{ name: string; file: File } | null>(null);
 const hint = ref("");
 const submitting = ref(false);
+const latitude = ref<number | null>(null);
+const longitude = ref<number | null>(null);
 const verificationLoading = ref(true);
 const fetchError = ref("");
 const documentsFromApi = ref<
@@ -385,11 +439,7 @@ const showDocumentsIntro = computed(
 );
 
 const showUploadForm = computed(() => {
-  if (
-    status.value === "APPROVED" ||
-    status.value === "UNDER_REVIEW" ||
-    status.value === "PENDING"
-  )
+  if (status.value === "APPROVED" || status.value === "UNDER_REVIEW")
     return false;
   if (status.value === "REJECTED") return true;
   if (documentsFromApi.value === null && !editingDocuments.value) return false;
@@ -402,6 +452,19 @@ const showDocumentsBack = computed(
     documentsFromApi.value === null &&
     editingDocuments.value,
 );
+
+const mapCenter = computed<[number, number]>(() => [
+  ALMATY_CENTER[0],
+  ALMATY_CENTER[1],
+]);
+const mapZoom = computed(() => MAP_DEFAULT_ZOOM);
+
+const selectedLocationLabel = computed(() => {
+  if (latitude.value === null || longitude.value === null) {
+    return "не выбрано";
+  }
+  return `${latitude.value.toFixed(4)}, ${longitude.value.toFixed(4)}`;
+});
 
 function apiMessage(
   err: unknown,
@@ -469,7 +532,9 @@ const photoSlots = computed(() => {
 const canContinue = computed(
   () =>
     kitchenPhotos.value.length >= MIN_KITCHEN &&
-    certificatePdf.value?.file !== undefined,
+    certificatePdf.value?.file !== undefined &&
+    latitude.value !== null &&
+    longitude.value !== null,
 );
 
 function revokePreviews() {
@@ -536,16 +601,35 @@ function clearPdf() {
   if (pdfInputRef.value) pdfInputRef.value.value = "";
 }
 
+function onMapClick(event: { latlng?: { lat: number; lng: number } }) {
+  if (!event.latlng) return;
+  hint.value = "";
+  latitude.value = event.latlng.lat;
+  longitude.value = event.latlng.lng;
+}
+
 async function onContinue() {
   if (!canContinue.value || submitting.value) return;
   const cert = certificatePdf.value;
-  if (!cert) return;
+  if (!cert || latitude.value === null || longitude.value === null) {
+    hint.value = "Выберите точку кухни на карте.";
+    return;
+  }
+
+  const payload: CookVerificationSubmitPayload = {
+    kitchenPhotos: kitchenPhotos.value.map((photo) => photo.file),
+    certificate: cert.file,
+    latitude: latitude.value,
+    longitude: longitude.value,
+  };
 
   const form = new FormData();
-  for (const p of kitchenPhotos.value) {
-    form.append("kitchenPhotos", p.file);
+  for (const p of payload.kitchenPhotos) {
+    form.append("kitchenPhotos", p);
   }
-  form.append("certificate", cert.file, cert.name);
+  form.append("certificate", payload.certificate, cert.name);
+  form.append("latitude", String(payload.latitude));
+  form.append("longitude", String(payload.longitude));
 
   hint.value = "";
   submitting.value = true;

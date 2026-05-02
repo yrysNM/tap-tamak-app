@@ -87,11 +87,11 @@
       </main>
 
       <nav
-        class="flex items-center justify-around border-t border-border bg-white py-2 lg:hidden"
+        class="flex w-full max-w-full items-center border-t border-border bg-white py-2 lg:hidden"
       >
         <NuxtLink
           to="/cook/dashboard"
-          class="flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
+          class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary"
         >
           <Icon name="material-symbols:dashboard-outline" class="size-6" />
@@ -99,7 +99,7 @@
         </NuxtLink>
         <NuxtLink
           to="/cook/orders"
-          class="relative flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
+          class="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary"
         >
           <Icon name="material-symbols:receipt-long-outline" class="size-6" />
@@ -113,7 +113,7 @@
         </NuxtLink>
         <NuxtLink
           to="/cook/menu"
-          class="flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
+          class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary"
         >
           <Icon name="material-symbols:menu-book-2" class="size-6" />
@@ -121,7 +121,7 @@
         </NuxtLink>
         <NuxtLink
           to="/cook/earnings"
-          class="flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
+          class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary"
         >
           <Icon name="material-symbols:payments-outline" class="size-6" />
@@ -129,7 +129,7 @@
         </NuxtLink>
         <NuxtLink
           to="/cook/profile"
-          class="flex flex-col items-center gap-0.5 px-3 py-1 text-muted"
+          class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary"
         >
           <Icon name="material-symbols:person-outline" class="size-6" />
