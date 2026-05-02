@@ -12,15 +12,15 @@
     </div>
 
     <div class="mt-3 flex items-center gap-2">
-      <Input
+      <UiInput
         v-model="search"
-        class="flex-1 rounded-2xl border p-3"
+        class="flex-1 rounded-2xl p-3"
         placeholder="Поиск: повар, блюдо, район..."
       >
         <template #icon>
           <Icon name="material-symbols:search-rounded" class="size-4" />
         </template>
-      </Input>
+      </UiInput>
       <button
         type="button"
         class="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border border-black/10 bg-white text-icon-secondary"
@@ -56,11 +56,15 @@
     </div>
 
     <div v-else class="mt-3 grid grid-cols-2 gap-3">
-      <Card
+      <UiCard
         v-for="chef in filteredCookCards"
         :key="chef.id"
         padding="sm"
-        class="overflow-hidden rounded-[16px] border border-black/8 p-0!"
+        class="cursor-pointer overflow-hidden rounded-[16px] border border-black/8 p-0!"
+        role="link"
+        tabindex="0"
+        @click="navigateTo(`/cooks/${chef.id}/menu`)"
+        @keydown.enter.prevent="navigateTo(`/cooks/${chef.id}/menu`)"
       >
         <div class="relative">
           <img
@@ -87,18 +91,24 @@
           </p>
           <div class="mt-2 flex gap-1.5">
             <button
+              type="button"
               class="rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-white"
+              @click.stop="
+                navigateTo(`/cooks/${encodeURIComponent(chef.id)}/menu`)
+              "
             >
               Блюда
             </button>
             <button
+              type="button"
               class="rounded-full border border-black/10 bg-white px-3 py-1 text-[10px] font-bold text-icon-secondary"
+              @click.stop="navigateTo(`/cooks/${chef.id}/menu`)"
             >
               Профиль
             </button>
           </div>
         </div>
-      </Card>
+      </UiCard>
     </div>
   </section>
 </template>
@@ -123,6 +133,8 @@ const {
   "home-cooks",
   async () => {
     const cooksPack = await fetchCooksPage(api, 1, 20);
+    console.log(cooksPack);
+
     return {
       cooks: cooksPack.items,
     };

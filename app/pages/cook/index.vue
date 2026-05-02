@@ -3,6 +3,8 @@
 </template>
 
 <script setup lang="ts">
-const auth = useAuthStore()
-await navigateTo(getCookHomePath(auth.user, auth.verificationStatus), { replace: true })
+const auth = useAuthStore();
+navigateTo(getCookHomePath(auth.user, auth.verificationStatus), {
+  replace: true,
+});
 </script>

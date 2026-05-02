@@ -1,115 +1,177 @@
 <script setup lang="ts">
-import type { CookMenuHistoryItem, CookMenuPayload } from '~/utils/menuApi'
-import { formatMenuDateLabel } from '~/composables/useUtcMenuDates'
-import { apiMessage } from '~/utils/apiMessage'
-import { unwrapMenuPayload } from '~/utils/menuApi'
-import { dishImageSrc, unwrapDishesList } from '~/utils/dishApi'
-import type { CookDish } from '~/types'
+import type { CookSchedule } from "~/types";
+import type { CookMenuHistoryItem, CookMenuPayload } from "~/utils/menuApi";
+import { formatMenuDateLabel } from "~/composables/useUtcMenuDates";
+import { apiMessage } from "~/utils/apiMessage";
+import { unwrapMenuPayload } from "~/utils/menuApi";
+import { dishImageSrc, unwrapDishesList } from "~/utils/dishApi";
+import type { CookDish } from "~/types";
 
-const from = defineModel<string>('from', { required: true })
-const to = defineModel<string>('to', { required: true })
+const from = defineModel<string>("from", { required: true });
+const to = defineModel<string>("to", { required: true });
 
 defineProps<{
-  items: CookMenuHistoryItem[]
-  loading: boolean
-  historyPage: number
-  historyTotalPages: number | null
-  todayYmd: string
-  todayMenu: CookMenuPayload | null
-  todayLoading: boolean
-  todayError: string
+  items: CookMenuHistoryItem[];
+  loading: boolean;
+  historyPage: number;
+  historyTotalPages: number | null;
+  todayYmd: string;
+  todayMenu: CookMenuPayload | null;
+  todayLoading: boolean;
+  todayError: string;
   /** Path segment for PATCH/DELETE (menu id or YYYY-MM-DD). */
-  deletingMenuId: string | null
-}>()
+  deletingMenuId: string | null;
+  schedule: CookSchedule | null;
+  scheduleLoading: boolean;
+  scheduleError: string;
+}>();
 
 const emit = defineEmits<{
-  'load-more': []
-  'create-today': []
-  'delete-menu': [menuKey: string]
-}>()
+  "load-more": [];
+  "create-today": [];
+  "delete-menu": [menuKey: string];
+  "open-schedule": [];
+}>();
 
 function menuEditPath(menuKey: string) {
-  return `/cook/menu/edit/${encodeURIComponent(menuKey)}`
+  return `/cook/menu/edit/${encodeURIComponent(menuKey)}`;
 }
 
 function menuKeyFromRow(row: CookMenuHistoryItem) {
-  return row.id ?? row.date
+  return row.id ?? row.date;
 }
 
 function menuKeyToday(menu: CookMenuPayload, todayYmd: string) {
-  return menu.id ?? todayYmd
+  return menu.id ?? todayYmd;
 }
 
-const { $api } = useNuxtApp()
-const config = useRuntimeConfig()
-const apiBase = computed(() => config.public.apiBaseUrl as string)
+const { $api } = useNuxtApp();
+const config = useRuntimeConfig();
+const apiBase = computed(() => config.public.apiBaseUrl as string);
 
-const previewOpen = ref(false)
-const previewDate = ref<string | null>(null)
-const previewLoading = ref(false)
-const previewError = ref('')
-const previewDishes = ref<CookDish[]>([])
+const previewOpen = ref(false);
+const previewDate = ref<string | null>(null);
+const previewLoading = ref(false);
+const previewError = ref("");
+const previewDishes = ref<CookDish[]>([]);
 
 function imageSrc(url: string | undefined) {
-  return dishImageSrc(url, apiBase.value)
+  return dishImageSrc(url, apiBase.value);
 }
 
-async function openPreview(date: string) {
-  previewDate.value = date
-  previewOpen.value = true
-  previewLoading.value = true
-  previewError.value = ''
-  previewDishes.value = []
+async function openPreview(id: string) {
+  previewOpen.value = true;
+  previewLoading.value = true;
+  previewError.value = "";
+  previewDishes.value = [];
   try {
     const raw = await ($api as (url: string, opts: object) => Promise<unknown>)(
-      `/menus/${encodeURIComponent(date)}`,
-      { method: 'GET' },
-    )
-    const menu = unwrapMenuPayload(raw)
+      `/menus/${encodeURIComponent(id)}`,
+      { method: "GET" },
+    );
+    const menu = unwrapMenuPayload(raw);
     if (!menu?.dishIds?.length) {
-      previewDishes.value = []
-      return
+      previewDishes.value = [];
+      return;
     }
-    const rawDishes = await ($api as (url: string, opts: object) => Promise<unknown>)('/dishes', {
-      method: 'GET',
+    const rawDishes = await (
+      $api as (url: string, opts: object) => Promise<unknown>
+    )("/dishes", {
+      method: "GET",
       query: { page: 1, limit: 100 },
-    })
-    const { items } = unwrapDishesList((rawDishes as { data?: unknown }).data ?? rawDishes)
-    const map = new Map(items.map((d) => [d.id, d]))
-    previewDishes.value = menu.dishIds.map((id) => map.get(id)).filter(Boolean) as CookDish[]
+    });
+    const { items } = unwrapDishesList(
+      (rawDishes as { data?: unknown }).data ?? rawDishes,
+    );
+    const map = new Map(items.map((d) => [d.id, d]));
+    previewDishes.value = menu.dishIds
+      .map((id) => map.get(id))
+      .filter(Boolean) as CookDish[];
   } catch (err) {
-    previewError.value = apiMessage(err, 'Не удалось загрузить это меню.')
+    previewError.value = apiMessage(err, "Не удалось загрузить это меню.");
   } finally {
-    previewLoading.value = false
+    previewLoading.value = false;
   }
 }
 
 function closePreview() {
-  previewOpen.value = false
+  previewOpen.value = false;
 }
 
 function statusClass(status: string) {
-  const s = status.toLowerCase()
-  if (s.includes('draft')) return 'bg-amber-50 text-amber-800 ring-amber-200'
-  if (s.includes('publish') || s.includes('live')) return 'bg-emerald-50 text-emerald-800 ring-emerald-200'
-  return 'bg-primary-light text-primary ring-primary/25'
+  const s = status.toLowerCase();
+  if (s.includes("draft")) return "bg-amber-50 text-amber-800 ring-amber-200";
+  if (s.includes("publish") || s.includes("live"))
+    return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  return "bg-primary-light text-primary ring-primary/25";
 }
 
 function formatTime(iso?: string) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' })
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function formatUtcHm(iso: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
 }
 </script>
 
 <template>
   <section class="space-y-5">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h2 class="text-lg font-bold text-dark">
-        История меню
-      </h2>
-      <MenuDateRangePicker v-model:from="from" v-model:to="to" />
+    <div class="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-dark">Рабочее расписание</h3>
+          <p class="mt-1 text-[13px] text-muted">
+            Укажите временное окно доступности (UTC).
+          </p>
+        </div>
+        <button
+          type="button"
+          class="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
+          @click="emit('open-schedule')"
+        >
+          {{
+            schedule?.workStartAt && schedule?.workEndAt
+              ? "Изменить"
+              : "Добавить расписание"
+          }}
+        </button>
+      </div>
+
+      <p v-if="scheduleLoading" class="mt-3 text-sm text-caption">
+        Загрузка расписания…
+      </p>
+      <p v-else-if="scheduleError" class="mt-3 text-sm text-error">
+        {{ scheduleError }}
+      </p>
+      <div v-else class="mt-3 rounded-xl bg-surface-muted/30 p-3">
+        <p class="text-sm font-semibold text-dark">
+          {{
+            schedule?.workStartAt && schedule?.workEndAt
+              ? `${formatUtcHm(schedule.workStartAt)} - ${formatUtcHm(schedule.workEndAt)} UTC`
+              : "Расписание не задано"
+          }}
+        </p>
+        <p class="mt-1 text-[12px] text-caption">
+          Статус:
+          <span class="font-semibold text-dark">
+            {{ schedule?.isActiveNow ? "Сейчас активен" : "Сейчас не активен" }}
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <h2 class="text-lg font-bold text-dark">История меню</h2>
+      <CookMenuDateRangePicker v-model:from="from" v-model:to="to" />
     </div>
 
     <div
@@ -129,9 +191,7 @@ function formatTime(iso?: string) {
       v-else-if="!todayMenu"
       class="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary-light to-white p-5 shadow-md ring-1 ring-primary/15"
     >
-      <h3 class="text-base font-bold text-dark">
-        Меню на сегодня не создано
-      </h3>
+      <h3 class="text-base font-bold text-dark">Меню на сегодня не создано</h3>
       <p class="mt-1 text-[13px] text-muted">
         Создайте меню на {{ formatMenuDateLabel(todayYmd) }} (UTC).
       </p>
@@ -143,13 +203,12 @@ function formatTime(iso?: string) {
         Создать меню на сегодня
       </button>
     </div>
-    <div
-      v-else
-      class="rounded-2xl border border-border bg-white p-5 shadow-sm"
-    >
+    <div v-else class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p class="text-[12px] font-medium uppercase tracking-wide text-caption">
+          <p
+            class="text-[12px] font-medium uppercase tracking-wide text-caption"
+          >
             Сегодня
           </p>
           <p class="text-base font-bold text-dark">
@@ -168,17 +227,21 @@ function formatTime(iso?: string) {
       <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <NuxtLink
           :to="menuEditPath(menuKeyToday(todayMenu, todayYmd))"
-          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary sm:flex-none sm:px-5"
+          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary sm:flex-none sm:px-5 py-3"
         >
           Редактировать
         </NuxtLink>
         <button
           type="button"
-          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-error/30 text-sm font-semibold text-error transition hover:bg-error/5 disabled:opacity-45 sm:flex-none sm:px-5"
+          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-error/30 text-sm font-semibold text-error transition hover:bg-error/5 disabled:opacity-45 sm:flex-none sm:px-5 py-3"
           :disabled="deletingMenuId === menuKeyToday(todayMenu, todayYmd)"
           @click="emit('delete-menu', menuKeyToday(todayMenu, todayYmd))"
         >
-          {{ deletingMenuId === menuKeyToday(todayMenu, todayYmd) ? 'Удаление…' : 'Удалить' }}
+          {{
+            deletingMenuId === menuKeyToday(todayMenu, todayYmd)
+              ? "Удаление…"
+              : "Удалить"
+          }}
         </button>
       </div>
     </div>
@@ -202,12 +265,14 @@ function formatTime(iso?: string) {
       v-else-if="!loading && items.length === 0"
       class="rounded-2xl border border-dashed border-border bg-white py-14 text-center shadow-sm"
     >
-      <Icon name="material-symbols:history-rounded" class="mx-auto size-12 text-caption" />
-      <p class="mt-3 text-sm font-semibold text-dark">
-        Нет истории меню
-      </p>
+      <Icon
+        name="material-symbols:history-rounded"
+        class="mx-auto size-12 text-caption"
+      />
+      <p class="mt-3 text-sm font-semibold text-dark">Нет истории меню</p>
       <p class="mt-1 px-6 text-[13px] text-caption">
-        В этом диапазоне дат меню нет. Измените период или создайте меню на сегодня.
+        В этом диапазоне дат меню нет. Измените период или создайте меню на
+        сегодня.
       </p>
     </div>
     <ul v-else class="space-y-3">
@@ -216,7 +281,9 @@ function formatTime(iso?: string) {
         :key="row.id ?? row.date"
         class="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:border-primary/25 hover:shadow-md"
       >
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <p class="text-base font-bold text-dark">
@@ -232,9 +299,16 @@ function formatTime(iso?: string) {
             <p class="mt-1 text-[13px] text-muted">
               {{ row.dishCount }} блюд · создано {{ formatTime(row.createdAt) }}
             </p>
-            <p v-if="row.dishNamePreview.length" class="mt-2 line-clamp-2 text-[13px] text-caption">
-              {{ row.dishNamePreview.join(' · ') }}
-              <span v-if="row.dishCount > row.dishNamePreview.length" class="text-caption">…</span>
+            <p
+              v-if="row.dishNamePreview.length"
+              class="mt-2 line-clamp-2 text-[13px] text-caption"
+            >
+              {{ row.dishNamePreview.join(" · ") }}
+              <span
+                v-if="row.dishCount > row.dishNamePreview.length"
+                class="text-caption"
+                >…</span
+              >
             </p>
           </div>
           <div class="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
@@ -247,7 +321,7 @@ function formatTime(iso?: string) {
             <button
               type="button"
               class="h-10 rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
-              @click="openPreview(row.date)"
+              @click="openPreview(row.id || '')"
             >
               Просмотр
             </button>
@@ -257,7 +331,7 @@ function formatTime(iso?: string) {
               :disabled="deletingMenuId === menuKeyFromRow(row)"
               @click="emit('delete-menu', menuKeyFromRow(row))"
             >
-              {{ deletingMenuId === menuKeyFromRow(row) ? '…' : 'Удалить' }}
+              {{ deletingMenuId === menuKeyFromRow(row) ? "…" : "Удалить" }}
             </button>
           </div>
         </div>
@@ -274,14 +348,14 @@ function formatTime(iso?: string) {
         :disabled="loading"
         @click="emit('load-more')"
       >
-        {{ loading ? 'Загрузка…' : 'Показать ещё' }}
+        {{ loading ? "Загрузка…" : "Показать ещё" }}
       </button>
     </div>
 
     <Teleport to="body">
       <div
         v-if="previewOpen"
-        class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
+        class="fixed inset-0 z-60 flex items-end justify-center sm:items-center sm:p-4"
         role="dialog"
         aria-modal="true"
       >
@@ -289,9 +363,11 @@ function formatTime(iso?: string) {
         <div
           class="relative max-h-[min(88vh,640px)] w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl"
         >
-          <header class="flex items-center justify-between border-b border-border px-4 py-3">
+          <header
+            class="flex items-center justify-between border-b border-border px-4 py-3"
+          >
             <h3 class="text-base font-bold text-dark">
-              Меню {{ previewDate ? formatMenuDateLabel(previewDate) : '' }}
+              Меню {{ previewDate ? formatMenuDateLabel(previewDate) : "" }}
             </h3>
             <button
               type="button"
@@ -303,9 +379,7 @@ function formatTime(iso?: string) {
             </button>
           </header>
           <div class="max-h-[55vh] overflow-y-auto px-4 py-3">
-            <p v-if="previewLoading" class="text-sm text-caption">
-              Загрузка…
-            </p>
+            <p v-if="previewLoading" class="text-sm text-caption">Загрузка…</p>
             <p v-else-if="previewError" class="text-sm text-error">
               {{ previewError }}
             </p>
@@ -315,30 +389,34 @@ function formatTime(iso?: string) {
                 :key="d.id"
                 class="flex gap-3 rounded-xl border border-border p-2"
               >
-                <div class="size-14 shrink-0 overflow-hidden rounded-lg bg-primary-light">
+                <div
+                  class="size-14 shrink-0 overflow-hidden rounded-lg bg-primary-light"
+                >
                   <img
                     v-if="imageSrc(d.imageUrl)"
                     :src="imageSrc(d.imageUrl)"
                     :alt="d.name"
                     class="size-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="flex size-full items-center justify-center text-icon-muted"
                   >
-                  <div v-else class="flex size-full items-center justify-center text-icon-muted">
-                    <Icon name="material-symbols:restaurant-outline" class="size-7" />
+                    <Icon
+                      name="material-symbols:restaurant-outline"
+                      class="size-7"
+                    />
                   </div>
                 </div>
                 <div class="min-w-0">
                   <p class="font-semibold text-dark">
                     {{ d.name }}
                   </p>
-                  <p class="text-[12px] text-muted">
-                    {{ d.cookingTime }} мин
-                  </p>
+                  <p class="text-[12px] text-muted">{{ d.cookingTime }} мин</p>
                 </div>
               </li>
             </ul>
-            <p v-else class="text-sm text-caption">
-              В этом меню нет блюд.
-            </p>
+            <p v-else class="text-sm text-caption">В этом меню нет блюд.</p>
           </div>
         </div>
       </div>

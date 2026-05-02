@@ -21,6 +21,8 @@ import {
 import { httpStatus } from "~/composables/useHttpStatus";
 import { usePageToast } from "~/composables/usePageToast";
 import { utcMonthRangeYmd, utcTodayYmd } from "~/composables/useUtcMenuDates";
+import type { CookSchedule, CookSchedulePatchPayload } from "~/types";
+import { unwrapCookSchedule } from "~/utils/scheduleApi";
 
 definePageMeta({
   layout: "cook",
@@ -62,9 +64,15 @@ const deletingMenuId = ref<string | null>(null);
 
 const createMenuOpen = ref(false);
 const createDishOpen = ref(false);
+const scheduleModalOpen = ref(false);
+const scheduleSaving = ref(false);
+const schedule = ref<CookSchedule | null>(null);
+const scheduleLoading = ref(false);
+const scheduleError = ref("");
 
-const historyRows = computed(() =>
-  historyItems.value.filter((row) => row.date !== todayYmd),
+const historyRows = computed(
+  () => historyItems.value,
+  // historyItems.value.filter((row) => row.date !== todayYmd),
 );
 
 const historyTotalPages = computed(() => {
@@ -191,7 +199,10 @@ async function loadTodayMenu() {
     if (httpStatus(err) === 404) {
       todayMenu.value = null;
     } else {
-      todayError.value = apiMessage(err, "Не удалось проверить меню на сегодня.");
+      todayError.value = apiMessage(
+        err,
+        "Не удалось проверить меню на сегодня.",
+      );
       todayMenu.value = null;
     }
   } finally {
@@ -229,6 +240,40 @@ async function loadDishes() {
   }
 }
 
+async function loadSchedule() {
+  scheduleLoading.value = true;
+  scheduleError.value = "";
+  try {
+    const raw = await ($api as (url: string, opts: object) => Promise<unknown>)(
+      "/cooks/me/schedule",
+      { method: "GET" },
+    );
+    schedule.value = unwrapCookSchedule(raw);
+  } catch (err) {
+    scheduleError.value = apiMessage(err, "Не удалось загрузить расписание.");
+    schedule.value = null;
+  } finally {
+    scheduleLoading.value = false;
+  }
+}
+
+async function onScheduleSubmit(payload: CookSchedulePatchPayload) {
+  scheduleSaving.value = true;
+  try {
+    await ($api as (url: string, opts: object) => Promise<unknown>)(
+      "/cooks/me/schedule",
+      { method: "PATCH", body: payload },
+    );
+    scheduleModalOpen.value = false;
+    toast.show("Расписание сохранено.", "success");
+    await loadSchedule();
+  } catch (err) {
+    toast.show(apiMessage(err, "Не удалось сохранить расписание."), "error");
+  } finally {
+    scheduleSaving.value = false;
+  }
+}
+
 async function onDeleteDish(id: string) {
   deletingId.value = id;
   try {
@@ -247,11 +292,7 @@ async function onDeleteDish(id: string) {
 
 async function onDeleteMenu(menuKey: string) {
   const apiFn = $api as (url: string, opts?: object) => Promise<unknown>;
-  if (
-    !confirm(
-      "Удалить это меню? Действие необратимо.",
-    )
-  ) {
+  if (!confirm("Удалить это меню? Действие необратимо.")) {
     return;
   }
   deletingMenuId.value = menuKey;
@@ -291,6 +332,7 @@ onMounted(() => {
   void loadTodayMenu();
   void loadHistory(false);
   void loadDishes();
+  void loadSchedule();
 });
 </script>
 
@@ -344,9 +386,13 @@ onMounted(() => {
         :today-loading="todayLoading"
         :today-error="todayError"
         :deleting-menu-id="deletingMenuId"
+        :schedule="schedule"
+        :schedule-loading="scheduleLoading"
+        :schedule-error="scheduleError"
         @create-today="createMenuOpen = true"
         @load-more="loadMoreHistory"
         @delete-menu="onDeleteMenu"
+        @open-schedule="scheduleModalOpen = true"
       />
 
       <CookMenuDishSection
@@ -391,6 +437,13 @@ onMounted(() => {
     <CookMenuCreateDishModal
       v-model="createDishOpen"
       @success="onDishCreated"
+    />
+    <CookMenuScheduleModal
+      v-model="scheduleModalOpen"
+      :initial-start-at="schedule?.workStartAt ?? null"
+      :initial-end-at="schedule?.workEndAt ?? null"
+      :saving="scheduleSaving"
+      @submit="onScheduleSubmit"
     />
 
     <Teleport to="body">

@@ -39,6 +39,28 @@ export interface CookVerificationGetResponse {
   documents: CookVerificationDocuments | null
 }
 
+export interface CookVerificationSubmitPayload {
+  kitchenPhotos: File[]
+  certificate: File
+  latitude: number
+  longitude: number
+}
+
+export interface CookSchedule {
+  workStartAt: string | null
+  workEndAt: string | null
+  isActiveNow: boolean
+}
+
+export interface CookScheduleGetResponse {
+  data: CookSchedule
+}
+
+export interface CookSchedulePatchPayload {
+  workStartAt: string
+  workEndAt: string
+}
+
 export interface User {
   id: string
   email?: string
@@ -82,6 +104,31 @@ export interface CookDish {
   isAvailable?: boolean
   calories?: number
   [key: string]: unknown
+}
+
+export interface PublicCookMenuCookInfo {
+  id: string
+  businessName: string
+  bio?: string | null
+  rating: number
+  totalReviews: number
+  latitude?: number
+  longitude?: number
+  isAvailable: boolean
+  kitchenPhotoUrls: string[]
+}
+
+export interface PublicCookMenuInfo {
+  id: string
+  date: string
+}
+
+export interface PublicCookMenuDish extends CookDish {}
+
+export interface PublicCookMenuPayload {
+  cook: PublicCookMenuCookInfo
+  menu: PublicCookMenuInfo | null
+  dishes: PublicCookMenuDish[]
 }
 
 export interface Dish {
