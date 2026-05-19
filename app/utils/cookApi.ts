@@ -81,6 +81,7 @@ function unwrapPublicCookMenuInformation(raw: unknown): PublicCookMenuPayload | 
     cook: {
       id: cookRaw.id,
       businessName: typeof cookRaw.businessName === 'string' ? cookRaw.businessName : 'Повар',
+      profileImageUrl: typeof cookRaw.profileImageUrl === 'string' ? cookRaw.profileImageUrl : undefined,
       bio: typeof cookRaw.bio === 'string' || cookRaw.bio === null ? (cookRaw.bio as string | null) : null,
       rating: toNumber(cookRaw.rating),
       totalReviews: Math.max(0, Math.trunc(toNumber(cookRaw.totalReviews))),
@@ -107,6 +108,7 @@ function fallbackCook(cookId: string) {
   return {
     id: cookId,
     businessName: 'Повар',
+    profileImageUrl: undefined,
     bio: null,
     rating: 0,
     totalReviews: 0,

@@ -25,7 +25,7 @@ function imageSrc(url: string | undefined) {
 
 function prepLabel(t: PreparationType | string | undefined) {
   if (t === "FAST" || t === "Fast") return "Быстрое";
-  if (t === "LOGN" || t === "Long") return "Долгое";
+  if (t === "LONG" || t === "Long") return "Долгое";
   return "—";
 }
 

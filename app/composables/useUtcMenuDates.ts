@@ -15,7 +15,7 @@ export function utcYmdAddDays(ymd: string, deltaDays: number): string {
   if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(day)) {
     return ymd
   }
-  const dt = new Date(Date.UTC(y, mo - 1, day))
+  const dt = new Date(Date.UTC(y || 1970, (mo || 0) - 1, day))
   dt.setUTCDate(dt.getUTCDate() + deltaDays)
   const yy = dt.getUTCFullYear()
   const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
@@ -23,12 +23,16 @@ export function utcYmdAddDays(ymd: string, deltaDays: number): string {
   return `${yy}-${mm}-${dd}`
 }
 
+/** Full UTC calendar month immediately before `ref` (excludes `ref`'s month, so never includes “today” when `ref` is now). */
 export function utcMonthRangeYmd(ref = new Date()): { from: string; to: string } {
   const y = ref.getUTCFullYear()
   const m0 = ref.getUTCMonth()
-  const from = `${y}-${String(m0 + 1).padStart(2, '0')}-01`
-  const last = new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate()
-  const to = `${y}-${String(m0 + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`
+  const prev = new Date(Date.UTC(y, m0 - 1, 1))
+  const py = prev.getUTCFullYear()
+  const pm0 = prev.getUTCMonth()
+  const from = `${py}-${String(pm0 + 1).padStart(2, '0')}-01`
+  const last = new Date(Date.UTC(py, pm0 + 1, 0)).getUTCDate()
+  const to = `${py}-${String(pm0 + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`
   return { from, to }
 }
 

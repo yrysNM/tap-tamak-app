@@ -7,7 +7,14 @@ type ApiRequest = (url: string, opts?: object) => Promise<unknown>
 export type UpdateDishBody = Partial<
   Pick<
     CookDish,
-    'name' | 'description' | 'price' | 'cookingTime' | 'preparationType' | 'isAvailable' | 'calories'
+    | 'name'
+    | 'description'
+    | 'price'
+    | 'cookingTime'
+    | 'preparationType'
+    | 'isAvailable'
+    | 'calories'
+    | 'portionCount'
   >
 >
 

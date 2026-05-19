@@ -2,12 +2,18 @@ export type Role = 'USER' | 'COOK'
 
 export type OrderStatus =
   | 'PENDING'
+  | 'AWAITING_COOK_ACCEPTANCE'
+  | 'AWAITING_PAYMENT'
   | 'CONFIRMED'
+  | 'COOKING'
   | 'PREPARING'
   | 'READY'
+  | 'COURIER_NEARBY'
   | 'ON_THE_WAY'
   | 'DELIVERED'
+  | 'COMPLETED'
   | 'CANCELLED'
+  | 'REJECTED'
 
 export type PaymentStatus =
   | 'PENDING'
@@ -75,6 +81,7 @@ export interface Cook {
   id: string
   userId: string
   businessName: string
+  profileImageUrl?: string
   bio?: string
   specialties: string[]
   kitchenPhotoUrls: string[]
@@ -103,12 +110,14 @@ export interface CookDish {
   category?: string
   isAvailable?: boolean
   calories?: number
+  portionCount?: number
   [key: string]: unknown
 }
 
 export interface PublicCookMenuCookInfo {
   id: string
   businessName: string
+  profileImageUrl?: string
   bio?: string | null
   rating: number
   totalReviews: number
@@ -168,9 +177,15 @@ export interface Order {
   totalAmount: number
   deliveryFee: number
   deliveryAddress: string
+  /** Customer phone from checkout; used on cook-facing order views. */
+  contactPhone?: string
   paymentStatus: PaymentStatus
   items: OrderItem[]
   cook?: Cook
+  createdAt?: string
+  updatedAt?: string
+  /** Optional minutes-to-ready estimate from the backend. */
+  estimatedMinutes?: number | null
 }
 
 export interface Review {
@@ -189,6 +204,77 @@ export interface Review {
 export interface CartItem {
   dish: Dish
   quantity: number
+}
+
+/** Snapshot for checkout UI (persisted cart). */
+export interface CartLineCook {
+  id: string
+  businessName: string
+  profileImageUrl?: string
+  rating: number
+  totalReviews: number
+  kitchenPhotoUrls: string[]
+}
+
+export interface CartLineDish {
+  id: string
+  name: string
+  description?: string
+  price: number
+  imageUrl?: string
+  cookingTime?: number
+  calories?: number
+  portionCount?: number
+}
+
+export interface CartLineItem {
+  cook: CartLineCook
+  dish: CartLineDish
+  quantity: number
+  addedAt: string
+}
+
+/** GET /basket — cook summary (mapCookSummary). */
+export interface BasketCookSummary {
+  id: string
+  businessName: string
+  profileImageUrl?: string
+  bio?: string | null
+  rating: number
+  totalReviews: number
+  latitude?: number
+  longitude?: number
+  isAvailable: boolean
+  kitchenPhotoUrls: string[]
+}
+
+/** Dish snapshot on a basket line from GET /basket. */
+export interface BasketLineDish {
+  id: string
+  name: string
+  description?: string
+  price: number
+  imageUrl?: string
+  isAvailable: boolean
+  portionCount?: number
+  cookId: string
+}
+
+export interface BasketLineItem {
+  id: string
+  dishId: string
+  quantity: number
+  lineSubtotal: number
+  dish: BasketLineDish
+}
+
+/** GET /basket */
+export interface BasketGetResponse {
+  cookId: string | null
+  cook: BasketCookSummary | null
+  items: BasketLineItem[]
+  itemsCount: number
+  itemsTotal: number
 }
 
 export interface Address {

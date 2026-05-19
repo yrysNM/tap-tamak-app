@@ -97,9 +97,9 @@
             />
             <div
               v-else
-              class="flex size-14 items-center justify-center rounded-[16px] border-2 border-white bg-black/5 text-[11px] font-semibold text-muted shadow-md"
+              class="flex size-14 items-center justify-center rounded-[16px] border-2 border-white bg-black/5 text-lg font-bold text-muted shadow-md"
             >
-              Нет фото
+              {{ cookInitials(selectedCook.businessName) }}
             </div>
             <div class="min-w-0 flex-1">
               <p
@@ -111,9 +111,9 @@
                 {{ specialtiesLine(selectedCook.specialties) }}
               </p>
               <p class="mt-1 text-[12px] font-semibold text-subtle">
-                <span class="text-primary"
+                <!-- <span class="text-primary"
                   >{{ selectedCook.rating.toFixed(1) }} ★</span
-                >
+                > -->
                 <span class="mx-1 text-black/25">•</span>
                 {{ distanceLabel(selectedCook) }}
               </p>
@@ -213,6 +213,7 @@ const selectedCook = computed(
 );
 
 const selectedCookImage = computed(() =>
+  dishImageSrc(selectedCook.value?.profileImageUrl, apiBase.value) ??
   dishImageSrc(selectedCook.value?.kitchenPhotoUrls?.[0], apiBase.value),
 );
 
@@ -231,6 +232,16 @@ watch(selectedCook, (cook) => {
 function specialtiesLine(specialties: string[] | undefined): string {
   if (!specialties?.length) return "Разные блюда";
   return specialties.slice(0, 2).join(", ");
+}
+
+function cookInitials(name: string | undefined): string {
+  const words = (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return "П";
+  const initials = words.slice(0, 2).map((word) => word[0] ?? "").join("");
+  return (initials || words[0][0] || "П").toUpperCase();
 }
 
 function selectCook(cookId: string) {

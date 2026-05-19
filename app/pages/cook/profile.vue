@@ -3,18 +3,9 @@
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <div class="flex items-start gap-4 flex-wrap">
         <div
-          class="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-muted"
-        >
-          <img
-            v-if="user?.avatarUrl"
-            :src="user.avatarUrl"
-            :alt="displayName"
-            class="size-full object-cover"
-          />
-          <div
-            v-else
-            class="flex size-full items-center justify-center bg-primary text-lg font-bold text-white"
-          >
+          class="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-muted">
+          <img v-if="avatarSrc" :src="avatarSrc" :alt="displayName" class="size-full object-cover" />
+          <div v-else class="flex size-full items-center justify-center bg-primary text-lg font-bold text-white">
             {{ initials }}
           </div>
         </div>
@@ -30,14 +21,23 @@
             {{ contactLine }}
           </p>
         </div>
-        <button
-          type="button"
-          class="shrink-0 rounded-xl border border-primary/35 bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary-light"
-          @click="goToGeneralProfile"
-        >
-          Изменить
-        </button>
+        <div class="shrink-0 space-y-2">
+          <input ref="avatarInputRef" type="file" class="hidden" accept="image/png,image/jpeg,image/webp"
+            @change="onPickAvatar" />
+          <button type="button"
+            class="block w-full rounded-xl border border-primary/35 bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="uploadingAvatar" @click="onClickChangePhoto">
+            {{ uploadingAvatar ? "Загрузка..." : "Изменить" }}
+          </button>
+          <!-- <button type="button"
+            class="block w-full rounded-xl border border-primary/35 bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary-light"
+            @click="goToGeneralProfile">
+            Изменить
+          </button> -->
+        </div>
       </div>
+      <p v-if="avatarError" class="mt-3 text-xs text-error">{{ avatarError }}</p>
+      <p v-else-if="profileError" class="mt-3 text-xs text-error">{{ profileError }}</p>
     </section>
 
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
@@ -66,7 +66,7 @@
           </p>
         </div>
 
-        <div class="flex items-center justify-between gap-3 py-3 last:pb-0">
+        <!-- <div class="flex items-center justify-between gap-3 py-3 last:pb-0">
           <div class="min-w-0">
             <p class="text-sm font-semibold text-dark">Специализация</p>
             <p class="mt-0.5 truncate text-xs text-muted">
@@ -77,6 +77,13 @@
             name="material-symbols:chevron-right-rounded"
             class="size-6 shrink-0 text-muted"
           />
+        </div> -->
+        <div class="flex items-center justify-between gap-3 py-3 last:pb-0">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-dark">Всего блюд</p>
+            <p class="mt-0.5 text-xs text-muted">В вашем меню</p>
+          </div>
+          <p class="shrink-0 text-sm font-semibold text-dark">{{ dishesCountLabel }}</p>
         </div>
       </div>
     </section>
@@ -94,11 +101,9 @@
           </div>
         </div>
 
-        <button
-          type="button"
+        <button type="button"
           class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
-          @click="onLogout"
-        >
+          @click="onLogout">
           Выйти
         </button>
       </div>
@@ -119,13 +124,29 @@ type AuthCook = {
   kitchenAddress?: string;
   menuItemsCount?: number;
   city?: string;
+  profileImageUrl?: string;
 };
 
 const auth = useAuthStore();
+const config = useRuntimeConfig();
+const nuxtApp = useNuxtApp();
+const api = nuxtApp.$api as (url: string, opts?: object) => Promise<unknown>;
+
+const wsUrl = config.public.wsUrl;
+const cookProfile = ref<AuthCook | null>(null);
+const profileError = ref("");
+const avatarError = ref("");
+const uploadingAvatar = ref(false);
+const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 const user = computed(() => auth.user);
 const cook = computed(
-  () => (auth.user as (typeof auth.user & { cook?: AuthCook }) | null)?.cook,
+  () =>
+    cookProfile.value ??
+    ((auth.user as (typeof auth.user & { cook?: AuthCook }) | null)?.cook ?? null),
+);
+const avatarSrc = computed(
+  () => `${wsUrl}${cook.value?.profileImageUrl || user.value?.avatarUrl || ""}`,
 );
 
 const displayName = computed(() => {
@@ -154,6 +175,7 @@ const avgCookTimeLabel = computed(
   () => `${cook.value?.preparationTimeMin ?? 45} мин`,
 );
 const radiusLabel = computed(() => `${cook.value?.deliveryRadius ?? 4} км`);
+const dishesCountLabel = computed(() => String(cook.value?.menuItemsCount ?? 0));
 const specialtiesLabel = computed(() =>
   (cook.value?.specialties?.length
     ? cook.value.specialties
@@ -161,8 +183,86 @@ const specialtiesLabel = computed(() =>
   ).join(", "),
 );
 
+onMounted(async () => {
+  await loadCookProfile();
+});
+
+async function loadCookProfile() {
+  profileError.value = "";
+  try {
+    const raw = await api("/cooks/me/informations", { method: "GET" });
+    const envelope = raw as { data?: unknown };
+    const payload = (
+      (envelope?.data as { data?: unknown } | undefined)?.data ??
+      envelope?.data ??
+      raw
+    ) as Record<string, unknown>;
+    cookProfile.value = {
+      businessName:
+        typeof payload.businessName === "string" ? payload.businessName : undefined,
+      preparationTimeMin:
+        typeof payload.avgTimeCooking === "number"
+          ? payload.avgTimeCooking
+          : undefined,
+      menuItemsCount:
+        typeof payload.countDishes === "number"
+          ? payload.countDishes
+          : undefined,
+      profileImageUrl:
+        typeof payload.image === "string"
+          ? payload.image
+          : undefined,
+    };
+  } catch (err) {
+    profileError.value = apiMessage(err, "Не удалось загрузить профиль повара.");
+  }
+}
+
 function goToGeneralProfile() {
   navigateTo("/profile");
+}
+
+function onClickChangePhoto() {
+  avatarInputRef.value?.click();
+}
+
+async function onPickAvatar(event: Event) {
+  avatarError.value = "";
+  const input = event.target as HTMLInputElement | null;
+  const file = input?.files?.[0];
+  if (!file) return;
+
+  uploadingAvatar.value = true;
+  try {
+    const form = new FormData();
+    form.append("image", file);
+    const raw = await api("/cooks/me/profile-image", {
+      method: "PATCH",
+      body: form,
+    });
+    const envelope = raw as { data?: unknown };
+    const payload = (
+      (envelope?.data as { data?: unknown } | undefined)?.data ??
+      envelope?.data ??
+      raw
+    ) as Record<string, unknown>;
+    const nextImage =
+      typeof payload.profileImageUrl === "string"
+        ? payload.profileImageUrl
+        : typeof payload.avatarUrl === "string"
+          ? payload.avatarUrl
+          : undefined;
+    if (nextImage) {
+      cookProfile.value = { ...(cookProfile.value ?? {}), profileImageUrl: nextImage };
+    } else {
+      await loadCookProfile();
+    }
+  } catch (err) {
+    avatarError.value = apiMessage(err, "Не удалось обновить фото профиля.");
+  } finally {
+    uploadingAvatar.value = false;
+    if (input) input.value = "";
+  }
 }
 
 async function onLogout() {

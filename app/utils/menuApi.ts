@@ -4,6 +4,8 @@ export interface CookMenuPayload {
   id?: string
   date: string
   dishIds: string[]
+  /** Portions per menu when the API exposes it. */
+  portionCount?: number
 }
 
 export type ApiRequest = (url: string, opts?: object) => Promise<unknown>
@@ -11,6 +13,7 @@ export type ApiRequest = (url: string, opts?: object) => Promise<unknown>
 export interface UpdateMenuBody {
   date?: string
   dishIds?: string[]
+  portionCount?: number
 }
 
 export function menuByIdPath(id: string): string {
@@ -92,10 +95,17 @@ export function unwrapMenuPayload(raw: unknown): CookMenuPayload | null {
           ? node.menuId
           : undefined
 
+  const portionRaw = node.portionCount
+  let portionCount: number | undefined
+  if (typeof portionRaw === 'number' && Number.isFinite(portionRaw) && portionRaw >= 1) {
+    portionCount = Math.trunc(portionRaw)
+  }
+
   return {
     date: normalizeMenuDate(date),
     dishIds,
     ...(id ? { id } : {}),
+    ...(portionCount != null ? { portionCount } : {}),
   }
 }
 

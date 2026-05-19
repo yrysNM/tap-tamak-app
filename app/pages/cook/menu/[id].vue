@@ -158,6 +158,19 @@
                 class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
               />
             </label>
+            <label class="block">
+              <span class="text-[13px] font-medium text-dark"
+                >Количество порций *</span
+              >
+              <input
+                v-model.number="form.portionCount"
+                type="number"
+                min="1"
+                step="1"
+                required
+                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
+              />
+            </label>
           </div>
           <label class="flex items-center gap-3">
             <input
@@ -260,6 +273,7 @@ const form = reactive({
   cookingTime: 30 as number,
   preparationType: "FAST" as PreparationType,
   price: 0 as number,
+  portionCount: 1 as number,
   calories: "" as string,
   isAvailable: true,
 });
@@ -297,6 +311,7 @@ function snapshotForm(): string {
     cookingTime: form.cookingTime,
     preparationType: form.preparationType,
     price: form.price,
+    portionCount: form.portionCount,
     calories: form.calories.trim(),
     isAvailable: form.isAvailable,
     hasNewImage: imageFile.value != null,
@@ -359,6 +374,13 @@ function fillFormFromDish(d: CookDish) {
   form.cookingTime = d.cookingTime;
   form.preparationType = normPrep(d.preparationType);
   form.price = d.price;
+  {
+    const p = d.portionCount;
+    form.portionCount =
+      typeof p === "number" && Number.isFinite(p) && p >= 1
+        ? Math.trunc(p)
+        : 1;
+  }
   form.calories =
     typeof d.calories === "number" && Number.isFinite(d.calories)
       ? String(d.calories)
@@ -411,6 +433,11 @@ async function onSave() {
     formError.value = "Цена не может быть отрицательной.";
     return;
   }
+  const portions = Math.trunc(form.portionCount);
+  if (!Number.isFinite(form.portionCount) || portions < 1) {
+    formError.value = "Количество порций — не менее 1.";
+    return;
+  }
 
   saving.value = true;
   try {
@@ -421,6 +448,7 @@ async function onSave() {
       fd.append("cookingTime", String(form.cookingTime));
       fd.append("preparationType", form.preparationType);
       fd.append("price", String(form.price));
+      fd.append("portionCount", String(portions));
       fd.append("isAvailable", form.isAvailable ? "true" : "false");
       const cal = form.calories.trim();
       if (cal !== "") fd.append("calories", cal);
@@ -433,6 +461,7 @@ async function onSave() {
         cookingTime: form.cookingTime,
         preparationType: form.preparationType,
         price: form.price,
+        portionCount: portions,
         isAvailable: form.isAvailable,
       };
       const cal = form.calories.trim();

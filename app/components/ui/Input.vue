@@ -20,6 +20,7 @@
         :type="type"
         :placeholder="placeholder"
         :disabled="disabled"
+        :autocomplete="autocomplete"
         :class="[
           'w-full rounded-xl border bg-white py-3 text-dark placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:opacity-60',
           $slots.icon ? 'pl-10 pr-4' : 'px-4',
@@ -46,6 +47,7 @@ const props = withDefaults(
     modelValue?: string
     disabled?: boolean
     phoneMask?: boolean
+    autocomplete?: string
   }>(),
   {
     type: 'text',
