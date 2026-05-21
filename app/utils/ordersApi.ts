@@ -70,8 +70,8 @@ export function isOrderDelivered(status: OrderStatus | string | undefined | null
 export function isOrderCancellable(status: OrderStatus | string | undefined | null): boolean {
   switch ((status ?? '').toString().toUpperCase()) {
     case 'PENDING':
-    case 'AWAITING_COOK_ACCEPTANCE':
-    case 'AWAITING_PAYMENT':
+    // case 'AWAITING_COOK_ACCEPTANCE':
+    // case 'AWAITING_PAYMENT':
       return true
     default:
       return false

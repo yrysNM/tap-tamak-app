@@ -1,5 +1,5 @@
 {
-  "name": "TapTamakUI",
+  "name": "TapTamak",
   "type": "module",
   "private": true,
   "scripts": {
@@ -8,12 +8,13 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "mobile:build": "nuxi generate && npx cap sync",
-    "mobile:android": "nuxi generate && npx cap sync && npx cap open android",
-    "mobile:ios": "nuxi generate && npx cap sync && npx cap open ios",
-    "mobile:dev": "npx cap run android -l"
+    "mobile:build": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs",
+    "mobile:android": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs && npx cap open android",
+    "mobile:ios": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs && npx cap open ios",
+    "mobile:dev": "npx cap run android -l --port 32206"
   },
   "dependencies": {
+    "@capacitor-community/safe-area": "^7.0.0",
     "@capacitor/android": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/geolocation": "^7.1.8",
@@ -31,6 +32,7 @@
     "nuxt-icon": "^0.6.5",
     "pinia": "^2.2.6",
     "pinia-plugin-persistedstate": "^4.1.3",
+    "sharp": "^0.34.5",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.0.0",
     "v-calendar": "^3.1.2",
@@ -41,6 +43,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.4.4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^25.3.5",

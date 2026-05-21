@@ -387,7 +387,7 @@ watch(
       >
         <div
           v-if="toast.open"
-          class="fixed bottom-6 left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
+          class="safe-bottom-floating-sm fixed left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
           :class="
             toast.kind === 'success'
               ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'

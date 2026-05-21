@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative min-h-dvh bg-page-cream pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] font-sans text-body"
+    class="relative min-h-dvh bg-page-cream font-sans text-body"
     data-name="Профиль"
   >
     <!-- Sticky header -->

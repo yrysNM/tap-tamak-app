@@ -1,29 +1,19 @@
 <template>
   <div class="min-h-screen bg-page-cream pb-10 pt-4 sm:pt-8">
     <div class="mx-auto max-w-lg px-4">
-      <NuxtLink
-        to="/cook/menu?tab=dishes"
-        class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-      >
+      <NuxtLink to="/cook/menu?tab=dishes"
+        class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
         ← К меню
       </NuxtLink>
 
-      <div
-        v-if="loading"
-        class="h-64 animate-pulse rounded-[20px] bg-surface-muted"
-      />
+      <div v-if="loading" class="h-64 animate-pulse rounded-[20px] bg-surface-muted" />
 
-      <div
-        v-else-if="error"
-        class="rounded-[20px] border border-border bg-white p-6 text-[13px] text-error shadow-soft"
-      >
+      <div v-else-if="error"
+        class="rounded-[20px] border border-border bg-white p-6 text-[13px] text-error shadow-soft">
         {{ error }}
       </div>
 
-      <div
-        v-else-if="dish"
-        class="overflow-hidden rounded-[20px] border border-border bg-white p-5 shadow-soft"
-      >
+      <div v-else-if="dish" class="overflow-hidden rounded-[20px] border border-border bg-white p-5 shadow-soft">
         <h2 class="text-lg font-bold text-dark">Редактирование</h2>
         <form class="mt-4 space-y-4" @submit.prevent="onSave">
           <div>
@@ -32,106 +22,53 @@
               Необязательно — оставьте пустым, чтобы сохранить текущее
               изображение.
             </p>
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept="image/*"
+            <input ref="fileInputRef" type="file" accept="image/*"
               class="mt-1.5 block w-full text-sm text-muted file:mr-3 file:rounded-xl file:border-0 file:bg-primary-light file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary"
-              @change="onImageChange"
-            />
-            <div
-              v-if="imagePreviewUrl"
-              class="mt-3 overflow-hidden rounded-xl border border-border"
-            >
-              <img
-                :src="imagePreviewUrl"
-                alt=""
-                class="max-h-48 w-full object-cover"
-              />
+              @change="onImageChange" />
+            <div v-if="imagePreviewUrl" class="mt-3 overflow-hidden rounded-xl border border-border">
+              <img :src="imagePreviewUrl" alt="" class="max-h-48 w-full object-cover" />
             </div>
           </div>
           <label class="block">
             <span class="text-[13px] font-medium text-dark">Название *</span>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-            />
+            <input v-model="form.name" type="text" required
+              class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
           </label>
           <label class="block">
             <span class="text-[13px] font-medium text-dark">Описание *</span>
-            <textarea
-              v-model="form.description"
-              required
-              rows="3"
-              class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-            />
+            <textarea v-model="form.description" required rows="3"
+              class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
           </label>
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="block">
-              <span class="text-[13px] font-medium text-dark"
-                >Время (мин) *</span
-              >
-              <input
-                v-model.number="form.cookingTime"
-                type="number"
-                min="1"
-                required
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
+              <span class="text-[13px] font-medium text-dark">Время (мин) *</span>
+              <input v-model.number="form.cookingTime" type="number" min="1" required
+                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
               <span class="text-[13px] font-medium text-dark">Тип *</span>
-              <div
-                ref="prepSelectRef"
-                class="relative mt-1.5"
-                @keydown.esc.prevent="closePrepSelect"
-              >
-                <button
-                  type="button"
+              <div ref="prepSelectRef" class="relative mt-1.5" @keydown.esc.prevent="closePrepSelect">
+                <button type="button"
                   class="flex w-full items-center justify-between rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-dark outline-none ring-primary transition focus:ring-2"
-                  :aria-expanded="prepSelectOpen ? 'true' : 'false'"
-                  aria-haspopup="listbox"
-                  @click="togglePrepSelect"
-                >
+                  :aria-expanded="prepSelectOpen ? 'true' : 'false'" aria-haspopup="listbox" @click="togglePrepSelect">
                   <span>{{ selectedPrepLabel }}</span>
-                  <Icon
-                    name="material-symbols:expand-more-rounded"
-                    class="size-5 text-muted transition-transform"
-                    :class="prepSelectOpen ? 'rotate-180' : ''"
-                  />
+                  <Icon name="material-symbols:expand-more-rounded" class="size-5 text-muted transition-transform"
+                    :class="prepSelectOpen ? 'rotate-180' : ''" />
                 </button>
-                <Transition
-                  enter-active-class="transition duration-150 ease-out"
-                  enter-from-class="translate-y-1 opacity-0"
-                  enter-to-class="translate-y-0 opacity-100"
-                  leave-active-class="transition duration-100 ease-in"
-                  leave-from-class="translate-y-0 opacity-100"
-                  leave-to-class="translate-y-1 opacity-0"
-                >
-                  <div
-                    v-if="prepSelectOpen"
+                <Transition enter-active-class="transition duration-150 ease-out"
+                  enter-from-class="translate-y-1 opacity-0" enter-to-class="translate-y-0 opacity-100"
+                  leave-active-class="transition duration-100 ease-in" leave-from-class="translate-y-0 opacity-100"
+                  leave-to-class="translate-y-1 opacity-0">
+                  <div v-if="prepSelectOpen"
                     class="absolute left-0 z-30 w-full overflow-hidden rounded-xl border border-border bg-white shadow-soft"
-                    :class="
-                      prepSelectDirection === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-                    "
-                    role="listbox"
-                    aria-label="Тип приготовления"
-                  >
-                    <button
-                      v-for="option in prepOptions"
-                      :key="option.value"
-                      type="button"
+                    :class="prepSelectDirection === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+                      " role="listbox" aria-label="Тип приготовления">
+                    <button v-for="option in prepOptions" :key="option.value" type="button"
                       class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-dark transition hover:bg-primary-light/40"
-                      @click="selectPrep(option.value)"
-                    >
+                      @click="selectPrep(option.value)">
                       <span>{{ option.label }}</span>
-                      <Icon
-                        v-if="form.preparationType === option.value"
-                        name="material-symbols:check-rounded"
-                        class="size-4 text-primary"
-                      />
+                      <Icon v-if="form.preparationType === option.value" name="material-symbols:check-rounded"
+                        class="size-4 text-primary" />
                     </button>
                   </div>
                 </Transition>
@@ -139,45 +76,23 @@
             </label>
             <label class="block">
               <span class="text-[13px] font-medium text-dark">Калории</span>
-              <input
-                v-model="form.calories"
-                type="number"
-                min="0"
-                placeholder="Необязательно"
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
+              <input v-model="form.calories" type="number" min="0" placeholder="Необязательно"
+                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
               <span class="text-[13px] font-medium text-dark">Цена *</span>
-              <input
-                v-model.number="form.price"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
+              <input v-model.number="form.price" type="number" min="0" step="0.01" required
+                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark"
-                >Количество порций *</span
-              >
-              <input
-                v-model.number="form.portionCount"
-                type="number"
-                min="1"
-                step="1"
-                required
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
+              <span class="text-[13px] font-medium text-dark">Количество порций *</span>
+              <input v-model.number="form.portionCount" type="number" min="1" step="1" required
+                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
           </div>
           <label class="flex items-center gap-3">
-            <input
-              v-model="form.isAvailable"
-              type="checkbox"
-              class="size-4 rounded border-border text-primary focus:ring-primary"
-            />
+            <input v-model="form.isAvailable" type="checkbox"
+              class="size-4 rounded border-border text-primary focus:ring-primary" />
             <span class="text-[13px] font-medium text-dark">В наличии</span>
           </label>
 
@@ -185,22 +100,15 @@
             {{ formError }}
           </p>
 
-          <div
-            class="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
-          >
-            <button
-              type="button"
+          <div class="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+            <button type="button"
               class="h-11 rounded-xl border border-border px-6 text-sm font-semibold text-dark disabled:opacity-45"
-              :disabled="saving"
-              @click="cancelEdit"
-            >
+              :disabled="saving" @click="cancelEdit">
               Отмена
             </button>
-            <button
-              type="submit"
+            <button type="submit"
               class="flex h-11 items-center justify-center rounded-xl bg-primary px-8 text-sm font-bold text-white shadow-primary-cta disabled:opacity-45"
-              :disabled="saving"
-            >
+              :disabled="saving">
               {{ saving ? "Сохранение…" : "Сохранить" }}
             </button>
           </div>
@@ -209,26 +117,17 @@
     </div>
 
     <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="translate-y-2 opacity-0"
-        enter-to-class="translate-y-0 opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="translate-y-0 opacity-100"
-        leave-to-class="translate-y-2 opacity-0"
-      >
-        <div
-          v-if="toast.open"
-          class="fixed bottom-6 left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
-          :class="
-            toast.kind === 'success'
-              ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
-              : toast.kind === 'error'
-                ? 'border-red-200 bg-red-50/95 text-red-900'
-                : 'border-border bg-white/95 text-dark'
-          "
-          role="status"
-        >
+      <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0"
+        enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in"
+        leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-2 opacity-0">
+        <div v-if="toast.open"
+          class="safe-bottom-floating-sm fixed left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
+          :class="toast.kind === 'success'
+            ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
+            : toast.kind === 'error'
+              ? 'border-red-200 bg-red-50/95 text-red-900'
+              : 'border-border bg-white/95 text-dark'
+            " role="status">
           {{ toast.message }}
         </div>
       </Transition>

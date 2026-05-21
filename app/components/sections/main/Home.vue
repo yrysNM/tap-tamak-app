@@ -51,6 +51,17 @@
             class="flex h-[104px] w-full items-center justify-center bg-surface-muted text-xl font-bold text-muted">
             {{ chef.initials }}
           </div>
+          <span
+            class="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-bold shadow-sm"
+            :class="chef.isAvailable ? 'text-[#6B8E23]' : 'text-muted'"
+          >
+            <span
+              class="size-1.5 shrink-0 rounded-full"
+              :class="chef.isAvailable ? 'bg-[#6B8E23]' : 'bg-black/25'"
+              aria-hidden="true"
+            />
+            {{ chef.isAvailable ? "Онлайн" : "Оффлайн" }}
+          </span>
         </div>
 
         <div class="p-2.5">
@@ -145,6 +156,7 @@ const cookCards = computed(() => {
       dishImageSrc(c.profileImageUrl, base) ??
       "",
     initials: businessInitials(c.businessName),
+    isAvailable: c.isAvailable !== false,
     meta: specialtiesLine(c.specialties),
     tags: specialtiesTags(c.specialties),
   }));

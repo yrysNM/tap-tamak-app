@@ -468,7 +468,7 @@ async function confirmDeliveryReject(): Promise<void> {
         enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in"
         leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-2 opacity-0">
         <div v-if="toast.open"
-          class="fixed bottom-24 left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
+          class="safe-bottom-toast fixed left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
           :class="toast.kind === 'success'
             ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
             : toast.kind === 'error'

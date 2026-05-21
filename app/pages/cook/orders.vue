@@ -235,7 +235,7 @@ async function submitReject(): Promise<void> {
 
 <template>
   <div class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
-    <header class="sticky top-0 z-30 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
+    <header class="sticky top-0 z-10 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
       <h1 class="text-[23.1px] font-bold leading-none -tracking-[0.2px] text-heading">
         Заказы
       </h1>
@@ -421,7 +421,7 @@ async function submitReject(): Promise<void> {
         enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in"
         leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-2 opacity-0">
         <div v-if="toast.open"
-          class="fixed bottom-24 left-1/2 z-110 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
+          class="safe-bottom-floating fixed left-1/2 z-110 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
           :class="toast.kind === 'success'
             ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
             : toast.kind === 'error'

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Tap Tamak design tokens */
+  /* TapTamak design tokens */
   --color-primary: #f47b20;
   --color-primary-hover: #d4611a;
   --color-primary-light: #fff8f3;

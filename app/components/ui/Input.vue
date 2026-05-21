@@ -1,35 +1,20 @@
 <template>
   <div class="w-full">
-    <label
-      v-if="label"
-      :for="inputId"
-      class="mb-1 block text-sm font-medium text-dark"
-    >
+    <label v-if="label" :for="inputId" class="mb-1 block text-sm font-medium text-dark">
       {{ label }}
     </label>
     <div class="relative">
-      <span
-        v-if="$slots.icon"
-        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-      >
+      <span v-if="$slots.icon" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">
         <slot name="icon" />
       </span>
-      <input
-        :id="inputId"
-        :value="modelValue"
-        :type="type"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        :autocomplete="autocomplete"
-        :class="[
+      <input :id="inputId" :value="modelValue" :type="type" :placeholder="placeholder" :disabled="disabled"
+        :autocomplete="autocomplete" :class="[
           'w-full rounded-xl border bg-white py-3 text-dark placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:opacity-60',
           $slots.icon ? 'pl-10 pr-4' : 'px-4',
           error
             ? 'border-error focus:ring-error'
             : 'border-border hover:border-muted',
-        ]"
-        @input="onInput"
-      />
+        ]" @input="onInput" />
     </div>
     <p v-if="error" class="mt-1 text-sm text-error">
       {{ error }}

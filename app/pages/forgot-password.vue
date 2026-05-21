@@ -1,18 +1,14 @@
 <template>
   <div>
     <div class="mb-4">
-      <button
-        type="button"
-        class="text-sm font-medium text-primary"
-        @click="navigateTo('/login')"
-      >
+      <button type="button" class="text-sm font-medium text-primary" @click="navigateTo('/login')">
         ← Back to login
       </button>
     </div>
 
     <div class="mb-6 text-center">
       <div class="text-4xl">🍳</div>
-      <div class="mt-2 text-2xl font-bold text-primary">Tap Tamak</div>
+      <div class="mt-2 text-2xl font-bold text-primary">TapTamak</div>
     </div>
 
     <div class="space-y-6 rounded-2xl bg-white p-6 shadow-card md:p-8">
@@ -24,21 +20,11 @@
           </p>
         </div>
 
-        <UiInput
-          label="Phone or email"
-          placeholder="+7 ___ ___-__-__ or name@example.com"
-          v-model="values.identifier"
-          :error="errors.identifier"
-        />
+        <UiInput label="Phone or email" placeholder="+7 ___ ___-__-__ or name@example.com" v-model="values.identifier"
+          :error="errors.identifier" />
 
         <div class="space-y-3">
-          <UiButton
-            variant="primary"
-            fullWidth
-            :loading="isSubmitting"
-            :disabled="isSubmitting"
-            @click="onSubmit"
-          >
+          <UiButton variant="primary" fullWidth :loading="isSubmitting" :disabled="isSubmitting" @click="onSubmit">
             Send reset link
           </UiButton>
 
@@ -50,9 +36,7 @@
 
       <div v-else class="space-y-6 text-center">
         <div class="flex justify-center">
-          <div
-            class="flex size-16 items-center justify-center rounded-full bg-primary-light text-3xl text-success"
-          >
+          <div class="flex size-16 items-center justify-center rounded-full bg-primary-light text-3xl text-success">
             ✅
           </div>
         </div>
@@ -72,13 +56,8 @@
 
           <div class="text-sm text-muted">
             <p>Didn't receive it?</p>
-            <button
-              v-if="resendCooldown === 0"
-              type="button"
-              class="mt-1 font-medium text-primary"
-              :disabled="isSubmitting"
-              @click="onResend"
-            >
+            <button v-if="resendCooldown === 0" type="button" class="mt-1 font-medium text-primary"
+              :disabled="isSubmitting" @click="onResend">
               Resend
             </button>
             <p v-else class="mt-1">Resend in {{ resendCooldown }}s</p>

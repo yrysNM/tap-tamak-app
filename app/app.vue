@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen font-sans text-dark">
+  <div class="min-h-dvh font-sans text-dark">
     <NuxtRouteAnnouncer />
     <NuxtLayout>
       <NuxtPage />

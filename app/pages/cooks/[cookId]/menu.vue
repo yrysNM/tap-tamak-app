@@ -171,7 +171,8 @@ const checkoutDisabled = computed(
 </script>
 
 <template>
-  <section class="mx-auto min-h-screen w-full max-w-md bg-page-cream px-4 pb-28 pt-4">
+  <section
+    class="mx-auto min-h-dvh w-full max-w-md bg-page-cream px-4 pb-[calc(13rem+var(--safe-area-bottom))] pt-4 mb-20">
     <div class="mb-5 flex items-center">
       <button type="button"
         class="flex size-11 items-center justify-center rounded-2xl border border-black/10 bg-white text-dark shadow-sm"
@@ -301,8 +302,8 @@ const checkoutDisabled = computed(
                 <button type="button"
                   class="flex size-8 items-center justify-center rounded-xl text-lg font-bold shadow-[0_12px_11px_rgba(255,122,0,0.22)] transition"
                   :class="atMaxPortions(dish)
-                      ? 'cursor-not-allowed bg-[#FF7A00]/40 text-white'
-                      : 'bg-[#FF7A00] text-white'
+                    ? 'cursor-not-allowed bg-[#FF7A00]/40 text-white'
+                    : 'bg-[#FF7A00] text-white'
                     " :disabled="atMaxPortions(dish)" :aria-disabled="atMaxPortions(dish)" @click="addToCart(dish)">
                   +
                 </button>
@@ -323,7 +324,7 @@ const checkoutDisabled = computed(
     </div>
 
     <div
-      class="fixed inset-x-0 bottom-4 z-20 mx-auto w-[calc(100%-2rem)] max-w-md rounded-[22px] border border-black/8 bg-white p-3 shadow-elevated"
+      class="safe-fixed-bottom-bar fixed inset-x-0 bottom-4 z-20 mx-auto w-[calc(100%-2rem)] max-w-md rounded-[22px] border border-black/8 bg-white p-3 shadow-elevated"
       v-show="cook?.isAvailable">
       <div class="flex items-center justify-between gap-3">
         <div>
@@ -337,12 +338,9 @@ const checkoutDisabled = computed(
         <button type="button"
           class="inline-flex h-11 min-w-29 items-center justify-center rounded-2xl px-4 text-sm font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] transition disabled:opacity-95"
           :class="checkoutDisabled
-              ? 'bg-[#FF7A00]/45'
-              : 'bg-[#FF7A00]'
-            "
-          :disabled="checkoutDisabled"
-          :aria-busy="checkoutSubmitting"
-          :aria-disabled="checkoutDisabled"
+            ? 'bg-[#FF7A00]/45'
+            : 'bg-[#FF7A00]'
+            " :disabled="checkoutDisabled" :aria-busy="checkoutSubmitting" :aria-disabled="checkoutDisabled"
           @click="checkoutThisCook">
           {{ checkoutSubmitting ? "Отправка…" : "Оформить" }}
         </button>
@@ -350,17 +348,16 @@ const checkoutDisabled = computed(
     </div>
 
     <Teleport to="body">
-      <Transition enter-active-class="transition duration-200 ease-out"
-        enter-from-class="translate-y-2 opacity-0" enter-to-class="translate-y-0 opacity-100"
-        leave-active-class="transition duration-150 ease-in" leave-from-class="translate-y-0 opacity-100"
-        leave-to-class="translate-y-2 opacity-0">
+      <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0"
+        enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in"
+        leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-2 opacity-0">
         <div v-if="toast.open"
-          class="fixed bottom-24 left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
+          class="safe-bottom-toast fixed left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm md:bottom-6"
           :class="toast.kind === 'success'
-              ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
-              : toast.kind === 'error'
-                ? 'border-red-200 bg-red-50/95 text-red-900'
-                : 'border-border bg-white/95 text-dark'
+            ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
+            : toast.kind === 'error'
+              ? 'border-red-200 bg-red-50/95 text-red-900'
+              : 'border-border bg-white/95 text-dark'
             " role="alert">
           {{ toast.message }}
         </div>

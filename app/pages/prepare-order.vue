@@ -294,27 +294,27 @@ function retryBasket(): void {
                             <span>Блюда</span>
                             <span class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(dishesAmount)
-                                }}</span>
+                            }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>Доставка</span>
                             <span v-if="deliveryAmount != null" class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(deliveryAmount) }}</span>
                             <span v-else class="shrink-0 text-[13px] text-caption">{{ preparePending ? "…" : "—"
-                                }}</span>
+                            }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>Скидка</span>
                             <span class="shrink-0 text-[15px] text-body">− {{
                                 formatPrice(discountShown)
-                                }}</span>
+                            }}</span>
                         </div>
                     </div>
                     <div class="mt-2.5 flex items-center justify-between border-t border-black/10 pt-3">
                         <span class="text-[15px] font-bold text-body">Итого</span>
                         <span class="text-[20px] font-bold text-section">{{
                             formatPrice(totalAmount)
-                            }}</span>
+                        }}</span>
                     </div>
                     <p v-if="!prepareSnapshot && !preparePending" class="mt-2 text-[11px] leading-relaxed text-caption">
                         Укажите адрес и телефон — рассчитаем доставку.
@@ -361,15 +361,9 @@ function retryBasket(): void {
 
                     <div class="mt-5" @focusout="onPhoneSectionFocusOut">
                         <label class="block text-[13px] text-[#555555]">Телефон</label>
-                        <UiInput
-                            v-model="form.contactPhone"
-                            type="tel"
-                            phone-mask
-                            autocomplete="tel"
-                            placeholder="+7 (700) 000-00-00"
-                            :error="phoneError"
-                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25"
-                        />
+                        <UiInput v-model="form.contactPhone" type="tel" phone-mask autocomplete="tel"
+                            placeholder="+7 (700) 000-00-00" :error="phoneError"
+                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
                     </div>
 
                     <div class="mt-5">

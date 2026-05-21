@@ -33,7 +33,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = usePageToast();
 
-const activeTab = ref<"menus" | "dishes">("menus");
+const activeTab = ref<"menus" | "dishes">("dishes");
 
 const historyFrom = ref("");
 const historyTo = ref("");
@@ -82,8 +82,8 @@ const historyTotalPages = computed(() => {
 
 function readQuery() {
   const q = route.query;
-  if (q.tab === "dishes") activeTab.value = "dishes";
-  else activeTab.value = "menus";
+  if (q.tab === "menus") activeTab.value = "menus";
+  else activeTab.value = "dishes";
 
   const def = utcMonthRangeYmd();
   const fromQ = typeof q.from === "string" ? q.from : "";
@@ -339,134 +339,69 @@ onMounted(() => {
 <template>
   <div class="min-h-screen bg-page-cream pb-10 pt-4 sm:pt-8">
     <div class="mx-auto max-w-5xl px-4">
-      <div
-        class="mb-6 flex rounded-pill border border-border bg-white/90 p-1 shadow-tab backdrop-blur-sm"
-        role="tablist"
-      >
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'menus'"
+      <div class="mb-6 flex rounded-pill border border-border bg-white/90 p-1 shadow-tab backdrop-blur-sm"
+        role="tablist">
+        <button type="button" role="tab" :aria-selected="activeTab === 'dishes'"
           class="flex-1 rounded-pill py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          :class="
-            activeTab === 'menus'
-              ? 'bg-primary text-white shadow-primary-cta'
-              : 'text-muted hover:text-dark'
-          "
-          @click="activeTab = 'menus'"
-        >
-          Меню
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'dishes'"
-          class="flex-1 rounded-pill py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          :class="
-            activeTab === 'dishes'
-              ? 'bg-primary text-white shadow-primary-cta'
-              : 'text-muted hover:text-dark'
-          "
-          @click="activeTab = 'dishes'"
-        >
+          :class="activeTab === 'dishes'
+            ? 'bg-primary text-white shadow-primary-cta'
+            : 'text-muted hover:text-dark'
+            " @click="activeTab = 'dishes'">
           Блюда
+        </button>
+        <button type="button" role="tab" :aria-selected="activeTab === 'menus'"
+          class="flex-1 rounded-pill py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          :class="activeTab === 'menus'
+            ? 'bg-primary text-white shadow-primary-cta'
+            : 'text-muted hover:text-dark'
+            " @click="activeTab = 'menus'">
+          Меню
         </button>
       </div>
 
-      <CookMenuHistorySection
-        v-show="activeTab === 'menus'"
-        v-model:from="historyFrom"
-        v-model:to="historyTo"
-        :items="historyRows"
-        :loading="historyLoading"
-        :history-page="historyPage"
-        :history-total-pages="historyTotalPages"
-        :today-ymd="todayYmd"
-        :today-menu="todayMenu"
-        :today-loading="todayLoading"
-        :today-error="todayError"
-        :deleting-menu-id="deletingMenuId"
-        :schedule="schedule"
-        :schedule-loading="scheduleLoading"
-        :schedule-error="scheduleError"
-        @create-today="createMenuOpen = true"
-        @load-more="loadMoreHistory"
-        @delete-menu="onDeleteMenu"
-        @open-schedule="scheduleModalOpen = true"
-      />
+      <CookMenuHistorySection v-show="activeTab === 'menus'" v-model:from="historyFrom" v-model:to="historyTo"
+        :items="historyRows" :loading="historyLoading" :history-page="historyPage"
+        :history-total-pages="historyTotalPages" :today-ymd="todayYmd" :today-menu="todayMenu"
+        :today-loading="todayLoading" :today-error="todayError" :deleting-menu-id="deletingMenuId" :schedule="schedule"
+        :schedule-loading="scheduleLoading" :schedule-error="scheduleError" @create-today="createMenuOpen = true"
+        @load-more="loadMoreHistory" @delete-menu="onDeleteMenu" @open-schedule="scheduleModalOpen = true" />
 
-      <CookMenuDishSection
-        v-show="activeTab === 'dishes'"
-        v-model:search="dishSearch"
-        :dishes="dishes"
-        :loading="listLoading"
-        :list-error="listError"
-        :deleting-id="deletingId"
-        @create-click="createDishOpen = true"
-        @delete="onDeleteDish"
-      />
+      <CookMenuDishSection v-show="activeTab === 'dishes'" v-model:search="dishSearch" :dishes="dishes"
+        :loading="listLoading" :list-error="listError" :deleting-id="deletingId" @create-click="createDishOpen = true"
+        @delete="onDeleteDish" />
 
-      <div
-        v-if="activeTab === 'dishes'"
-        class="mt-6 flex items-center justify-center gap-3"
-      >
-        <button
-          type="button"
+      <div v-if="activeTab === 'dishes'" class="mt-6 flex items-center justify-center gap-3">
+        <button type="button"
           class="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-dark shadow-sm transition hover:border-primary/40 disabled:opacity-40"
-          :disabled="dishPage <= 1 || listLoading"
-          @click="dishPage--"
-        >
+          :disabled="dishPage <= 1 || listLoading" @click="dishPage--">
           Назад
         </button>
         <span class="text-sm text-muted">Стр. {{ dishPage }}</span>
-        <button
-          type="button"
+        <button type="button"
           class="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-dark shadow-sm transition hover:border-primary/40 disabled:opacity-40"
-          :disabled="!canDishNext || listLoading"
-          @click="dishPage++"
-        >
+          :disabled="!canDishNext || listLoading" @click="dishPage++">
           Далее
         </button>
       </div>
     </div>
 
-    <CookMenuCreateMenuModal
-      v-model="createMenuOpen"
-      @success="onMenuCreated"
-    />
-    <CookMenuCreateDishModal
-      v-model="createDishOpen"
-      @success="onDishCreated"
-    />
-    <CookMenuScheduleModal
-      v-model="scheduleModalOpen"
-      :initial-start-at="schedule?.workStartAt ?? null"
-      :initial-end-at="schedule?.workEndAt ?? null"
-      :saving="scheduleSaving"
-      @submit="onScheduleSubmit"
-    />
+    <CookMenuCreateMenuModal v-model="createMenuOpen" @success="onMenuCreated" />
+    <CookMenuCreateDishModal v-model="createDishOpen" @success="onDishCreated" />
+    <CookMenuScheduleModal v-model="scheduleModalOpen" :initial-start-at="schedule?.workStartAt ?? null"
+      :initial-end-at="schedule?.workEndAt ?? null" :saving="scheduleSaving" @submit="onScheduleSubmit" />
 
     <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="translate-y-2 opacity-0"
-        enter-to-class="translate-y-0 opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="translate-y-0 opacity-100"
-        leave-to-class="translate-y-2 opacity-0"
-      >
-        <div
-          v-if="toast.open"
-          class="fixed bottom-6 left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
-          :class="
-            toast.kind === 'success'
-              ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
-              : toast.kind === 'error'
-                ? 'border-red-200 bg-red-50/95 text-red-900'
-                : 'border-border bg-white/95 text-dark'
-          "
-          role="status"
-        >
+      <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0"
+        enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in"
+        leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-2 opacity-0">
+        <div v-if="toast.open"
+          class="safe-bottom-floating-sm fixed left-1/2 z-80 w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-floating backdrop-blur-sm"
+          :class="toast.kind === 'success'
+            ? 'border-emerald-200 bg-emerald-50/95 text-emerald-900'
+            : toast.kind === 'error'
+              ? 'border-red-200 bg-red-50/95 text-red-900'
+              : 'border-border bg-white/95 text-dark'
+            " role="status">
           {{ toast.message }}
         </div>
       </Transition>
