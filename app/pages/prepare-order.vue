@@ -232,8 +232,12 @@ async function submitOrder(): Promise<void> {
     submitting.value = true;
     try {
         const payload = buildCheckoutPayload();
-        const { orderId } = await createOrderFromCart(api, payload);
-        toast.show("Заказ оформлен.", "success");
+        const { orderId, orderIds } = await createOrderFromCart(api, payload);
+        const count = orderIds?.length ?? 1;
+        toast.show(
+            count > 1 ? `Оформлено заказов: ${count}.` : "Заказ оформлен.",
+            "success",
+        );
         await navigateTo({ path: "/orders", query: { orderId } });
     } catch (err: unknown) {
         toast.show(apiMessage(err, "Не удалось оформить заказ."), "error");

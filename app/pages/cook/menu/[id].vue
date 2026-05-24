@@ -369,6 +369,7 @@ async function onSave() {
         if (Number.isFinite(n)) body.calories = n;
       }
       await updateDishById(api, dish.value.id, body);
+      navigateTo(`/cook/menu/`);
     }
     toast.show("Блюдо обновлено.", "success");
     clearImagePick();

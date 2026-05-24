@@ -131,11 +131,9 @@ function formatUtcHm(iso: string | null) {
             Укажите временное окно доступности (UTC).
           </p>
         </div>
-        <button
-          type="button"
+        <button type="button"
           class="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
-          @click="emit('open-schedule')"
-        >
+          @click="emit('open-schedule')">
           {{
             schedule?.workStartAt && schedule?.workEndAt
               ? "Изменить"
@@ -167,48 +165,34 @@ function formatUtcHm(iso: string | null) {
       </div>
     </div>
 
-    <div
-      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-    >
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h2 class="text-lg font-bold text-dark">История меню</h2>
       <CookMenuDateRangePicker v-model:from="from" v-model:to="to" />
     </div>
 
-    <div
-      v-if="todayLoading"
-      class="rounded-2xl border border-border bg-white p-5 shadow-sm"
-    >
+    <div v-if="todayLoading" class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <div class="h-5 w-48 animate-pulse rounded bg-surface-muted" />
       <div class="mt-3 h-4 w-full animate-pulse rounded bg-surface-muted" />
     </div>
-    <div
-      v-else-if="todayError"
-      class="rounded-2xl border border-error/25 bg-white p-5 text-sm text-error shadow-sm"
-    >
+    <div v-else-if="todayError" class="rounded-2xl border border-error/25 bg-white p-5 text-sm text-error shadow-sm">
       {{ todayError }}
     </div>
-    <div
-      v-else-if="!todayMenu"
-      class="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary-light to-white p-5 shadow-md ring-1 ring-primary/15"
-    >
+    <div v-else-if="!todayMenu"
+      class="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary-light to-white p-5 shadow-md ring-1 ring-primary/15">
       <h3 class="text-base font-bold text-dark">Меню на сегодня не создано</h3>
       <p class="mt-1 text-[13px] text-muted">
         Создайте меню на {{ formatMenuDateLabel(todayYmd) }} (UTC).
       </p>
-      <button
-        type="button"
+      <button type="button"
         class="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-primary-cta transition hover:bg-primary-hover sm:w-auto sm:px-8"
-        @click="emit('create-today')"
-      >
+        @click="emit('create-today')">
         Создать меню на сегодня
       </button>
     </div>
     <div v-else class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p
-            class="text-[12px] font-medium uppercase tracking-wide text-caption"
-          >
+          <p class="text-[12px] font-medium uppercase tracking-wide text-caption">
             Сегодня
           </p>
           <p class="text-base font-bold text-dark">
@@ -216,8 +200,7 @@ function formatUtcHm(iso: string | null) {
           </p>
         </div>
         <span
-          class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-200"
-        >
+          class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-200">
           Создано
         </span>
       </div>
@@ -225,18 +208,14 @@ function formatUtcHm(iso: string | null) {
         Блюд в меню: {{ todayMenu.dishIds.length }}
       </p>
       <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <NuxtLink
-          :to="menuEditPath(menuKeyToday(todayMenu, todayYmd))"
-          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary sm:flex-none sm:px-5 py-3"
-        >
+        <NuxtLink :to="menuEditPath(menuKeyToday(todayMenu, todayYmd))"
+          class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary sm:flex-none sm:px-5 py-3">
           Редактировать
         </NuxtLink>
-        <button
-          type="button"
+        <button type="button"
           class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-error/30 text-sm font-semibold text-error transition hover:bg-error/5 disabled:opacity-45 sm:flex-none sm:px-5 py-3"
           :disabled="deletingMenuId === menuKeyToday(todayMenu, todayYmd)"
-          @click="emit('delete-menu', menuKeyToday(todayMenu, todayYmd))"
-        >
+          @click="emit('delete-menu', menuKeyToday(todayMenu, todayYmd))">
           {{
             deletingMenuId === menuKeyToday(todayMenu, todayYmd)
               ? "Удаление…"
@@ -247,11 +226,7 @@ function formatUtcHm(iso: string | null) {
     </div>
 
     <div v-if="loading && items.length === 0" class="space-y-3">
-      <div
-        v-for="n in 4"
-        :key="n"
-        class="rounded-2xl border border-border bg-white p-4 shadow-sm"
-      >
+      <div v-for="n in 4" :key="n" class="rounded-2xl border border-border bg-white p-4 shadow-sm">
         <div class="flex gap-3">
           <div class="h-14 w-24 animate-pulse rounded-xl bg-surface-muted" />
           <div class="min-w-0 flex-1 space-y-2">
@@ -261,14 +236,9 @@ function formatUtcHm(iso: string | null) {
         </div>
       </div>
     </div>
-    <div
-      v-else-if="!loading && items.length === 0"
-      class="rounded-2xl border border-dashed border-border bg-white py-14 text-center shadow-sm"
-    >
-      <Icon
-        name="material-symbols:history-rounded"
-        class="mx-auto size-12 text-caption"
-      />
+    <div v-else-if="!loading && items.length === 0"
+      class="rounded-2xl border border-dashed border-border bg-white py-14 text-center shadow-sm">
+      <Icon name="material-symbols:history-rounded" class="mx-auto size-12 text-caption" />
       <p class="mt-3 text-sm font-semibold text-dark">Нет истории меню</p>
       <p class="mt-1 px-6 text-[13px] text-caption">
         В этом диапазоне дат меню нет. Измените период или создайте меню на
@@ -276,61 +246,40 @@ function formatUtcHm(iso: string | null) {
       </p>
     </div>
     <ul v-else class="space-y-3">
-      <li
-        v-for="row in items"
-        :key="row.id ?? row.date"
-        class="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:border-primary/25 hover:shadow-md"
-      >
-        <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-        >
+      <li v-for="row in items" :key="row.id ?? row.date"
+        class="rounded-2xl border border-border bg-white p-4 shadow-sm transition hover:border-primary/25 hover:shadow-md">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <p class="text-base font-bold text-dark">
                 {{ formatMenuDateLabel(row.date) }}
               </p>
-              <span
-                class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1"
-                :class="statusClass(row.status)"
-              >
+              <span class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1"
+                :class="statusClass(row.status)">
                 {{ row.status }}
               </span>
             </div>
             <p class="mt-1 text-[13px] text-muted">
               {{ row.dishCount }} блюд · создано {{ formatTime(row.createdAt) }}
             </p>
-            <p
-              v-if="row.dishNamePreview.length"
-              class="mt-2 line-clamp-2 text-[13px] text-caption"
-            >
+            <p v-if="row.dishNamePreview.length" class="mt-2 line-clamp-2 text-[13px] text-caption">
               {{ row.dishNamePreview.join(" · ") }}
-              <span
-                v-if="row.dishCount > row.dishNamePreview.length"
-                class="text-caption"
-                >…</span
-              >
+              <span v-if="row.dishCount > row.dishNamePreview.length" class="text-caption">…</span>
             </p>
           </div>
           <div class="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-            <NuxtLink
-              :to="menuEditPath(menuKeyFromRow(row))"
-              class="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
-            >
+            <NuxtLink :to="menuEditPath(menuKeyFromRow(row))"
+              class="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary">
               Редактировать
             </NuxtLink>
-            <button
-              type="button"
+            <button type="button"
               class="h-10 rounded-xl border border-border px-4 text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
-              @click="openPreview(row.id || '')"
-            >
+              @click="openPreview(row.id || '')">
               Просмотр
             </button>
-            <button
-              type="button"
+            <button type="button"
               class="h-10 rounded-xl border border-error/30 px-4 text-sm font-semibold text-error transition hover:bg-error/5 disabled:opacity-45"
-              :disabled="deletingMenuId === menuKeyFromRow(row)"
-              @click="emit('delete-menu', menuKeyFromRow(row))"
-            >
+              :disabled="deletingMenuId === menuKeyFromRow(row)" @click="emit('delete-menu', menuKeyFromRow(row))">
               {{ deletingMenuId === menuKeyFromRow(row) ? "…" : "Удалить" }}
             </button>
           </div>
@@ -338,43 +287,27 @@ function formatUtcHm(iso: string | null) {
       </li>
     </ul>
 
-    <div
-      v-if="historyTotalPages != null && historyPage < historyTotalPages"
-      class="flex justify-center pt-1"
-    >
-      <button
-        type="button"
+    <div v-if="historyTotalPages != null && historyPage < historyTotalPages" class="flex justify-center pt-1">
+      <button type="button"
         class="rounded-full border border-border bg-white px-5 py-2 text-sm font-semibold text-dark shadow-sm transition hover:border-primary/40 hover:text-primary disabled:opacity-45"
-        :disabled="loading"
-        @click="emit('load-more')"
-      >
+        :disabled="loading" @click="emit('load-more')">
         {{ loading ? "Загрузка…" : "Показать ещё" }}
       </button>
     </div>
 
     <Teleport to="body">
-      <div
-        v-if="previewOpen"
-        class="fixed inset-0 z-60 flex items-end justify-center sm:items-center sm:p-4"
-        role="dialog"
-        aria-modal="true"
-      >
+      <div v-if="previewOpen" class="fixed inset-0 z-1000 flex items-end justify-center sm:items-center sm:p-4"
+        role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/45" @click="closePreview" />
         <div
-          class="relative max-h-[min(88vh,640px)] w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl"
-        >
-          <header
-            class="flex items-center justify-between border-b border-border px-4 py-3"
-          >
+          class="relative max-h-[min(88vh,640px)] w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
+          <header class="flex items-center justify-between border-b border-border px-4 py-3">
             <h3 class="text-base font-bold text-dark">
               Меню {{ previewDate ? formatMenuDateLabel(previewDate) : "" }}
             </h3>
-            <button
-              type="button"
+            <button type="button"
               class="flex size-9 items-center justify-center rounded-xl text-caption hover:bg-surface-muted"
-              aria-label="Закрыть"
-              @click="closePreview"
-            >
+              aria-label="Закрыть" @click="closePreview">
               <Icon name="material-symbols:close-rounded" class="size-6" />
             </button>
           </header>
@@ -384,28 +317,12 @@ function formatUtcHm(iso: string | null) {
               {{ previewError }}
             </p>
             <ul v-else-if="previewDishes.length" class="space-y-3">
-              <li
-                v-for="d in previewDishes"
-                :key="d.id"
-                class="flex gap-3 rounded-xl border border-border p-2"
-              >
-                <div
-                  class="size-14 shrink-0 overflow-hidden rounded-lg bg-primary-light"
-                >
-                  <img
-                    v-if="imageSrc(d.imageUrl)"
-                    :src="imageSrc(d.imageUrl)"
-                    :alt="d.name"
-                    class="size-full object-cover"
-                  />
-                  <div
-                    v-else
-                    class="flex size-full items-center justify-center text-icon-muted"
-                  >
-                    <Icon
-                      name="material-symbols:restaurant-outline"
-                      class="size-7"
-                    />
+              <li v-for="d in previewDishes" :key="d.id" class="flex gap-3 rounded-xl border border-border p-2">
+                <div class="size-14 shrink-0 overflow-hidden rounded-lg bg-primary-light">
+                  <img v-if="imageSrc(d.imageUrl)" :src="imageSrc(d.imageUrl)" :alt="d.name"
+                    class="size-full object-cover" />
+                  <div v-else class="flex size-full items-center justify-center text-icon-muted">
+                    <Icon name="material-symbols:restaurant-outline" class="size-7" />
                   </div>
                 </div>
                 <div class="min-w-0">

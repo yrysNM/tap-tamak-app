@@ -268,10 +268,19 @@ export interface BasketLineItem {
   dish: BasketLineDish
 }
 
+export interface BasketCookGroup {
+  cookId: string
+  cook: BasketCookSummary
+  items: BasketLineItem[]
+  itemsCount: number
+  itemsTotal: number
+}
+
 /** GET /basket */
 export interface BasketGetResponse {
   cookId: string | null
   cook: BasketCookSummary | null
+  groups: BasketCookGroup[]
   items: BasketLineItem[]
   itemsCount: number
   itemsTotal: number

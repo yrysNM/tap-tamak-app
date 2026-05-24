@@ -4,9 +4,11 @@ import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import { dishImageSrc } from "~/utils/dishApi";
 import {
+  ORDER_PAYMENT_TIMEOUT_MS,
   acceptDeliveredOrder,
   cancelOrderById,
   fetchOrders,
+  isOrderAwaitingPayment,
   isOrderCancellable,
   isOrderDelivered,
   orderStatusLabel,
@@ -14,13 +16,19 @@ import {
   rejectDeliveredOrder,
 } from "~/utils/ordersApi";
 
+const PAYMENT_CANCEL_REASON = "Заказ отменён из-за отсутствия оплаты";
+
 const toast = usePageToast();
 const { $api } = useNuxtApp();
 const config = useRuntimeConfig();
+const kaspiPaymentNumber = useKaspiPaymentNumber();
 
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
 const cancellingOrderIds = ref<Set<string>>(new Set());
+const paymentSecondsByOrderId = ref<Record<string, number>>({});
+const paymentAutoCancelTriggered = ref<Set<string>>(new Set());
+let paymentCountdownTimer: ReturnType<typeof setInterval> | null = null;
 const respondedOrderIds = ref<Set<string>>(new Set());
 
 type DeliveryModalKind = "accepting" | "accept" | "reject" | null;
@@ -110,6 +118,86 @@ function showHero(order: Order): OrderItem | undefined {
   return order.items[0];
 }
 
+function paymentDeadlineStorageKey(orderId: string): string {
+  return `tap-tamak-payment-deadline-${orderId}`;
+}
+
+function readPaymentDeadline(orderId: string): number {
+  if (!import.meta.client) return Date.now() + ORDER_PAYMENT_TIMEOUT_MS;
+  const key = paymentDeadlineStorageKey(orderId);
+  const stored = sessionStorage.getItem(key);
+  const parsed = stored ? Number(stored) : NaN;
+  if (Number.isFinite(parsed) && parsed > Date.now()) return parsed;
+  const deadline = Date.now() + ORDER_PAYMENT_TIMEOUT_MS;
+  sessionStorage.setItem(key, String(deadline));
+  return deadline;
+}
+
+function clearPaymentDeadline(orderId: string): void {
+  if (!import.meta.client) return;
+  sessionStorage.removeItem(paymentDeadlineStorageKey(orderId));
+}
+
+function stopPaymentCountdown(): void {
+  if (paymentCountdownTimer) {
+    clearInterval(paymentCountdownTimer);
+    paymentCountdownTimer = null;
+  }
+}
+
+function paymentTimerLabel(orderId: string): string {
+  const sec = Math.max(0, paymentSecondsByOrderId.value[orderId] ?? 0);
+  const mm = Math.floor(sec / 60)
+    .toString()
+    .padStart(2, "0");
+  const ss = (sec % 60).toString().padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
+function syncPaymentCountdowns(): void {
+  const next: Record<string, number> = { ...paymentSecondsByOrderId.value };
+  for (const order of orders.value ?? []) {
+    if (!isOrderAwaitingPayment(order)) {
+      clearPaymentDeadline(order.id);
+      delete next[order.id];
+      continue;
+    }
+    const deadline = readPaymentDeadline(order.id);
+    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    next[order.id] = secondsLeft;
+    if (secondsLeft <= 0) {
+      void onPaymentTimeout(order);
+    }
+  }
+  paymentSecondsByOrderId.value = next;
+}
+
+function startPaymentCountdown(): void {
+  stopPaymentCountdown();
+  syncPaymentCountdowns();
+  const hasAwaiting = (orders.value ?? []).some((o) => isOrderAwaitingPayment(o));
+  if (!hasAwaiting) return;
+  paymentCountdownTimer = setInterval(() => {
+    syncPaymentCountdowns();
+  }, 1000);
+}
+
+async function onPaymentTimeout(order: Order): Promise<void> {
+  if (paymentAutoCancelTriggered.value.has(order.id) || !isOrderAwaitingPayment(order)) return;
+  paymentAutoCancelTriggered.value = new Set(paymentAutoCancelTriggered.value).add(order.id);
+  try {
+    await cancelOrderById(api, order.id);
+    clearPaymentDeadline(order.id);
+    toast.show(PAYMENT_CANCEL_REASON, "error");
+    await refresh();
+  } catch (err: unknown) {
+    const next = new Set(paymentAutoCancelTriggered.value);
+    next.delete(order.id);
+    paymentAutoCancelTriggered.value = next;
+    toast.show(apiMessage(err, "Не удалось отменить заказ."), "error");
+  }
+}
+
 function isCancelling(orderId: string): boolean {
   return cancellingOrderIds.value.has(orderId);
 }
@@ -193,6 +281,18 @@ function closeDeliveryThankYou(): void {
   closeDeliveryModal();
 }
 
+watch(
+  orders,
+  () => {
+    startPaymentCountdown();
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  stopPaymentCountdown();
+});
+
 async function confirmDeliveryReject(): Promise<void> {
   const order = deliveryModalOrder.value;
   if (!order || deliverySubmitting.value) return;
@@ -220,7 +320,7 @@ async function confirmDeliveryReject(): Promise<void> {
 <template>
   <div class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
     <header class="sticky top-0 z-30 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
-      <h1 class="text-[23.1px] font-bold leading-none -tracking-[0.2px] text-heading">
+      <h1 class="text-[23.1px] font-bold leading-none tracking-[-0.2px] text-heading">
         Мои заказы
       </h1>
     </header>
@@ -306,7 +406,7 @@ async function confirmDeliveryReject(): Promise<void> {
 
             <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               <span
-                class="inline-flex items-center gap-2 rounded-full border px-[11px] py-[9px] text-[11.6px] font-bold leading-none -tracking-[0.1px] text-[#2A2A2A]"
+                class="inline-flex items-center gap-2 rounded-full border px-[11px] py-[9px] text-[11.6px] font-bold leading-none tracking-[-0.1px] text-[#2A2A2A]"
                 :class="orderStatusTone(order.status) === 'success'
                   ? 'border-[#6B8E23]/22 bg-[#6B8E23]/10'
                   : orderStatusTone(order.status) === 'danger'
@@ -327,10 +427,30 @@ async function confirmDeliveryReject(): Promise<void> {
                 </span>
                 <span>{{ orderStatusLabel(order.status) }}</span>
               </span>
-              <span v-if="order.estimatedMinutes && orderStatusTone(order.status) === 'warning'"
+              <span v-if="isOrderAwaitingPayment(order)"
+                class="inline-flex items-center gap-1 rounded-full border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2.5 py-1 text-[11.6px] font-bold leading-none text-[#FF7A00]">
+                <Icon name="material-symbols:timer-outline" class="size-3.5" />
+                {{ paymentTimerLabel(order.id) }}
+              </span>
+              <span v-else-if="order.estimatedMinutes && orderStatusTone(order.status) === 'warning'"
                 class="text-[11.8px] font-bold leading-none text-subtle">
                 Осталось {{ order.estimatedMinutes }} мин
               </span>
+            </div>
+
+            <div
+              v-if="isOrderAwaitingPayment(order)"
+              class="rounded-[14px] border border-[#FF7A00]/22 bg-[#FF7A00]/6 px-3 py-2.5"
+            >
+              <p class="text-[11.5px] leading-relaxed text-subtle">
+                Переведите
+                <span class="font-bold text-[#FF7A00]">{{ formatPrice(order.totalAmount) }} ₸</span>
+                на Kaspi в течение 5 минут.
+              </p>
+              <p class="mt-1 text-[11.5px] leading-relaxed text-subtle">
+                Номер для оплаты:
+                <span class="font-bold text-heading">{{ kaspiPaymentNumber }}</span>
+              </p>
             </div>
 
             <div v-if="showHero(order)" class="flex gap-3 pt-0.5">
@@ -352,7 +472,7 @@ async function confirmDeliveryReject(): Promise<void> {
                     <p class="text-[16px] font-bold leading-none text-[#555]">
                       ×{{ item.quantity }}
                     </p>
-                    <p class="text-[15px] font-bold leading-none -tracking-[0.3px] text-heading">
+                    <p class="text-[15px] font-bold leading-none tracking-[-0.3px] text-heading">
                       {{ formatPrice(itemSubtotal(item)) }}
                       <span class="text-[11.5px] font-normal text-[#333]">₸</span>
                     </p>
@@ -360,7 +480,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 </div>
 
                 <p v-if="order.totalAmount > 0"
-                  class="mt-auto pt-1.5 text-right text-[20.1px] font-bold leading-none -tracking-[0.3px] text-heading">
+                  class="mt-auto pt-1.5 text-right text-[20.1px] font-bold leading-none tracking-[-0.3px] text-heading">
                   {{ formatPrice(order.totalAmount) }}
                   <span class="text-[12.1px] font-normal text-[#333]">₸</span>
                 </p>

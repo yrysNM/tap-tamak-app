@@ -98,7 +98,15 @@ export function dishImageSrc(
 ): string | undefined {
   if (!imageUrl) return undefined
   if (/^https?:\/\//i.test(imageUrl)) return imageUrl
+
   const origin = apiBaseUrl.replace(/\/api\/v1\/?$/i, '')
-  const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`
-  return `${origin}${path}`
+  const normalizedPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`
+
+  if (/api\/v1\/uploads/i.test(imageUrl)) {
+    return `${origin}${normalizedPath}`
+  }
+
+  const uploadPath = imageUrl.replace(/^\/+/, '')
+  const base = apiBaseUrl.replace(/\/+$/, '')
+  return `${base}/uploads/${uploadPath}`
 }

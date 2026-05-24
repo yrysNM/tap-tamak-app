@@ -1,4 +1,9 @@
-import type { BasketCookSummary, BasketGetResponse, BasketLineItem } from '~/types'
+import type {
+  BasketCookGroup,
+  BasketCookSummary,
+  BasketGetResponse,
+  BasketLineItem,
+} from '~/types'
 
 type ApiRequest = (url: string, opts?: object) => Promise<unknown>
 
@@ -8,11 +13,24 @@ export async function fetchBasket(api: ApiRequest): Promise<BasketGetResponse> {
   return normalizeBasket(body)
 }
 
+export async function removeBasketItem(
+  api: ApiRequest,
+  cartItemId: string,
+): Promise<void> {
+  await api(`/basket/items/${encodeURIComponent(cartItemId)}`, {
+    method: 'DELETE',
+  })
+}
+
 export async function updateBasketItemQuantity(
   api: ApiRequest,
   cartItemId: string,
   quantity: number,
 ): Promise<void> {
+  if (quantity < 1) {
+    await removeBasketItem(api, cartItemId)
+    return
+  }
   await api(`/basket/items/${encodeURIComponent(cartItemId)}`, {
     method: 'PATCH',
     body: { quantity },
@@ -23,6 +41,7 @@ function normalizeBasket(raw: unknown): BasketGetResponse {
   const empty: BasketGetResponse = {
     cookId: null,
     cook: null,
+    groups: [],
     items: [],
     itemsCount: 0,
     itemsTotal: 0,
@@ -42,6 +61,26 @@ function normalizeBasket(raw: unknown): BasketGetResponse {
     .map((row) => parseLineItem(row))
     .filter((x): x is BasketLineItem => x != null)
 
+  const groupsRaw = Array.isArray(o.groups) ? o.groups : []
+  const groups: BasketCookGroup[] = groupsRaw
+    .map((row) => parseCookGroup(row))
+    .filter((x): x is BasketCookGroup => x != null)
+
+  const resolvedGroups =
+    groups.length > 0
+      ? groups
+      : cook && cookId
+        ? [
+            {
+              cookId,
+              cook,
+              items,
+              itemsCount: items.reduce((s, i) => s + i.quantity, 0),
+              itemsTotal: items.reduce((s, i) => s + i.lineSubtotal, 0),
+            },
+          ]
+        : []
+
   const itemsCount =
     typeof o.itemsCount === 'number' && Number.isFinite(o.itemsCount)
       ? Math.max(0, Math.trunc(o.itemsCount))
@@ -50,6 +89,39 @@ function normalizeBasket(raw: unknown): BasketGetResponse {
   const itemsTotal =
     typeof o.itemsTotal === 'number' && Number.isFinite(o.itemsTotal)
       ? o.itemsTotal
+      : items.reduce((s, i) => s + i.lineSubtotal, 0)
+
+  return {
+    cookId,
+    cook,
+    groups: resolvedGroups,
+    items,
+    itemsCount,
+    itemsTotal,
+  }
+}
+
+function parseCookGroup(raw: unknown): BasketCookGroup | null {
+  if (!raw || typeof raw !== 'object') return null
+  const row = raw as Record<string, unknown>
+  const cook = parseCookSummary(row.cook)
+  const cookId =
+    typeof row.cookId === 'string' ? row.cookId : cook?.id ?? null
+  if (!cook || !cookId) return null
+
+  const itemsRaw = Array.isArray(row.items) ? row.items : []
+  const items = itemsRaw
+    .map((item) => parseLineItem(item))
+    .filter((x): x is BasketLineItem => x != null)
+
+  const itemsCount =
+    typeof row.itemsCount === 'number' && Number.isFinite(row.itemsCount)
+      ? Math.max(0, Math.trunc(row.itemsCount))
+      : items.reduce((s, i) => s + i.quantity, 0)
+
+  const itemsTotal =
+    typeof row.itemsTotal === 'number' && Number.isFinite(row.itemsTotal)
+      ? row.itemsTotal
       : items.reduce((s, i) => s + i.lineSubtotal, 0)
 
   return { cookId, cook, items, itemsCount, itemsTotal }
@@ -75,7 +147,7 @@ function parseCookSummary(raw: unknown): BasketCookSummary | null {
   return {
     id: c.id,
     businessName: c.businessName,
-    profileImageUrl: typeof c.profileImageUrl === 'string' ? c.profileImageUrl : undefined,
+    profileImageUrl: typeof c.chefAvatarUrl === 'string' ? c.chefAvatarUrl : undefined,
     bio: c.bio === null || typeof c.bio === 'string' ? (c.bio as string | null | undefined) : undefined,
     rating,
     totalReviews,

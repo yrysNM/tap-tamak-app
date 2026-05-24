@@ -20,7 +20,7 @@ export function orderStatusLabel(status: OrderStatus | string | undefined | null
     case 'AWAITING_PAYMENT':
       return 'Ждем оплаты'
     case 'CONFIRMED':
-      return 'Подтвержден'
+      return 'Заказ даставлен'
     case 'COOKING':
     case 'PREPARING':
       return 'Готовится'
@@ -50,8 +50,9 @@ export function orderStatusTone(status: OrderStatus | string | undefined | null)
     case 'READY':
     case 'COURIER_NEARBY':
     case 'ON_THE_WAY':
-    case 'DELIVERED':
     case 'COMPLETED':
+    // case 'DELIVERED':
+    case "CONFIRMED":
       return 'success'
     case 'CANCELLED':
     case 'REJECTED':
@@ -76,6 +77,23 @@ export function isOrderCancellable(status: OrderStatus | string | undefined | nu
     default:
       return false
   }
+}
+
+export const ORDER_PAYMENT_TIMEOUT_MS = 5 * 60 * 1000
+
+/** True when the customer must pay before the kitchen queue starts. */
+export function isOrderAwaitingPayment(order: Order): boolean {
+  const status = (order.status ?? '').toString().toUpperCase()
+  const payment = (order.paymentStatus ?? '').toString().toUpperCase()
+  return status === 'AWAITING_PAYMENT' && payment !== 'COMPLETED'
+}
+
+/** True once payment is recorded or the order has moved past the payment step. */
+export function isOrderPaymentComplete(order: Order): boolean {
+  const payment = (order.paymentStatus ?? '').toString().toUpperCase()
+  if (payment === 'COMPLETED') return true
+  const status = (order.status ?? '').toString().toUpperCase()
+  return status !== 'AWAITING_PAYMENT' && status !== 'CANCELLED' && status !== 'REJECTED'
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -236,6 +254,17 @@ export async function fetchOrders(
   return orders
 }
 
+/** GET /orders/:id — single order for the current user. */
+export async function fetchOrderById(api: ApiRequest, orderId: string): Promise<Order> {
+  const raw = await api(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' })
+  const body = unwrapBody<unknown>(raw)
+  const parsed = parseOrder(body)
+  if (!parsed) {
+    throw new Error('Invalid order response')
+  }
+  return parsed
+}
+
 /** POST /orders/:id/cancel — cancel an order while it is still cancellable. */
 export async function cancelOrderById(api: ApiRequest, orderId: string): Promise<void> {
   await api(`/orders/${encodeURIComponent(orderId)}/cancel`, { method: 'POST' })
@@ -315,9 +344,17 @@ export interface PrepareOrderLine {
   lineSubtotal: number
 }
 
+export interface PrepareOrderCookGroup {
+  cook: PrepareOrderCook
+  items: PrepareOrderLine[]
+  itemsTotal: number
+  totalAmount: number
+}
+
 export interface PrepareOrderResponse {
   basketId: string
-  cook: PrepareOrderCook
+  cook: PrepareOrderCook | null
+  groups?: PrepareOrderCookGroup[]
   delivery: Record<string, unknown>
   items: PrepareOrderLine[]
   itemsTotal: number
@@ -343,12 +380,12 @@ export async function prepareOrderFromCart(
 export async function createOrderFromCart(
   api: ApiRequest,
   payload: CheckoutOrderPayload,
-): Promise<{ orderId: string }> {
+): Promise<{ orderId: string; orderIds?: string[] }> {
   const raw = await api(`/orders`, {
     method: 'POST',
     body: payload,
   })
-  return unwrapBody<{ orderId: string }>(raw)
+  return unwrapBody<{ orderId: string; orderIds?: string[] }>(raw)
 }
 
 const MULTIPART_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -390,10 +427,10 @@ export function buildCheckoutMultipartFormData(
 export async function createOrderFromCartMultipart(
   api: ApiRequest,
   formData: FormData,
-): Promise<{ orderId: string }> {
+): Promise<{ orderId: string; orderIds?: string[] }> {
   const raw = await api(`/orders/checkout-multipart`, {
     method: 'POST',
     body: formData,
   })
-  return unwrapBody<{ orderId: string }>(raw)
+  return unwrapBody<{ orderId: string; orderIds?: string[] }>(raw)
 }
