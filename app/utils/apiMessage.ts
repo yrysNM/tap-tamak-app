@@ -2,7 +2,7 @@ import { ApiClientError } from './apiClientError'
 
 export function apiMessage(
   err: unknown,
-  fallback = 'Не удалось выполнить запрос.',
+  fallbackKey = 'l_Request_failed',
 ): string {
   if (err instanceof ApiClientError) return err.message
   const e = err as {
@@ -13,5 +13,5 @@ export function apiMessage(
   if (Array.isArray(m)) return m.join(', ')
   if (typeof m === 'string') return m
   if (e?.message) return e.message
-  return fallback
+  return appT(fallbackKey)
 }

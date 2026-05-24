@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 import type { CookDish, PreparationType } from "~/types";
 import { dishImageSrc } from "~/utils/dishApi";
 
@@ -24,8 +25,8 @@ function imageSrc(url: string | undefined) {
 }
 
 function prepLabel(t: PreparationType | string | undefined) {
-  if (t === "FAST" || t === "Fast") return "Быстрое";
-  if (t === "LONG" || t === "Long") return "Долгое";
+  if (t === "FAST" || t === "Fast") return appT("l_Fast_prep");
+  if (t === "LONG" || t === "Long") return appT("l_Long_prep");
   return "—";
 }
 
@@ -34,7 +35,7 @@ function isFast(t: PreparationType | string | undefined) {
 }
 
 async function onDelete(id: string, name: string) {
-  if (!confirm(`Удалить «${name}»? Действие необратимо.`)) return;
+  if (!confirm(t("l_Delete_confirm", { name }))) return;
   emit("delete", id);
 }
 
@@ -49,20 +50,20 @@ function caloriesOf(d: CookDish) {
     <div
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
-      <h2 class="text-lg font-bold text-dark">Блюда</h2>
+      <h2 class="text-lg font-bold text-dark">{{ t("l_Dishes") }}</h2>
       <button
         type="button"
         class="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-primary-cta transition hover:bg-primary-hover"
         @click="emit('create-click')"
       >
         <Icon name="material-symbols:add-rounded" class="size-5" />
-        Создать блюдо
+        {{ t("l_Create_dish") }}
       </button>
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label class="block min-w-0 flex-1">
-        <span class="text-[13px] font-medium text-dark">Поиск</span>
+        <span class="text-[13px] font-medium text-dark">{{ t("l_Dish_search") }}</span>
         <div class="relative mt-1.5">
           <Icon
             name="material-symbols:search-rounded"
@@ -72,13 +73,13 @@ function caloriesOf(d: CookDish) {
             v-model="search"
             type="search"
             autocomplete="off"
-            placeholder="Поиск блюд…"
+            :placeholder="t('l_Dish_search_placeholder')"
             class="w-full rounded-xl border border-border py-2.5 pl-10 pr-3 text-sm outline-none ring-primary focus:ring-2"
           />
         </div>
       </label>
       <p class="text-[12px] text-caption sm:pb-2">
-        Фильтр необязателен — уточнение по имени после загрузки.
+        {{ t("l_Filter_optional_hint") }}
       </p>
     </div>
 
@@ -110,9 +111,9 @@ function caloriesOf(d: CookDish) {
         name="material-symbols:restaurant-outline"
         class="mx-auto size-12 text-caption"
       />
-      <p class="mt-3 text-sm font-semibold text-dark">Пока нет блюд</p>
+      <p class="mt-3 text-sm font-semibold text-dark">{{ t("l_No_dishes_yet") }}</p>
       <p class="mt-1 text-[13px] text-caption">
-        Создайте первое блюдо, чтобы быстрее собирать меню.
+        {{ t("l_Create_first_dish_hint") }}
       </p>
     </div>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -156,9 +157,9 @@ function caloriesOf(d: CookDish) {
             {{ dish.description }}
           </p>
           <p class="mt-2 text-[13px] text-muted">
-            {{ dish.cookingTime }} мин
+            {{ t("l_Cooking_time_single", { min: dish.cookingTime }) }}
             <template v-if="caloriesOf(dish) != null">
-              · {{ caloriesOf(dish) }} ккал
+              {{ t("l_Calories_kcal", { calories: caloriesOf(dish) }) }}
             </template>
           </p>
           <p class="mt-1 text-sm font-semibold text-primary">
@@ -172,7 +173,7 @@ function caloriesOf(d: CookDish) {
               :to="`/cook/menu/${dish.id}`"
               class="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border text-sm font-semibold text-dark transition hover:border-primary/40 hover:text-primary"
             >
-              Изменить
+              {{ t("l_Change") }}
             </NuxtLink>
             <button
               type="button"
@@ -180,7 +181,7 @@ function caloriesOf(d: CookDish) {
               :disabled="deletingId === dish.id"
               @click="onDelete(dish.id, dish.name)"
             >
-              {{ deletingId === dish.id ? "…" : "Удалить" }}
+              {{ deletingId === dish.id ? "…" : t("l_Delete") }}
             </button>
           </div>
         </div>

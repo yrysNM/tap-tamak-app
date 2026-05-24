@@ -1,5 +1,5 @@
 <template>
-  <div class="w-auto space-y-4">
+  <div class="w-auto space-y-4 mb-8">
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <div class="flex items-start gap-4 flex-wrap">
         <div
@@ -27,7 +27,7 @@
           <button type="button"
             class="block w-full rounded-xl border border-primary/35 bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="uploadingAvatar" @click="onClickChangePhoto">
-            {{ uploadingAvatar ? "Загрузка..." : "Изменить" }}
+            {{ uploadingAvatar ? t("l_Loading") : t("l_Change") }}
           </button>
           <!-- <button type="button"
             class="block w-full rounded-xl border border-primary/35 bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary-light"
@@ -42,29 +42,29 @@
 
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
-        Повар
+        {{ t("l_Cook_profile_section") }}
       </h2>
 
       <div class="mt-4 divide-y divide-border">
         <div class="flex items-center justify-between gap-3 py-3 first:pt-0">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-dark">Среднее время готовки</p>
-            <p class="mt-0.5 text-xs text-muted">Показывается клиентам</p>
+            <p class="text-sm font-semibold text-dark">{{ $t("l_Avg_cook_time") }}</p>
+            <p class="mt-0.5 text-xs text-muted">{{ $t("l_Shown_to_clients") }}</p>
           </div>
           <p class="shrink-0 text-sm font-semibold text-dark">
             {{ avgCookTimeLabel }}
           </p>
         </div>
 
-        <div class="flex items-center justify-between gap-3 py-3">
+        <!-- <div class="flex items-center justify-between gap-3 py-3">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-dark">Радиус доставки</p>
-            <p class="mt-0.5 text-xs text-muted">Максимальная зона</p>
+            <p class="text-sm font-semibold text-dark">{{ $t("l_Delivery_radius") }}</p>
+            <p class="mt-0.5 text-xs text-muted">{{ $t("l_Max_zone") }}</p>
           </div>
           <p class="shrink-0 text-sm font-semibold text-dark">
             {{ radiusLabel }}
           </p>
-        </div>
+        </div> -->
 
         <!-- <div class="flex items-center justify-between gap-3 py-3 last:pb-0">
           <div class="min-w-0">
@@ -80,8 +80,8 @@
         </div> -->
         <div class="flex items-center justify-between gap-3 py-3 last:pb-0">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-dark">Всего блюд</p>
-            <p class="mt-0.5 text-xs text-muted">В вашем меню</p>
+            <p class="text-sm font-semibold text-dark">{{ $t("l_Total_dishes") }}</p>
+            <p class="mt-0.5 text-xs text-muted">{{ $t("l_In_your_menu") }}</p>
           </div>
           <p class="shrink-0 text-sm font-semibold text-dark">{{ dishesCountLabel }}</p>
         </div>
@@ -90,28 +90,45 @@
 
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
-        Аккаунт
+        {{ t("l_Account") }}
       </h2>
 
       <div class="mt-4 space-y-4">
         <div class="flex items-center justify-between gap-3">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-dark">Телефон</p>
+            <p class="text-sm font-semibold text-dark">{{ t("l_Phone") }}</p>
             <p class="mt-0.5 text-xs text-muted">{{ phoneLabel }}</p>
           </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-dark">{{ t("l_Language") }}</p>
+            <p class="mt-0.5 text-xs text-muted">{{ currentLocaleName }}</p>
+          </div>
+          <button type="button"
+            class="shrink-0 rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-dark transition hover:bg-surface-muted/50"
+            @click="languagePickerOpen = true">
+            {{ t("l_Switch") }}
+          </button>
         </div>
 
         <button type="button"
           class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
           @click="onLogout">
-          Выйти
+          {{ t("l_Log_out") }}
         </button>
       </div>
     </section>
+
+    <UiLanguagePickerModal v-model="languagePickerOpen" />
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+const { currentLocaleName } = useLocaleDisplayName()
+
 definePageMeta({ layout: "cook" });
 
 type AuthCook = {
@@ -138,6 +155,7 @@ const profileError = ref("");
 const avatarError = ref("");
 const uploadingAvatar = ref(false);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
+const languagePickerOpen = ref(false);
 
 const user = computed(() => auth.user);
 const cook = computed(
@@ -152,29 +170,31 @@ const avatarSrc = computed(
 const displayName = computed(() => {
   const first = user.value?.firstName?.trim() ?? "";
   const last = user.value?.lastName?.trim() ?? "";
-  return `${first} ${last}`.trim() || "Без имени";
+  return `${first} ${last}`.trim() || t("l_No_name");
 });
 
 const initials = computed(() => {
   const first = user.value?.firstName?.trim()?.[0] ?? "";
   const last = user.value?.lastName?.trim()?.[0] ?? "";
   const value = `${first}${last}`.toUpperCase();
-  return value || "П";
+  return value || t("l_Initial_fallback");
 });
 
 const kitchenName = computed(
   () =>
     cook.value?.businessName?.trim() ||
-    `Домашняя кухня ${user.value?.firstName ?? ""}`.trim(),
+    t("l_Homemade_kitchen", { name: user.value?.firstName ?? "" }).trim(),
 );
 const contactLine = computed(
-  () => user.value?.email || user.value?.phone || "Контакт не указан",
+  () => user.value?.email || user.value?.phone || t("l_Contact_not_set"),
 );
 const phoneLabel = computed(() => user.value?.phone || "+7 (___) ___-__-__");
 const avgCookTimeLabel = computed(
-  () => `${cook.value?.preparationTimeMin ?? 45} мин`,
+  () => t("l_Cooking_time_single", { min: cook.value?.preparationTimeMin ?? 45 }),
 );
-const radiusLabel = computed(() => `${cook.value?.deliveryRadius ?? 4} км`);
+const radiusLabel = computed(() =>
+  t("l_Radius_km", { km: cook.value?.deliveryRadius ?? 4 }),
+);
 const dishesCountLabel = computed(() => String(cook.value?.menuItemsCount ?? 0));
 const specialtiesLabel = computed(() =>
   (cook.value?.specialties?.length
@@ -214,7 +234,7 @@ async function loadCookProfile() {
           : undefined,
     };
   } catch (err) {
-    profileError.value = apiMessage(err, "Не удалось загрузить профиль повара.");
+    profileError.value = apiMessage(err, 'l_Failed_load_cook_profile');
   }
 }
 
@@ -258,7 +278,7 @@ async function onPickAvatar(event: Event) {
       await loadCookProfile();
     }
   } catch (err) {
-    avatarError.value = apiMessage(err, "Не удалось обновить фото профиля.");
+    avatarError.value = apiMessage(err, 'l_Failed_update_avatar');
   } finally {
     uploadingAvatar.value = false;
     if (input) input.value = "";

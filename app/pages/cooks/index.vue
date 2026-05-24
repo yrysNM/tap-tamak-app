@@ -38,7 +38,7 @@
         class="pointer-events-auto rounded-[16px] border border-black/10 bg-white/92 p-3 shadow-xl backdrop-blur-sm"
       >
         <h1 class="text-[27px] font-bold leading-none text-heading">
-          Карта поваров
+          {{ t("l_Cooks_map_title") }}
         </h1>
         <div class="mt-3 flex items-center gap-2">
           <div
@@ -52,7 +52,7 @@
               v-model.trim="search"
               type="text"
               class="w-full bg-transparent text-[13px] text-body outline-none placeholder:text-subtle"
-              placeholder="Поиск по району или имени"
+              :placeholder="t('l_Search_area_or_name')"
             />
           </div>
         </div>
@@ -85,7 +85,7 @@
         <!-- {{ listError }} -->
         <!-- </p> -->
         <p v-if="!selectedCook" class="text-[13px] text-subtle">
-          Поблизости не найдено поваров с координатами.
+          {{ t("l_No_cooks_with_coords") }}
         </p>
         <template v-else>
           <div class="flex items-center gap-3">
@@ -124,7 +124,7 @@
             :to="`/cooks/${encodeURIComponent(selectedCook.id)}/menu`"
             class="mt-3 flex h-11 items-center justify-center rounded-[16px] bg-primary text-[14px] font-bold text-white shadow-[0_10px_16px_rgba(255,122,0,0.24)]"
           >
-            Смотреть блюда
+            {{ t("l_View_dishes") }}
           </NuxtLink>
         </template>
       </div>
@@ -147,9 +147,13 @@ definePageMeta({
   layout: "default",
 });
 
-const categories = ["Все", "Закуски", "Десерты", "Горячее", "Детское", "Супы"];
+const { t } = useI18n();
+const categories = computed(() => [t("l_Category_all"), t("l_Category_snacks"), t("l_Category_desserts"), t("l_Category_hot"), t("l_Category_kids"), t("l_Category_soups")]);
 const search = ref("");
-const activeCategory = ref("Все");
+const activeCategory = ref("");
+onMounted(() => {
+  activeCategory.value = categories.value[0] ?? "";
+});
 const mapZoom = ref(14);
 
 const { $api } = useNuxtApp();
@@ -174,7 +178,7 @@ const { data: list, error: listFetchError } = await useAsyncData(
 
 const listError = computed(() => {
   if (listFetchError.value)
-    return "Не удалось загрузить поваров. Попробуйте позже.";
+    return t("l_Failed_load_cooks");
   return locationError.value;
 });
 
@@ -185,7 +189,7 @@ const cooksWithCoords = computed(() =>
 );
 
 function matchesCategory(cook: Cook): boolean {
-  if (activeCategory.value === "Все") return true;
+  if (!activeCategory.value || activeCategory.value === categories.value[0]) return true;
   const normalized = activeCategory.value.toLowerCase();
   return (cook.specialties ?? []).some((s) =>
     s.toLowerCase().includes(normalized),
@@ -230,7 +234,7 @@ watch(selectedCook, (cook) => {
 });
 
 function specialtiesLine(specialties: string[] | undefined): string {
-  if (!specialties?.length) return "Разные блюда";
+  if (!specialties?.length) return t("l_Various_dishes");
   return specialties.slice(0, 2).join(", ");
 }
 
@@ -239,9 +243,9 @@ function cookInitials(name: string | undefined): string {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (!words.length) return "П";
+  if (!words.length) return t("l_Initial_fallback");
   const initials = words.slice(0, 2).map((word) => word[0] ?? "").join("");
-  return (initials || words[0][0] || "П").toUpperCase();
+  return (initials || words[0][0] || t("l_Initial_fallback")).toUpperCase();
 }
 
 function selectCook(cookId: string) {
@@ -252,7 +256,7 @@ function distanceLabel(cook: Cook): string {
   const { lat, lng } = userCoords.value;
   const lat2 = cook.latitude;
   const lng2 = cook.longitude;
-  if (!Number.isFinite(lat2) || !Number.isFinite(lng2)) return "без координат";
+  if (!Number.isFinite(lat2) || !Number.isFinite(lng2)) return t("l_No_coords");
 
   const toRad = (x: number) => (x * Math.PI) / 180;
   const dLat = toRad((lat2 as number) - lat);
@@ -264,8 +268,8 @@ function distanceLabel(cook: Cook): string {
       Math.sin(dLon / 2) ** 2;
   const km = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  if (km < 1) return `${Math.round(km * 1000)} м от вас`;
-  return `${km.toFixed(1).replace(".", ",")} км от вас`;
+  if (km < 1) return t("l_Meters_from_you", { meters: Math.round(km * 1000) });
+  return t("l_Km_from_you", { km: km.toFixed(1).replace(".", ",") });
 }
 
 onMounted(async () => {

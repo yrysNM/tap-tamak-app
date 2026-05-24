@@ -10,38 +10,6 @@ function unwrapBody<T>(raw: unknown): T {
   return raw as T
 }
 
-/** Russian label for every known order status; unknown values fall back to the raw code. */
-export function orderStatusLabel(status: OrderStatus | string | undefined | null): string {
-  switch ((status ?? '').toString().toUpperCase()) {
-    case 'PENDING':
-      return 'В ожидании'
-    case 'AWAITING_COOK_ACCEPTANCE':
-      return 'Ждем ответа от повара'
-    case 'AWAITING_PAYMENT':
-      return 'Ждем оплаты'
-    case 'CONFIRMED':
-      return 'Заказ даставлен'
-    case 'COOKING':
-    case 'PREPARING':
-      return 'Готовится'
-    case 'READY':
-      return 'Готов к выдаче'
-    case 'COURIER_NEARBY':
-      return 'Курьер рядом'
-    case 'ON_THE_WAY':
-      return 'В пути'
-    case 'DELIVERED':
-    case 'COMPLETED':
-      return 'Доставлен'
-    case 'REJECTED':
-      return 'Отклонен'
-    case 'CANCELLED':
-      return 'Отменен'
-    default:
-      return (status ?? '').toString() || '—'
-  }
-}
-
 export type OrderStatusTone = 'warning' | 'success' | 'danger'
 
 /** Visual tone used for the status pill in the orders list. */
@@ -391,13 +359,14 @@ export async function createOrderFromCart(
 const MULTIPART_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 export const MAX_CHECKOUT_PHOTO_BYTES = 8 * 1024 * 1024
 
-export function validateCheckoutPhoto(file: File): string | null {
-  if (!file || file.size === 0) return 'Прикрепите фото чека (JPEG, PNG или WebP).'
+/** Returns an i18n key when validation fails. */
+export function validateCheckoutPhotoKey(file: File): string | null {
+  if (!file || file.size === 0) return 'l_Attach_receipt_photo'
   if (!MULTIPART_IMAGE_TYPES.has(file.type)) {
-    return 'Фото должно быть в формате JPEG, PNG или WebP.'
+    return 'l_Photo_format_jpeg_png_webp'
   }
   if (file.size > MAX_CHECKOUT_PHOTO_BYTES) {
-    return 'Размер фото не должен превышать 8 МБ.'
+    return 'l_Photo_max_8mb'
   }
   return null
 }

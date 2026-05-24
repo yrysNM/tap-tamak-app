@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-lg px-4">
       <NuxtLink to="/cook/menu?tab=dishes"
         class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-        ← К меню
+        {{ t("l_Back_to_menu") }}
       </NuxtLink>
 
       <div v-if="loading" class="h-64 animate-pulse rounded-[20px] bg-surface-muted" />
@@ -14,13 +14,12 @@
       </div>
 
       <div v-else-if="dish" class="overflow-hidden rounded-[20px] border border-border bg-white p-5 shadow-soft">
-        <h2 class="text-lg font-bold text-dark">Редактирование</h2>
+        <h2 class="text-lg font-bold text-dark">{{ t("l_Edit_dish") }}</h2>
         <form class="mt-4 space-y-4" @submit.prevent="onSave">
           <div>
-            <span class="text-[13px] font-medium text-dark">Новое фото</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_New_photo") }}</span>
             <p class="mt-0.5 text-[12px] text-caption">
-              Необязательно — оставьте пустым, чтобы сохранить текущее
-              изображение.
+              {{ t("l_New_photo_hint") }}
             </p>
             <input ref="fileInputRef" type="file" accept="image/*"
               class="mt-1.5 block w-full text-sm text-muted file:mr-3 file:rounded-xl file:border-0 file:bg-primary-light file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary"
@@ -30,23 +29,23 @@
             </div>
           </div>
           <label class="block">
-            <span class="text-[13px] font-medium text-dark">Название *</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_Title_required") }}</span>
             <input v-model="form.name" type="text" required
               class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
           </label>
           <label class="block">
-            <span class="text-[13px] font-medium text-dark">Описание *</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_Description_required") }}</span>
             <textarea v-model="form.description" required rows="3"
               class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
           </label>
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Время (мин) *</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Time_min_required") }}</span>
               <input v-model.number="form.cookingTime" type="number" min="1" required
                 class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Тип *</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Type_required") }}</span>
               <div ref="prepSelectRef" class="relative mt-1.5" @keydown.esc.prevent="closePrepSelect">
                 <button type="button"
                   class="flex w-full items-center justify-between rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-dark outline-none ring-primary transition focus:ring-2"
@@ -62,7 +61,7 @@
                   <div v-if="prepSelectOpen"
                     class="absolute left-0 z-30 w-full overflow-hidden rounded-xl border border-border bg-white shadow-soft"
                     :class="prepSelectDirection === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-                      " role="listbox" aria-label="Тип приготовления">
+                      " role="listbox" :aria-label="t('l_Prep_type')">
                     <button v-for="option in prepOptions" :key="option.value" type="button"
                       class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-dark transition hover:bg-primary-light/40"
                       @click="selectPrep(option.value)">
@@ -75,17 +74,17 @@
               </div>
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Калории</span>
-              <input v-model="form.calories" type="number" min="0" placeholder="Необязательно"
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Calories") }}</span>
+              <input v-model="form.calories" type="number" min="0" :placeholder="t('l_Optional')"
                 class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Цена *</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Price_required") }}</span>
               <input v-model.number="form.price" type="number" min="0" step="0.01" required
                 class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Количество порций *</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Portion_count_required") }}</span>
               <input v-model.number="form.portionCount" type="number" min="1" step="1" required
                 class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2" />
             </label>
@@ -93,7 +92,7 @@
           <label class="flex items-center gap-3">
             <input v-model="form.isAvailable" type="checkbox"
               class="size-4 rounded border-border text-primary focus:ring-primary" />
-            <span class="text-[13px] font-medium text-dark">В наличии</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_In_stock") }}</span>
           </label>
 
           <p v-if="formError" class="text-[13px] text-error">
@@ -104,12 +103,12 @@
             <button type="button"
               class="h-11 rounded-xl border border-border px-6 text-sm font-semibold text-dark disabled:opacity-45"
               :disabled="saving" @click="cancelEdit">
-              Отмена
+              {{ t("l_Cancel") }}
             </button>
             <button type="submit"
               class="flex h-11 items-center justify-center rounded-xl bg-primary px-8 text-sm font-bold text-white shadow-primary-cta disabled:opacity-45"
               :disabled="saving">
-              {{ saving ? "Сохранение…" : "Сохранить" }}
+              {{ saving ? t("l_Saving") : t("l_Save") }}
             </button>
           </div>
         </form>
@@ -136,6 +135,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 import type { CookDish, PreparationType } from "~/types";
 import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
@@ -185,14 +185,14 @@ const prepSelectOpen = ref(false);
 const prepSelectDirection = ref<"top" | "bottom">("bottom");
 let editBaseline = "";
 const prepOptions: Array<{ value: PreparationType; label: string }> = [
-  { value: "FAST", label: "Быстрое" },
-  { value: "LONG", label: "Долгое" },
+  { value: "FAST", label: t("l_Fast_prep") },
+  { value: "LONG", label: t("l_Long_prep") },
 ];
 
 const selectedPrepLabel = computed(() => {
   return (
     prepOptions.find((option) => option.value === form.preparationType)?.label ??
-    "Выберите тип"
+    t("l_Select_type")
   );
 });
 
@@ -294,7 +294,7 @@ function isDirty(): boolean {
 
 function cancelEdit() {
   if (saving.value) return;
-  if (isDirty() && !confirm("Отменить изменения?")) return;
+  if (isDirty() && !confirm(t("l_Discard_changes_confirm"))) return;
   if (dish.value) {
     fillFormFromDish(dish.value);
     editBaseline = snapshotForm();
@@ -317,24 +317,24 @@ async function onSave() {
   if (!dish.value) return;
   formError.value = "";
   if (!form.name.trim()) {
-    formError.value = "Укажите название.";
+    formError.value = t("l_Enter_title");
     return;
   }
   if (!form.description.trim()) {
-    formError.value = "Укажите описание.";
+    formError.value = t("l_Enter_description");
     return;
   }
   if (!Number.isFinite(form.cookingTime) || form.cookingTime < 1) {
-    formError.value = "Время приготовления — не менее 1 минуты.";
+    formError.value = t("l_Cooking_time_min_1");
     return;
   }
   if (!Number.isFinite(form.price) || form.price < 0) {
-    formError.value = "Цена не может быть отрицательной.";
+    formError.value = t("l_Price_non_negative");
     return;
   }
   const portions = Math.trunc(form.portionCount);
   if (!Number.isFinite(form.portionCount) || portions < 1) {
-    formError.value = "Количество порций — не менее 1.";
+    formError.value = t("l_Portion_min_1");
     return;
   }
 
@@ -371,11 +371,11 @@ async function onSave() {
       await updateDishById(api, dish.value.id, body);
       navigateTo(`/cook/menu/`);
     }
-    toast.show("Блюдо обновлено.", "success");
+    toast.show(t("l_Dish_updated"), "success");
     clearImagePick();
     await load();
   } catch (err) {
-    formError.value = apiMessage(err, "Не удалось сохранить изменения.");
+    formError.value = apiMessage(err, 'l_Failed_save_changes');
   } finally {
     saving.value = false;
   }
@@ -383,14 +383,14 @@ async function onSave() {
 
 async function onDelete() {
   if (!dish.value) return;
-  if (!confirm(`Удалить «${dish.value.name}»? Действие необратимо.`)) return;
+  if (!confirm(t("l_Delete_confirm", { name: dish.value.name }))) return;
   deleting.value = true;
   try {
     await deleteDishById(api, dish.value.id);
-    toast.show("Блюдо удалено.", "success");
+    toast.show(t("l_Dish_deleted"), "success");
     await router.push({ path: "/cook/menu", query: { tab: "dishes" } });
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось удалить блюдо."), "error");
+    toast.show(apiMessage(err, 'l_Failed_delete_dish'), "error");
   } finally {
     deleting.value = false;
   }
@@ -400,7 +400,7 @@ async function load() {
   const id = route.params.id;
   const idStr = Array.isArray(id) ? id[0] : id;
   if (!idStr) {
-    error.value = "Некорректная ссылка.";
+    error.value = t("l_Invalid_link");
     loading.value = false;
     return;
   }
@@ -410,7 +410,7 @@ async function load() {
     const raw = await api(`/dishes/${idStr}`, { method: "GET" });
     const parsed = unwrapDishPayload(raw);
     if (!parsed) {
-      error.value = "Блюдо не найдено.";
+      error.value = t("l_Dish_not_found");
       dish.value = null;
     } else {
       dish.value = parsed;
@@ -418,7 +418,7 @@ async function load() {
       editBaseline = snapshotForm();
     }
   } catch (err) {
-    error.value = apiMessage(err, "Не удалось загрузить блюдо.");
+    error.value = apiMessage(err, 'l_Failed_load_dish');
     dish.value = null;
   } finally {
     loading.value = false;

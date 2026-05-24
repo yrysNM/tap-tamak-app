@@ -11,14 +11,15 @@ import {
   isOrderAwaitingPayment,
   isOrderCancellable,
   isOrderDelivered,
-  orderStatusLabel,
   orderStatusTone,
   rejectDeliveredOrder,
 } from "~/utils/ordersApi";
-
-const PAYMENT_CANCEL_REASON = "Заказ отменён из-за отсутствия оплаты";
+import { useOrderStatusLabel } from "~/composables/useOrderStatusLabel";
 
 const toast = usePageToast();
+const { t } = useI18n();
+const orderStatusLabel = useOrderStatusLabel();
+const PAYMENT_CANCEL_REASON = computed(() => t("l_Payment_cancel_reason"));
 const { $api } = useNuxtApp();
 const config = useRuntimeConfig();
 const kaspiPaymentNumber = useKaspiPaymentNumber();
@@ -52,20 +53,7 @@ const isEmpty = computed(
   () => !pending.value && !error.value && (orders.value?.length ?? 0) === 0,
 );
 
-const MONTHS_RU = [
-  "января",
-  "февраля",
-  "марта",
-  "апреля",
-  "мая",
-  "июня",
-  "июля",
-  "августа",
-  "сентября",
-  "октября",
-  "ноября",
-  "декабря",
-] as const;
+const localizedMonths = useLocalizedMonths();
 
 function formatPrice(value: number): string {
   return Math.round(value).toLocaleString("ru-RU");
@@ -75,7 +63,7 @@ function formatOrderDate(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  const month = MONTHS_RU[d.getMonth()] ?? "";
+  const month = localizedMonths.value[d.getMonth()] ?? "";
   const hh = d.getHours().toString().padStart(2, "0");
   const mm = d.getMinutes().toString().padStart(2, "0");
   return `${d.getDate()} ${month} • ${hh}:${mm}`;
@@ -99,15 +87,15 @@ function filledStars(rating: number | undefined): number {
 }
 
 function cookInitials(name?: string): string {
-  if (!name) return "П";
+  if (!name) return t("l_Initial_fallback");
   const words = name.trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "П";
+  if (!words.length) return t("l_Initial_fallback");
   const initials = words.slice(0, 2).map((w) => w[0] ?? "").join("");
-  return (initials || words[0]?.[0] || "П").toUpperCase();
+  return (initials || words[0]?.[0] || t("l_Initial_fallback")).toUpperCase();
 }
 
 function itemName(item: OrderItem): string {
-  return item.dish?.name?.trim() || item.name?.trim() || "Блюдо";
+  return item.dish?.name?.trim() || item.name?.trim() || t("l_Dish");
 }
 
 function itemSubtotal(item: OrderItem): number {
@@ -188,13 +176,13 @@ async function onPaymentTimeout(order: Order): Promise<void> {
   try {
     await cancelOrderById(api, order.id);
     clearPaymentDeadline(order.id);
-    toast.show(PAYMENT_CANCEL_REASON, "error");
+    toast.show(PAYMENT_CANCEL_REASON.value, "error");
     await refresh();
   } catch (err: unknown) {
     const next = new Set(paymentAutoCancelTriggered.value);
     next.delete(order.id);
     paymentAutoCancelTriggered.value = next;
-    toast.show(apiMessage(err, "Не удалось отменить заказ."), "error");
+    toast.show(apiMessage(err, 'l_Failed_cancel_order'), "error");
   }
 }
 
@@ -215,16 +203,16 @@ async function onCancel(order: Order): Promise<void> {
   try {
     await cancelOrderById(api, order.id);
     await refresh();
-    toast.show("Заказ отменён.", "success");
+    toast.show(t("l_Order_cancelled"), "success");
   } catch (err: unknown) {
-    toast.show(apiMessage(err, "Не удалось отменить заказ."), "error");
+    toast.show(apiMessage(err, 'l_Failed_cancel_order'), "error");
   } finally {
     setCancelling(order.id, false);
   }
 }
 
 function onMessage(_order: Order): void {
-  toast.show("Чат с поваром скоро будет доступен.", "info");
+  toast.show(t("l_Chat_with_cook_soon"), "info");
 }
 
 function hasDeliveryResponse(orderId: string): boolean {
@@ -270,7 +258,7 @@ async function submitDeliveryAccept(): Promise<void> {
     await refresh();
     deliveryModal.value = "accept";
   } catch (err: unknown) {
-    toast.show(apiMessage(err, "Не удалось подтвердить доставку."), "error");
+    toast.show(apiMessage(err, 'l_Failed_confirm_delivery'), "error");
     closeDeliveryModal();
   } finally {
     deliverySubmitting.value = false;
@@ -298,7 +286,7 @@ async function confirmDeliveryReject(): Promise<void> {
   if (!order || deliverySubmitting.value) return;
   const reason = rejectDishesReason.value.trim();
   if (reason.length < 3) {
-    rejectDishesError.value = "Опишите причину (не менее 3 символов).";
+    rejectDishesError.value = t("l_Reject_reason_min_length");
     return;
   }
   rejectDishesError.value = "";
@@ -308,9 +296,9 @@ async function confirmDeliveryReject(): Promise<void> {
     markDeliveryResponded(order.id);
     await refresh();
     closeDeliveryModal();
-    toast.show("Мы получили ваш отзыв.", "info");
+    toast.show(t("l_Feedback_received"), "info");
   } catch (err: unknown) {
-    toast.show(apiMessage(err, "Не удалось отправить отзыв."), "error");
+    toast.show(apiMessage(err, 'l_Failed_send_feedback'), "error");
   } finally {
     deliverySubmitting.value = false;
   }
@@ -321,7 +309,7 @@ async function confirmDeliveryReject(): Promise<void> {
   <div class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
     <header class="sticky top-0 z-30 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
       <h1 class="text-[23.1px] font-bold leading-none tracking-[-0.2px] text-heading">
-        Мои заказы
+        {{ t("l_My_orders") }}
       </h1>
     </header>
 
@@ -346,22 +334,22 @@ async function confirmDeliveryReject(): Promise<void> {
 
       <div v-else-if="error"
         class="rounded-[22px] border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
-        <p>Не удалось загрузить заказы.</p>
+        <p>{{ t("l_Failed_load_orders") }}</p>
         <button type="button" class="mt-3 rounded-xl bg-white px-4 py-2 font-semibold text-dark shadow-sm"
           @click="refresh()">
-          Повторить
+          {{ t("l_Retry") }}
         </button>
       </div>
 
       <div v-else-if="isEmpty"
         class="rounded-[22px] border border-black/6 bg-white/92 p-8 text-center shadow-[0_14px_34px_rgba(0,0,0,0.1)]">
-        <p class="text-base font-bold text-body">Здесь будут ваши заказы</p>
+        <p class="text-base font-bold text-body">{{ t("l_Orders_empty_title") }}</p>
         <p class="mt-2 text-xs font-semibold text-subtle">
-          Когда вы оформите заказ, он появится в этом списке.
+          {{ t("l_Orders_empty_hint") }}
         </p>
         <NuxtLink to="/cooks"
           class="mt-6 inline-flex h-11 items-center justify-center rounded-[18px] bg-[#FF7A00] px-6 text-sm font-bold text-white shadow-[0_10px_12px_rgba(255,122,0,0.28)]">
-          К поварам
+          {{ t("l_To_cooks") }}
         </NuxtLink>
       </div>
 
@@ -382,7 +370,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <p class="truncate text-[15.4px] font-bold leading-[18.4px] text-heading">
-                      {{ order.cook?.businessName || "Повар" }}
+                      {{ order.cook?.businessName || t("l_Cook") }}
                     </p>
                     <div v-if="filledStars(order.cook?.rating) > 0" class="flex items-center gap-0.5">
                       <Icon v-for="i in filledStars(order.cook?.rating)" :key="`star-${order.id}-${i}`"
@@ -392,14 +380,14 @@ async function confirmDeliveryReject(): Promise<void> {
                   <div class="mt-1.5 flex items-center gap-1.5 text-subtle">
                     <Icon name="material-symbols:schedule-outline-rounded" class="size-3.5 shrink-0 text-icon-muted" />
                     <span class="text-[11.1px] font-normal leading-none">
-                      {{ formatOrderDate(order.createdAt) || "Дата уточняется" }}
+                      {{ formatOrderDate(order.createdAt) || t("l_Date_pending") }}
                     </span>
                   </div>
                 </div>
               </div>
               <!-- <button type="button"
                 class="flex size-10 shrink-0 items-center justify-center rounded-[14px] border border-black/6 bg-white"
-                aria-label="Меню заказа">
+                :aria-label="t('l_Order_menu')">
                 <Icon name="material-symbols:more-horiz" class="size-[18px] text-icon-secondary" />
               </button> -->
             </div>
@@ -434,7 +422,7 @@ async function confirmDeliveryReject(): Promise<void> {
               </span>
               <span v-else-if="order.estimatedMinutes && orderStatusTone(order.status) === 'warning'"
                 class="text-[11.8px] font-bold leading-none text-subtle">
-                Осталось {{ order.estimatedMinutes }} мин
+                {{ t("l_Minutes_left", { minutes: order.estimatedMinutes }) }}
               </span>
             </div>
 
@@ -443,12 +431,12 @@ async function confirmDeliveryReject(): Promise<void> {
               class="rounded-[14px] border border-[#FF7A00]/22 bg-[#FF7A00]/6 px-3 py-2.5"
             >
               <p class="text-[11.5px] leading-relaxed text-subtle">
-                Переведите
+                {{ t("l_Transfer_to_kaspi") }}
                 <span class="font-bold text-[#FF7A00]">{{ formatPrice(order.totalAmount) }} ₸</span>
-                на Kaspi в течение 5 минут.
+                {{ t("l_Kaspi_payment_hint") }}
               </p>
               <p class="mt-1 text-[11.5px] leading-relaxed text-subtle">
-                Номер для оплаты:
+                {{ t("l_Payment_number") }}
                 <span class="font-bold text-heading">{{ kaspiPaymentNumber }}</span>
               </p>
             </div>
@@ -458,7 +446,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 <img v-if="itemPhotoSrc(showHero(order)!)" :src="itemPhotoSrc(showHero(order)!)"
                   :alt="itemName(showHero(order)!)" class="size-full object-cover" />
                 <div v-else class="flex size-full items-center justify-center text-[10px] font-semibold text-subtle">
-                  Нет фото
+                  {{ t("l_No_photo") }}
                 </div>
               </div>
 
@@ -492,18 +480,18 @@ async function confirmDeliveryReject(): Promise<void> {
                 <button type="button"
                   class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                   :disabled="deliverySubmitting" @click="openDeliveryAccept(order)">
-                  {{ deliverySubmitting && deliveryModalOrder?.id === order.id ? "Отправка…" : "Принять" }}
+                  {{ deliverySubmitting && deliveryModalOrder?.id === order.id ? t("l_Submitting") : t("l_Accept") }}
                 </button>
                 <button type="button"
                   class="h-[42px] flex-1 rounded-[16px] border border-black/12 bg-white text-[13.7px] font-bold text-[#222]"
                   @click="openDeliveryReject(order)">
-                  Отклонить
+                  {{ t("l_Reject") }}
                 </button>
               </template>
               <button v-else-if="isOrderCancellable(order.status)" type="button"
                 class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                 :disabled="isCancelling(order.id)" @click="onCancel(order)">
-                {{ isCancelling(order.id) ? "Отмена…" : "Отменить" }}
+                {{ isCancelling(order.id) ? t("l_Cancelling") : t("l_Cancel_order") }}
               </button>
               <!-- <button type="button"
                 class="h-[42px] flex-1 rounded-[16px] border border-black/12 bg-white text-[13.7px] font-bold text-[#222]"
@@ -528,7 +516,7 @@ async function confirmDeliveryReject(): Promise<void> {
             @click.stop>
             <template v-if="deliveryModal === 'accepting'">
               <p class="text-center text-sm font-semibold text-subtle">
-                Подтверждаем доставку…
+                {{ t("l_Confirming_delivery") }}
               </p>
             </template>
 
@@ -537,7 +525,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 Thank you!
               </p>
               <p class="mt-2 text-center text-sm font-semibold text-subtle">
-                Спасибо, что заказали у нас. Приятного аппетита!
+                {{ t("l_Thanks_for_order") }}
               </p>
               <button type="button"
                 class="mt-5 h-[42px] w-full rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)]"
@@ -548,17 +536,17 @@ async function confirmDeliveryReject(): Promise<void> {
 
             <template v-else-if="deliveryModal === 'reject'">
               <p class="text-lg font-bold text-heading">
-                Почему вы отклонили блюда?
+                {{ t("l_Reject_dishes_title") }}
               </p>
               <p class="mt-1 text-xs font-semibold text-subtle">
-                Расскажите, что пошло не так — это поможет нам стать лучше.
+                {{ t("l_Reject_dishes_hint") }}
               </p>
               <div class="mt-4">
                 <label for="delivery-reject-reason" class="mb-1 block text-sm font-medium text-dark">
-                  Причина
+                  {{ t("l_Reason") }}
                 </label>
                 <textarea id="delivery-reject-reason" v-model="rejectDishesReason" rows="4"
-                  placeholder="Например: блюдо пришло холодным"
+                  :placeholder="t('l_Reject_reason_placeholder')"
                   class="w-full resize-y rounded-xl border border-border bg-white px-4 py-3 text-sm text-dark placeholder:text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
                   :class="rejectDishesError ? 'border-error focus:ring-error' : ''" />
                 <p v-if="rejectDishesError" class="mt-1 text-sm text-error">
@@ -569,12 +557,12 @@ async function confirmDeliveryReject(): Promise<void> {
                 <button type="button"
                   class="h-[42px] flex-1 rounded-[16px] border border-black/12 bg-white text-[13.6px] font-bold text-[#222] disabled:opacity-60"
                   :disabled="deliverySubmitting" @click="closeDeliveryModal">
-                  Отмена
+                  {{ t("l_Cancel") }}
                 </button>
                 <button type="button"
                   class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                   :disabled="deliverySubmitting" @click="confirmDeliveryReject">
-                  {{ deliverySubmitting ? "Отправка…" : "Отправить" }}
+                  {{ deliverySubmitting ? t("l_Submitting") : t("l_Submit") }}
                 </button>
               </div>
             </template>

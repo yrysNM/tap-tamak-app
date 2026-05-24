@@ -6,9 +6,9 @@ import { dishImageSrc } from '~/utils/dishApi'
 import {
   acceptOrderByCook,
   fetchOrders,
-  orderStatusLabel,
   rejectOrderByCook,
 } from '~/utils/ordersApi'
+import { useOrderStatusLabel } from '~/composables/useOrderStatusLabel'
 
 const AWAITING = 'AWAITING_COOK_ACCEPTANCE'
 
@@ -25,6 +25,8 @@ const VISIBLE_STATUSES = new Set([
 ])
 
 const toast = usePageToast()
+const { t } = useI18n()
+const orderStatusLabel = useOrderStatusLabel()
 const { $api } = useNuxtApp()
 const config = useRuntimeConfig()
 
@@ -127,37 +129,24 @@ function statusPillClass(status: string | undefined): string {
 function statusFootnote(status: string | undefined): string | null {
   const s = normStatus(status)
   if (s === 'COOKING' || s === 'PREPARING') {
-    return 'Заказ в работе на кухне.'
+    return t('l_Order_in_kitchen')
   }
   if (s === 'CONFIRMED') {
-    return 'Заказ подтверждён, ожидает начала готовки.'
+    return t('l_Order_awaiting_prep')
   }
   if (s === 'ON_THE_WAY' || s === 'COURIER_NEARBY') {
-    return 'Заказ в пути к клиенту.'
+    return t('l_Order_in_progress_client')
   }
   if (s === 'READY') {
-    return 'Готов к передаче курьеру или клиенту.'
+    return t('l_Ready_for_courier')
   }
   if (s === 'DELIVERED' || s === 'COMPLETED') {
-    return 'Заказ доставлен.'
+    return t('l_Order_awaiting_accept')
   }
   return null
 }
 
-const MONTHS_RU = [
-  'января',
-  'февраля',
-  'марта',
-  'апреля',
-  'мая',
-  'июня',
-  'июля',
-  'августа',
-  'сентября',
-  'октября',
-  'ноября',
-  'декабря',
-] as const
+const localizedMonths = useLocalizedMonths()
 
 function formatPrice(value: number): string {
   return Math.round(value).toLocaleString('ru-RU')
@@ -167,7 +156,7 @@ function formatOrderDate(iso?: string): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  const month = MONTHS_RU[d.getMonth()] ?? ''
+  const month = localizedMonths.value[d.getMonth()] ?? ''
   const hh = d.getHours().toString().padStart(2, '0')
   const mm = d.getMinutes().toString().padStart(2, '0')
   return `${d.getDate()} ${month} • ${hh}:${mm}`
@@ -178,7 +167,7 @@ function itemPhotoSrc(item: OrderItem): string | undefined {
 }
 
 function itemName(item: OrderItem): string {
-  return item.dish?.name?.trim() || item.name?.trim() || 'Блюдо'
+  return item.dish?.name?.trim() || item.name?.trim() || t('l_Dish')
 }
 
 function itemSubtotal(item: OrderItem): number {
@@ -191,7 +180,7 @@ async function submitAccept(): Promise<void> {
   const raw = acceptMinutesStr.value.trim()
   const n = Number(raw)
   if (!Number.isFinite(n) || n < 1 || n > 24 * 60) {
-    acceptError.value = 'Укажите время от 1 до 1440 минут.'
+    acceptError.value = t('l_Accept_time_range')
     return
   }
   acceptError.value = ''
@@ -202,9 +191,9 @@ async function submitAccept(): Promise<void> {
     })
     closeModal()
     await refresh()
-    toast.show('Заказ принят.', 'success')
+    toast.show(t('l_Order_accepted'), 'success')
   } catch (err: unknown) {
-    toast.show(apiMessage(err, 'Не удалось принять заказ.'), 'error')
+    toast.show(apiMessage(err, 'l_Failed_accept_order'), 'error')
   } finally {
     submitting.value = false
   }
@@ -215,7 +204,7 @@ async function submitReject(): Promise<void> {
   if (!order) return
   const reason = rejectReason.value.trim()
   if (reason.length < 3) {
-    rejectError.value = 'Опишите причину (не менее 3 символов).'
+    rejectError.value = t('l_Reject_reason_min_length')
     return
   }
   rejectError.value = ''
@@ -224,9 +213,9 @@ async function submitReject(): Promise<void> {
     await rejectOrderByCook(api, order.id, { reason })
     closeModal()
     await refresh()
-    toast.show('Заказ отклонён.', 'info')
+    toast.show(t('l_Order_rejected'), 'info')
   } catch (err: unknown) {
-    toast.show(apiMessage(err, 'Не удалось отклонить заказ.'), 'error')
+    toast.show(apiMessage(err, 'l_Failed_reject_order'), 'error')
   } finally {
     submitting.value = false
   }
@@ -237,10 +226,10 @@ async function submitReject(): Promise<void> {
   <div class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
     <header class="sticky top-0 z-10 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
       <h1 class="text-[23.1px] font-bold leading-none -tracking-[0.2px] text-heading">
-        Заказы
+        {{ t("l_Orders") }}
       </h1>
       <p class="mt-1.5 text-xs font-semibold text-subtle">
-        Сначала новые запросы, затем остальные активные заказы
+        {{ t("l_Cook_orders_subtitle") }}
       </p>
     </header>
 
@@ -256,18 +245,18 @@ async function submitReject(): Promise<void> {
 
       <div v-else-if="error"
         class="rounded-[22px] border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
-        <p>Не удалось загрузить заказы.</p>
+        <p>{{ t("l_Failed_load_orders") }}</p>
         <button type="button" class="mt-3 rounded-xl bg-white px-4 py-2 font-semibold text-dark shadow-sm"
           @click="refresh()">
-          Повторить
+          {{ t("l_Retry") }}
         </button>
       </div>
 
       <div v-else-if="isEmpty"
         class="rounded-[22px] border border-black/6 bg-white/92 p-8 text-center shadow-[0_14px_34px_rgba(0,0,0,0.1)]">
-        <p class="text-base font-bold text-body">Нет заказов в работе</p>
+        <p class="text-base font-bold text-body">{{ t("l_No_orders_in_progress") }}</p>
         <p class="mt-2 text-xs font-semibold text-subtle">
-          Новые заявки и активные заказы появятся здесь.
+          {{ t("l_Cook_orders_empty_hint") }}
         </p>
       </div>
 
@@ -281,7 +270,7 @@ async function submitReject(): Promise<void> {
                   {{ order.orderNumber }}
                 </p>
                 <p class="mt-0.5 text-[15px] font-bold text-heading">
-                  {{ formatOrderDate(order.createdAt) || 'Дата уточняется' }}
+                  {{ formatOrderDate(order.createdAt) || t("l_Date_pending") }}
                 </p>
               </div>
               <span class="inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[11px] font-bold"
@@ -297,7 +286,7 @@ async function submitReject(): Promise<void> {
 
             <div v-if="order.estimatedMinutes != null && order.estimatedMinutes > 0 && !isAwaitingCook(order.status)"
               class="text-[12px] font-semibold text-subtle">
-              Ориентир: ~{{ order.estimatedMinutes }} мин
+              {{ t("l_Estimated_minutes", { minutes: order.estimatedMinutes }) }}
             </div>
 
             <!-- <div class="space-y-1.5 rounded-[16px] border border-black/6 bg-surface-muted/60 px-3 py-2.5 text-sm">
@@ -316,7 +305,7 @@ async function submitReject(): Promise<void> {
                   <img v-if="itemPhotoSrc(item)" :src="itemPhotoSrc(item)" :alt="itemName(item)"
                     class="size-full object-cover" />
                   <div v-else class="flex size-full items-center justify-center text-[9px] font-semibold text-subtle">
-                    Нет фото
+                    {{ t("l_No_photo") }}
                   </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -334,7 +323,7 @@ async function submitReject(): Promise<void> {
             </div>
 
             <div v-if="order.deliveryFee > 0" class="flex justify-between text-xs font-semibold text-subtle">
-              <span>Доставка</span>
+              <span>{{ t("l_Delivery") }}</span>
               <span>{{ formatPrice(order.deliveryFee) }} ₸</span>
             </div>
 
@@ -345,10 +334,10 @@ async function submitReject(): Promise<void> {
 
             <div v-if="isAwaitingCook(order.status)" class="flex gap-2.5 border-t border-black/6 pt-3">
               <UiButton class="flex-1 rounded-[16px]! py-2.5! text-sm!" variant="primary" @click="openAccept(order)">
-                Принять
+                {{ t("l_Accept") }}
               </UiButton>
               <UiButton class="flex-1 rounded-[16px]! py-2.5! text-sm!" variant="outline" @click="openReject(order)">
-                Отклонить
+                {{ t("l_Reject") }}
               </UiButton>
             </div>
           </div>
@@ -367,35 +356,35 @@ async function submitReject(): Promise<void> {
             class="w-full max-w-md rounded-[22px] border border-black/8 bg-white p-5 shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
             @click.stop>
             <template v-if="modal === 'accept'">
-              <p class="text-lg font-bold text-heading">Время готовки</p>
+              <p class="text-lg font-bold text-heading">{{ t("l_Cooking_time_modal") }}</p>
               <p class="mt-1 text-xs font-semibold text-subtle">
-                Заказ {{ modalOrder.orderNumber }} — сколько минут до готовности?
+                {{ t("l_Accept_order_minutes_prompt", { orderNumber: modalOrder.orderNumber }) }}
               </p>
               <div class="mt-4">
-                <UiInput v-model="acceptMinutesStr" type="number" label="Минуты" placeholder="Например, 45"
+                <UiInput v-model="acceptMinutesStr" type="number" :label="t('l_Minutes')" :placeholder="t('l_Minutes_example')"
                   :error="acceptError" autocomplete="off" />
               </div>
               <div class="mt-5 flex gap-2.5">
                 <UiButton variant="outline" class="flex-1 rounded-[16px]!" :disabled="submitting" @click="closeModal">
-                  Отмена
+                  {{ t("l_Cancel") }}
                 </UiButton>
                 <UiButton class="flex-1 rounded-[16px]!" :loading="submitting" @click="submitAccept">
-                  Подтвердить
+                  {{ t("l_Confirm") }}
                 </UiButton>
               </div>
             </template>
 
             <template v-else-if="modal === 'reject'">
-              <p class="text-lg font-bold text-heading">Отклонить заказ</p>
+              <p class="text-lg font-bold text-heading">{{ t("l_Reject_order") }}</p>
               <p class="mt-1 text-xs font-semibold text-subtle">
-                Заказ {{ modalOrder.orderNumber }} — укажите причину для клиента
+                {{ t("l_Reject_order_reason_prompt", { orderNumber: modalOrder.orderNumber }) }}
               </p>
               <div class="mt-4">
                 <label for="cook-reject-reason" class="mb-1 block text-sm font-medium text-dark">
-                  Причина
+                  {{ t("l_Reason") }}
                 </label>
                 <textarea id="cook-reject-reason" v-model="rejectReason" rows="4"
-                  placeholder="Например: нет нужных ингредиентов на сегодня"
+                  :placeholder="t('l_Reject_reason_example')"
                   class="w-full resize-y rounded-xl border border-border bg-white px-4 py-3 text-sm text-dark placeholder:text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
                   :class="rejectError ? 'border-error focus:ring-error' : ''" />
                 <p v-if="rejectError" class="mt-1 text-sm text-error">
@@ -404,10 +393,10 @@ async function submitReject(): Promise<void> {
               </div>
               <div class="mt-5 flex gap-2.5">
                 <UiButton variant="outline" class="flex-1 rounded-[16px]!" :disabled="submitting" @click="closeModal">
-                  Отмена
+                  {{ t("l_Cancel") }}
                 </UiButton>
                 <UiButton class="flex-1 rounded-[16px]!" variant="primary" :loading="submitting" @click="submitReject">
-                  Отклонить
+                  {{ t("l_Reject") }}
                 </UiButton>
               </div>
             </template>

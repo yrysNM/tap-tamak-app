@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 import { useDebounceFn } from "@vueuse/core";
 import type { CookDish } from "~/types";
 import { apiMessage } from "~/utils/apiMessage";
@@ -91,7 +92,7 @@ async function loadDishes() {
     );
     dishes.value = items;
   } catch (err) {
-    listError.value = apiMessage(err, "Не удалось загрузить блюда.");
+    listError.value = apiMessage(err, 'l_Failed_load_dishes');
     dishes.value = [];
   } finally {
     listLoading.value = false;
@@ -101,7 +102,7 @@ async function loadDishes() {
 async function loadMenu() {
   const key = pathMenuKey.value;
   if (!key) {
-    error.value = "Некорректная ссылка.";
+    error.value = t("l_Invalid_link");
     loading.value = false;
     return;
   }
@@ -114,14 +115,14 @@ async function loadMenu() {
     });
     const m = unwrapMenuPayload(raw);
     if (!m) {
-      error.value = "Меню не найдено.";
+      error.value = t("l_Menu_not_found");
     } else {
       menu.value = m;
       menuDateInput.value = m.date;
       selected.value = new Set(m.dishIds);
     }
   } catch (err) {
-    error.value = apiMessage(err, "Не удалось загрузить меню.");
+    error.value = apiMessage(err, 'l_Failed_load_menu');
   } finally {
     loading.value = false;
   }
@@ -139,12 +140,12 @@ async function onSave() {
   formError.value = "";
   const dishIds = [...selected.value];
   if (dishIds.length === 0) {
-    formError.value = "Выберите хотя бы одно блюдо.";
+    formError.value = t("l_Select_at_least_one_dish");
     return;
   }
   const ymd = menuDateInput.value.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
-    formError.value = "Укажите дату в формате ГГГГ-ММ-ДД.";
+    formError.value = t("l_Enter_date_yyyy_mm_dd");
     return;
   }
   const patchId = resolvedPathForApi.value;
@@ -153,11 +154,11 @@ async function onSave() {
   saving.value = true;
   try {
     await updateMenuById(api, patchId, { date: ymd, dishIds });
-    toast.show("Меню обновлено.", "success");
+    toast.show(t("l_Menu_updated"), "success");
     await loadMenu();
     await loadDishes();
   } catch (err) {
-    formError.value = apiMessage(err, "Не удалось сохранить меню.");
+    formError.value = apiMessage(err, 'l_Failed_save_changes');
   } finally {
     saving.value = false;
   }
@@ -166,14 +167,14 @@ async function onSave() {
 async function onDelete() {
   const patchId = resolvedPathForApi.value;
   if (!patchId) return;
-  if (!confirm("Удалить это меню? Действие необратимо.")) return;
+  if (!confirm(t("l_Delete_menu_confirm"))) return;
   deleting.value = true;
   try {
     await deleteMenuById(api, patchId);
-    toast.show("Меню удалено.", "success");
+    toast.show(t("l_Menu_deleted"), "success");
     await router.push({ path: "/cook/menu" });
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось удалить меню."), "error");
+    toast.show(apiMessage(err, 'l_Failed_delete_menu'), "error");
   } finally {
     deleting.value = false;
   }
@@ -202,7 +203,7 @@ watch(
         to="/cook/menu"
         class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
       >
-        ← К списку меню
+        {{ t("l_Back_to_menu_list") }}
       </NuxtLink>
 
       <div
@@ -222,14 +223,14 @@ watch(
           class="mb-4 overflow-hidden rounded-[20px] border border-border bg-white p-5 shadow-soft"
         >
           <h1 class="text-lg font-bold text-dark">
-            Редактирование меню
+            {{ t("l_Edit_menu") }}
           </h1>
           <p class="mt-1 text-sm text-muted">
             {{ formatMenuDateLabel(menu.date) }}
-            <span class="text-caption"> (UTC, было при загрузке)</span>
+            <span class="text-caption"> {{ t("l_UTC_on_load") }}</span>
           </p>
           <label class="mt-4 block">
-            <span class="text-[13px] font-medium text-dark">Дата меню (UTC)</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_Menu_date_field") }}</span>
             <input
               v-model="menuDateInput"
               type="date"
@@ -241,7 +242,7 @@ watch(
         <div class="overflow-hidden rounded-[20px] border border-border bg-white shadow-soft">
           <div class="border-b border-border px-5 py-4">
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Поиск блюд</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Search_dishes") }}</span>
               <div class="relative mt-1.5">
                 <Icon
                   name="material-symbols:search-rounded"
@@ -251,7 +252,7 @@ watch(
                   v-model="search"
                   type="search"
                   autocomplete="off"
-                  placeholder="Название или ингредиент…"
+                  :placeholder="t('l_Search_name_ingredient')"
                   class="w-full rounded-xl border border-border py-2.5 pl-10 pr-3 text-sm outline-none ring-primary focus:ring-2"
                 >
               </div>
@@ -328,9 +329,9 @@ watch(
                     {{ dish.description }}
                   </p>
                   <p class="mt-1 text-[12px] text-muted">
-                    {{ dish.cookingTime }} мин
+                    {{ t("l_Cooking_time_single", { min: dish.cookingTime }) }}
                     <template v-if="caloriesOf(dish) != null">
-                      · {{ caloriesOf(dish) }} ккал
+                      {{ t("l_Calories_kcal", { calories: caloriesOf(dish) }) }}
                     </template>
                   </p>
                 </button>
@@ -351,7 +352,7 @@ watch(
               :disabled="deleting || saving"
               @click="onDelete"
             >
-              {{ deleting ? "Удаление…" : "Удалить меню" }}
+              {{ deleting ? t("l_Deleting") : t("l_Delete_menu_btn") }}
             </button>
             <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button
@@ -360,7 +361,7 @@ watch(
                 :disabled="saving || deleting"
                 @click="router.push({ path: '/cook/menu' })"
               >
-                Отмена
+                {{ t("l_Cancel") }}
               </button>
               <button
                 type="button"
@@ -368,7 +369,7 @@ watch(
                 :disabled="saving || deleting || listLoading"
                 @click="onSave"
               >
-                {{ saving ? "Сохранение…" : "Сохранить" }}
+                {{ saving ? t("l_Saving") : t("l_Save") }}
               </button>
             </div>
           </footer>

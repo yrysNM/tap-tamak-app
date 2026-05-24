@@ -1,4 +1,5 @@
 import type { Cook, PaginatedResponse, PublicCookMenuPayload } from '~/types'
+import { appT } from '~/composables/useAppT'
 
 export type CooksListMeta = PaginatedResponse<Cook>['meta']
 
@@ -80,7 +81,7 @@ function unwrapPublicCookMenuInformation(raw: unknown): PublicCookMenuPayload | 
   return {
     cook: {
       id: cookRaw.id,
-      businessName: typeof cookRaw.businessName === 'string' ? cookRaw.businessName : 'Повар',
+      businessName: typeof cookRaw.businessName === 'string' ? cookRaw.businessName : appT('l_Cook'),
       profileImageUrl: typeof cookRaw.profileImageUrl === 'string' ? cookRaw.profileImageUrl : undefined,
       bio: typeof cookRaw.bio === 'string' || cookRaw.bio === null ? (cookRaw.bio as string | null) : null,
       rating: toNumber(cookRaw.rating),
@@ -107,7 +108,7 @@ function unwrapPublicCookMenuInformation(raw: unknown): PublicCookMenuPayload | 
 function fallbackCook(cookId: string) {
   return {
     id: cookId,
-    businessName: 'Повар',
+    businessName: appT('l_Cook'),
     profileImageUrl: undefined,
     bio: null,
     rating: 0,

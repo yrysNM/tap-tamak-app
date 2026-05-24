@@ -1,191 +1,125 @@
 <template>
-  <div
-    class="min-h-screen bg-page-cream pb-10"
-    data-name="Верификация повара"
-    data-node-id="178:759"
-  >
+  <div class="min-h-screen bg-page-cream pb-10" data-name="Верификация повара" data-node-id="178:759">
     <div class="mx-auto w-full max-w-md px-5 pt-4">
       <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1 pt-0.5 text-left">
-          <h1
-            class="text-[22px] font-bold leading-tight tracking-[-0.4px] text-heading"
-            data-node-id="178:765"
-          >
-            Верификация повара
+          <h1 class="text-[22px] font-bold leading-tight tracking-[-0.4px] text-heading" data-node-id="178:765">
+            {{ t("l_Verification_title") }}
           </h1>
-          <p
-            class="mt-1.5 text-[11px] leading-snug text-caption"
-            data-node-id="178:767"
-          >
-            Загрузите фото кухни и санитарную книжку (PDF).
+          <p class="mt-1.5 text-[11px] leading-snug text-caption" data-node-id="178:767">
+            {{ t("l_Verification_subtitle") }}
           </p>
         </div>
         <div class="size-[38px] shrink-0" aria-hidden="true" />
       </div>
 
-      <div
-        v-if="verificationLoading"
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft"
-        role="status"
-        aria-live="polite"
-      >
-        <p class="text-[13px] text-caption">Загрузка статуса…</p>
+      <div v-if="verificationLoading"
+        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft" role="status"
+        aria-live="polite">
+        <p class="text-[13px] text-caption">{{ t("l_Loading_verification") }}</p>
       </div>
 
       <!-- Нет документов: статус + кнопка редактирования -->
-      <div
-        v-else-if="showDocumentsIntro"
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
-        role="region"
-        aria-labelledby="verification-status-heading"
-      >
-        <p
-          id="verification-status-heading"
-          class="text-[15px] font-bold text-heading"
-        >
-          Статус верификации
+      <div v-else-if="showDocumentsIntro" class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
+        role="region" aria-labelledby="verification-status-heading">
+        <p id="verification-status-heading" class="text-[15px] font-bold text-heading">
+          {{ t("l_Verification_status") }}
         </p>
-        <p
-          class="mt-2 rounded-[14px] bg-primary/10 px-3 py-2 text-[12px] font-bold text-primary"
-        >
+        <p class="mt-2 rounded-[14px] bg-primary/10 px-3 py-2 text-[12px] font-bold text-primary">
           {{ statusLabel }}
         </p>
         <p class="mt-3 text-[12px] leading-relaxed text-caption">
-          Документы ещё не отправлены. Загрузите фото кухни и санитарную книжку
-          (PDF), затем нажмите «Продолжить».
+          {{ t("l_Verification_not_sent") }}
         </p>
-        <button
-          type="button"
+        <button type="button"
           class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2"
-          @click="editingDocuments = true"
-        >
-          Редактировать документы
+          @click="editingDocuments = true">
+          {{ t("l_Edit_documents") }}
         </button>
+
+
+        <div>
+          <button type="button"
+            class="mt-6 flex h-14 w-full items-center justify-center rounded-[18px] bg-primary text-[17px] font-bold text-white shadow-[0_10px_24px_rgba(244,123,32,0.28)] disabled:opacity-45"
+            @click="signOut">{{ $t('l_Log_out') }}</button>
+        </div>
       </div>
 
       <!-- Статус: на проверке -->
-      <div
-        v-else-if="status === 'UNDER_REVIEW'"
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
-        role="status"
-      >
-        <p class="text-[15px] font-bold text-heading">Заявка на проверке</p>
+      <div v-else-if="status === 'UNDER_REVIEW'"
+        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft" role="status">
+        <p class="text-[15px] font-bold text-heading">{{ t("l_Application_under_review") }}</p>
         <p class="mt-2 text-[12px] leading-relaxed text-caption">
-          Документы отправлены. Модерация проверит их и изменит статус аккаунта.
-          Обычно это занимает до нескольких рабочих дней.
+          {{ t("l_Under_review_hint") }}
         </p>
-        <p
-          class="mt-3 rounded-[14px] bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary"
-        >
-          Статус: на проверке
+        <p class="mt-3 rounded-[14px] bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary">
+          {{ t("l_Status_under_review") }}
         </p>
+
+
+        <div>
+          <button type="button"
+            class="mt-6 flex h-14 w-full items-center justify-center rounded-[18px] bg-primary text-[17px] font-bold text-white shadow-[0_10px_24px_rgba(244,123,32,0.28)] disabled:opacity-45"
+            @click="signOut">{{ $t('l_Log_out') }}</button>
+        </div>
       </div>
 
       <!-- Форма загрузки -->
       <template v-else-if="showUploadForm && !verificationLoading">
         <!-- Фото кухни -->
-        <div
-          class="mt-6 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft"
-          data-node-id="178:770"
-        >
+        <div class="mt-6 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft" data-node-id="178:770">
           <div class="flex items-center justify-between gap-2">
-            <span
-              class="text-[11.5px] font-bold tracking-[-0.2px] text-heading"
-              data-node-id="178:773"
-            >
-              Фото кухни
+            <span class="text-[11.5px] font-bold tracking-[-0.2px] text-heading" data-node-id="178:773">
+              {{ t("l_Kitchen_photos") }}
             </span>
-            <span
-              class="text-[8.8px] font-bold tracking-[-0.2px] text-caption"
-              data-node-id="178:775"
-            >
+            <span class="text-[8.8px] font-bold tracking-[-0.2px] text-caption" data-node-id="178:775">
               {{ kitchenPhotos.length }}/6
             </span>
           </div>
 
           <div
             class="mt-2.5 rounded-[18px] border border-dashed border-black/15 bg-linear-to-b from-white to-peach-wash p-3"
-            data-node-id="178:776"
-          >
+            data-node-id="178:776">
             <div class="flex gap-3">
               <div
                 class="flex size-11 shrink-0 items-center justify-center rounded-[14px] border border-primary/20 bg-primary/10"
-                data-node-id="178:777"
-              >
-                <img
-                  :src="imgCamera"
-                  alt=""
-                  class="size-5"
-                  data-node-id="178:778"
-                />
+                data-node-id="178:777">
+                <img :src="imgCamera" alt="" class="size-5" data-node-id="178:778" />
               </div>
               <div class="min-w-0 flex-1">
-                <p
-                  class="text-[12.6px] font-bold tracking-[-0.2px] text-heading"
-                  data-node-id="178:783"
-                >
-                  Загрузите 3–6 фото
+                <p class="text-[12.6px] font-bold tracking-[-0.2px] text-heading" data-node-id="178:783">
+                  {{ t("l_Upload_3_6_photos") }}
                 </p>
-                <p
-                  class="mt-1 text-[11px] leading-snug text-caption"
-                  data-node-id="178:785"
-                >
-                  Покажите рабочее место: стол, плита, чистота, хранение
-                  продуктов.
+                <p class="mt-1 text-[11px] leading-snug text-caption" data-node-id="178:785">
+                  {{ t("l_Kitchen_photos_hint") }}
                 </p>
-                <input
-                  ref="kitchenInputRef"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  class="sr-only"
-                  @change="onKitchenFiles"
-                />
-                <button
-                  type="button"
+                <input ref="kitchenInputRef" type="file" accept="image/jpeg,image/png,image/webp" multiple
+                  class="sr-only" @change="onKitchenFiles" />
+                <button type="button"
                   class="mt-2 h-[42px] rounded-[14px] bg-primary px-3.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-primary-cta"
-                  data-node-id="178:787"
-                  @click="kitchenInputRef?.click()"
-                >
-                  Загрузить фото
+                  data-node-id="178:787" @click="kitchenInputRef?.click()">
+                  {{ t("l_Upload_photos") }}
                 </button>
 
                 <div class="mt-2 grid grid-cols-3 gap-2" data-node-id="178:789">
-                  <div
-                    v-for="(slot, i) in photoSlots"
-                    :key="i"
+                  <div v-for="(slot, i) in photoSlots" :key="i"
                     class="relative flex h-[78px] w-full items-center justify-center overflow-hidden rounded-[14px] border border-black/10 bg-black/3"
-                    data-node-id="178:791"
-                  >
+                    data-node-id="178:791">
                     <template v-if="slot">
-                      <img
-                        :src="slot.previewUrl"
-                        alt=""
-                        class="size-full object-cover"
-                      />
-                      <button
-                        type="button"
+                      <img :src="slot.previewUrl" alt="" class="size-full object-cover" />
+                      <button type="button"
                         class="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/50 text-xs font-bold text-white"
-                        aria-label="Удалить фото"
-                        @click="removeKitchenPhoto(i)"
-                      >
+                        :aria-label="t('l_Delete_photo')" @click="removeKitchenPhoto(i)">
                         ×
                       </button>
                     </template>
-                    <span
-                      v-else
-                      class="text-[11.5px] font-bold text-caption"
-                      data-node-id="178:792"
-                    >
-                      Фото
+                    <span v-else class="text-[11.5px] font-bold text-caption" data-node-id="178:792">
+                      {{ t("l_Photo") }}
                     </span>
                   </div>
                 </div>
-                <p
-                  class="mt-2 text-[11px] leading-snug text-caption"
-                  data-node-id="178:799"
-                >
-                  Поддерживаются JPG/PNG. Фото можно удалить.
+                <p class="mt-2 text-[11px] leading-snug text-caption" data-node-id="178:799">
+                  {{ t("l_Photos_format_hint") }}
                 </p>
               </div>
             </div>
@@ -193,135 +127,79 @@
         </div>
 
         <!-- Сан. книжка -->
-        <div
-          class="mt-4 rounded-[20px] border border-black/10 bg-white/90 p-3.5 shadow-soft"
-          data-node-id="178:800"
-        >
+        <div class="mt-4 rounded-[20px] border border-black/10 bg-white/90 p-3.5 shadow-soft" data-node-id="178:800">
           <div class="flex items-center justify-between gap-2">
-            <span
-              class="text-xs font-bold tracking-[-0.2px] text-heading"
-              data-node-id="178:803"
-            >
-              Сан. книжка (PDF)
+            <span class="text-xs font-bold tracking-[-0.2px] text-heading" data-node-id="178:803">
+              {{ t("l_Sanitary_book_pdf") }}
             </span>
-            <span
-              class="text-[10px] font-bold tracking-[-0.2px] text-caption"
-              data-node-id="178:805"
-            >
-              {{ certificatePdf ? certificatePdf.name : "не загружено" }}
+            <span class="text-[10px] font-bold tracking-[-0.2px] text-caption" data-node-id="178:805">
+              {{ certificatePdf ? certificatePdf.name : t("l_Not_uploaded") }}
             </span>
           </div>
 
           <div
             class="mt-2.5 rounded-[18px] border border-dashed border-blue-500/25 bg-linear-to-b from-white to-sky-50 p-3"
-            data-node-id="178:806"
-          >
+            data-node-id="178:806">
             <div class="flex gap-3">
               <div
                 class="flex size-11 shrink-0 items-center justify-center rounded-[14px] border border-blue-500/20 bg-blue-500/10"
-                data-node-id="178:807"
-              >
-                <img
-                  :src="imgPdf"
-                  alt=""
-                  class="size-5"
-                  data-node-id="178:808"
-                />
+                data-node-id="178:807">
+                <img :src="imgPdf" alt="" class="size-5" data-node-id="178:808" />
               </div>
               <div class="min-w-0 flex-1">
-                <p
-                  class="text-[12.9px] font-bold tracking-[-0.2px] text-heading"
-                  data-node-id="178:812"
-                >
-                  Загрузите один файл PDF
+                <p class="text-[12.9px] font-bold tracking-[-0.2px] text-heading" data-node-id="178:812">
+                  {{ t("l_Upload_one_pdf") }}
                 </p>
-                <p
-                  class="mt-1 text-[11px] leading-snug text-caption"
-                  data-node-id="178:814"
-                >
-                  Санитарная книжка. Размер до 10MB.
+                <p class="mt-1 text-[11px] leading-snug text-caption" data-node-id="178:814">
+                  {{ t("l_Sanitary_book_size_hint") }}
                 </p>
-                <input
-                  ref="pdfInputRef"
-                  type="file"
-                  accept="application/pdf"
-                  class="sr-only"
-                  @change="onPdfFile"
-                />
+                <input ref="pdfInputRef" type="file" accept="application/pdf" class="sr-only" @change="onPdfFile" />
                 <div class="mt-2 flex flex-wrap gap-2" data-node-id="178:815">
-                  <button
-                    type="button"
+                  <button type="button"
                     class="h-[42px] rounded-[14px] bg-primary px-3.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-primary-cta"
-                    data-node-id="178:816"
-                    @click="pdfInputRef?.click()"
-                  >
-                    Загрузить PDF
+                    data-node-id="178:816" @click="pdfInputRef?.click()">
+                    {{ t("l_Upload_pdf") }}
                   </button>
-                  <button
-                    type="button"
+                  <button type="button"
                     class="h-[42px] rounded-[14px] border border-black/10 bg-white px-4 text-[12.5px] font-bold text-muted"
-                    data-node-id="178:818"
-                    :disabled="!certificatePdf"
-                    :class="!certificatePdf && 'opacity-40'"
-                    @click="clearPdf"
-                  >
-                    Удалить
+                    data-node-id="178:818" :disabled="!certificatePdf" :class="!certificatePdf && 'opacity-40'"
+                    @click="clearPdf">
+                    {{ t("l_Delete") }}
                   </button>
                 </div>
-                <p
-                  v-if="status === 'REJECTED'"
-                  class="mt-2 text-[11px] leading-snug text-error"
-                >
-                  Ранее заявка отклонена — загрузите новые документы и отправьте
-                  снова.
+                <p v-if="status === 'REJECTED'" class="mt-2 text-[11px] leading-snug text-error">
+                  {{ t("l_Rejected_resubmit_hint") }}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          class="mt-4 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft"
-        >
+        <div class="mt-4 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-bold tracking-[-0.2px] text-heading">
-              Адрес кухни на карте
+              {{ t("l_Kitchen_address_map") }}
             </span>
             <span class="text-[10px] font-bold tracking-[-0.2px] text-caption">
               {{ selectedLocationLabel }}
             </span>
           </div>
           <p class="mt-1 text-[11px] leading-snug text-caption">
-            Нажмите на карту, чтобы выбрать точку кухни (Алматы).
+            {{ t("l_Tap_map_select_kitchen") }}
           </p>
           <ClientOnly>
             <div class="h-[240px]">
-              <LMap
-                :zoom="mapZoom"
-                :center="mapCenter"
-                class="mt-3 w-full overflow-hidden rounded-[16px] border border-black/10"
-                @click="onMapClick"
-              >
-                <LTileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  layer-type="base"
-                  name="OpenStreetMap"
-                />
-                <LCircleMarker
-                  v-if="latitude !== null && longitude !== null"
-                  :lat-lng="[latitude, longitude]"
-                  :radius="9"
-                  :weight="2"
-                />
+              <LMap :zoom="mapZoom" :center="mapCenter"
+                class="mt-3 w-full overflow-hidden rounded-[16px] border border-black/10" @click="onMapClick">
+                <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" layer-type="base"
+                  name="OpenStreetMap" />
+                <LCircleMarker v-if="latitude !== null && longitude !== null" :lat-lng="[latitude, longitude]"
+                  :radius="9" :weight="2" />
               </LMap>
             </div>
           </ClientOnly>
-          <p
-            v-if="latitude !== null && longitude !== null"
-            class="mt-2 text-[11px] text-caption"
-          >
-            Широта: {{ latitude.toFixed(6) }}, Долгота:
-            {{ longitude.toFixed(6) }}
+          <p v-if="latitude !== null && longitude !== null" class="mt-2 text-[11px] text-caption">
+            {{ t("l_Latitude_longitude", { lat: latitude.toFixed(6), lng: longitude.toFixed(6) }) }}
           </p>
         </div>
 
@@ -329,48 +207,34 @@
           {{ hint }}
         </p>
 
-        <button
-          v-if="showDocumentsBack"
-          type="button"
+        <button v-if="showDocumentsBack" type="button"
           class="mt-4 w-full text-center text-[12px] font-bold text-primary underline-offset-2 hover:underline"
-          @click="editingDocuments = false"
-        >
-          Назад к статусу
+          @click="editingDocuments = false">
+          {{ t("l_Back_to_status") }}
         </button>
 
-        <button
-          type="button"
+        <button type="button"
           class="mt-6 flex h-14 w-full items-center justify-center rounded-[18px] bg-primary text-[17px] font-bold text-white shadow-[0_10px_24px_rgba(244,123,32,0.28)] disabled:opacity-45"
-          :disabled="!canContinue || submitting"
-          @click="onContinue"
-        >
-          {{ submitting ? "Отправка…" : "Продолжить" }}
+          :disabled="!canContinue || submitting" @click="onContinue">
+          {{ submitting ? t("l_Submitting") : t("l_Continue") }}
         </button>
       </template>
 
-      <div
-        v-else-if="status === 'APPROVED'"
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft"
-      >
+      <div v-else-if="status === 'APPROVED'"
+        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft">
         <p class="text-[13px] text-caption">
-          Аккаунт подтверждён. Перенаправление…
+          {{ t("l_Account_verified_redirect") }}
         </p>
       </div>
 
-      <div
-        v-else-if="fetchError"
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft"
-      >
+      <div v-else-if="fetchError"
+        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft">
         <p class="text-[13px] text-caption">{{ fetchError }}</p>
       </div>
 
-      <div
-        v-else
-        class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft"
-      >
+      <div v-else class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft">
         <p class="text-[13px] text-caption">
-          Не удалось определить статус верификации. Обновите страницу или
-          войдите снова.
+          {{ t("l_Could_not_determine_verification") }}
         </p>
       </div>
     </div>
@@ -378,6 +242,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n();
 import { LCircleMarker, LMap, LTileLayer } from "@vue-leaflet/vue-leaflet";
 import type {
   CookVerificationGetResponse,
@@ -386,9 +251,9 @@ import type {
 } from "~/types";
 
 const imgCamera =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/75513deb-b547-4868-9e9a-1ba5ca9c8bdc.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/2b693848-fc60-4beb-8e56-e9fb0758e4b6.png";
 const imgPdf =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/b792aebe-9238-484d-ab04-58e1f35a71e0.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/a91b035d-8949-4831-a91a-12290db79e7d.png";
 
 const MAX_KITCHEN = 6;
 const MIN_KITCHEN = 3;
@@ -421,12 +286,12 @@ const status = computed<VerificationStatus>(() => {
 
 const statusLabel = computed(() => {
   const m: Record<VerificationStatus, string> = {
-    PENDING: "Ожидает загрузки документов",
-    UNDER_REVIEW: "На проверке",
-    APPROVED: "Подтверждён",
-    REJECTED: "Отклонён",
+    PENDING: t("l_Verification_status_pending"),
+    UNDER_REVIEW: t("l_Verification_status_under_review"),
+    APPROVED: t("l_Verification_status_approved"),
+    REJECTED: t("l_Verification_status_rejected"),
   };
-  return m[status.value] ?? status.value;
+  return m[status.value as VerificationStatus] ?? status.value;
 });
 
 const showDocumentsIntro = computed(
@@ -461,14 +326,14 @@ const mapZoom = computed(() => MAP_DEFAULT_ZOOM);
 
 const selectedLocationLabel = computed(() => {
   if (latitude.value === null || longitude.value === null) {
-    return "не выбрано";
+    return t("l_Not_selected");
   }
   return `${latitude.value.toFixed(4)}, ${longitude.value.toFixed(4)}`;
 });
 
 function apiMessage(
   err: unknown,
-  fallback = "Не удалось выполнить запрос.",
+  fallback = t("l_Request_failed"),
 ): string {
   const e = err as {
     data?: { message?: string | string[] };
@@ -501,7 +366,7 @@ async function loadVerification(opts?: { skipLoading?: boolean }) {
   } catch (err) {
     fetchError.value = apiMessage(
       err,
-      "Не удалось загрузить статус верификации.",
+      t("l_Failed_load_verification"),
     );
     documentsFromApi.value = undefined;
   } finally {
@@ -513,6 +378,11 @@ function redirectIfApproved() {
   if (status.value === "APPROVED") {
     navigateTo("/cook/dashboard");
   }
+}
+
+async function signOut() {
+  authStore.logout();
+  await navigateTo("/login");
 }
 
 onMounted(async () => {
@@ -560,7 +430,7 @@ function onKitchenFiles(e: Event) {
   const take = incoming.slice(0, Math.max(0, room));
 
   if (incoming.length > room) {
-    hint.value = `Можно не больше ${MAX_KITCHEN} фото. Лишние файлы пропущены.`;
+    hint.value = t("l_Max_kitchen_photos_hint", { max: MAX_KITCHEN });
   }
 
   for (const file of take) {
@@ -586,11 +456,11 @@ function onPdfFile(e: Event) {
   input.value = "";
   if (!file) return;
   if (file.type !== "application/pdf") {
-    hint.value = "Нужен файл PDF.";
+    hint.value = t("l_Need_pdf_file");
     return;
   }
   if (file.size > MAX_PDF_BYTES) {
-    hint.value = "PDF больше 10MB.";
+    hint.value = t("l_Pdf_max_10mb");
     return;
   }
   certificatePdf.value = { name: file.name, file };
@@ -612,12 +482,12 @@ async function onContinue() {
   if (!canContinue.value || submitting.value) return;
   const cert = certificatePdf.value;
   if (!cert || latitude.value === null || longitude.value === null) {
-    hint.value = "Выберите точку кухни на карте.";
+    hint.value = t("l_Select_kitchen_on_map");
     return;
   }
 
   const payload: CookVerificationSubmitPayload = {
-    kitchenPhotos: kitchenPhotos.value.map((photo) => photo.file),
+    kitchenPhotos: kitchenPhotos.value.map((photo: any) => photo.file),
     certificate: cert.file,
     latitude: latitude.value,
     longitude: longitude.value,
@@ -645,7 +515,7 @@ async function onContinue() {
     certificatePdf.value = null;
     if (pdfInputRef.value) pdfInputRef.value.value = "";
   } catch (err) {
-    hint.value = apiMessage(err, "Не удалось отправить документы.");
+    hint.value = apiMessage(err, t("l_Failed_send_documents"));
   } finally {
     submitting.value = false;
   }

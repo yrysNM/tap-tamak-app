@@ -1,23 +1,23 @@
 <template>
   <section class="mx-auto mb-20 w-full max-w-md px-4 py-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-heading">Главная</h1>
+      <h1 class="text-2xl font-bold text-heading">{{ $t('l_Home') }}</h1>
       <button type="button"
         class="flex size-11 items-center justify-center rounded-2xl border border-black/10 bg-white text-primary shadow-elevated"
-        aria-label="Закладки">
+        :aria-label="$t('l_Bookmarks')">
         <Icon name="material-symbols:bookmark-rounded" class="size-5" />
       </button>
     </div>
 
     <div class="mt-3 flex items-center gap-2">
-      <UiInput v-model="search" class="flex-1 rounded-2xl p-3" placeholder="Поиск: повар, блюдо, район...">
+      <UiInput v-model="search" class="flex-1 rounded-2xl p-3" :placeholder="$t('l_Search_cooks_placeholder')">
         <template #icon>
           <Icon name="material-symbols:search-rounded" class="size-4" />
         </template>
       </UiInput>
       <button type="button"
         class="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border border-black/10 bg-white text-icon-secondary"
-        aria-label="Фильтры">
+        :aria-label="$t('l_Filters')">
         <Icon name="material-symbols:tune-rounded" class="size-5" />
       </button>
     </div>
@@ -27,8 +27,8 @@
     </p>
 
     <div class="mt-5 flex items-center justify-between">
-      <h2 class="text-[15px] font-bold text-heading">Популярные повара</h2>
-      <NuxtLink to="/cooks" class="text-[11px] font-bold text-primary">Смотреть всех</NuxtLink>
+      <h2 class="text-[15px] font-bold text-heading">{{ $t('l_Popular_cooks') }}</h2>
+      <NuxtLink to="/cooks" class="text-[11px] font-bold text-primary">{{ $t('l_See_all_cooks') }}</NuxtLink>
     </div>
 
     <div v-if="pending" class="mt-3 grid grid-cols-2 gap-3" aria-busy="true">
@@ -53,36 +53,30 @@
           </div>
           <span
             class="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/92 px-2 py-0.5 text-[10px] font-bold shadow-sm"
-            :class="chef.isAvailable ? 'text-[#6B8E23]' : 'text-muted'"
-          >
-            <span
-              class="size-1.5 shrink-0 rounded-full"
-              :class="chef.isAvailable ? 'bg-[#6B8E23]' : 'bg-black/25'"
-              aria-hidden="true"
-            />
-            {{ chef.isAvailable ? "Онлайн" : "Оффлайн" }}
+            :class="chef.isAvailable ? 'text-[#6B8E23]' : 'text-muted'">
+            <span class="size-1.5 shrink-0 rounded-full" :class="chef.isAvailable ? 'bg-[#6B8E23]' : 'bg-black/25'"
+              aria-hidden="true" />
+            {{ chef.isAvailable ? $t('l_Online') : $t('l_Offline') }}
           </span>
         </div>
 
         <div class="p-2.5">
           <p class="text-[13px] font-bold text-dark">{{ chef.name }}</p>
-          <p class="mt-0.5 text-[11px] font-semibold text-subtle">
-            {{ chef.meta }}
-          </p>
-          <p class="mt-0.5 text-[11px] font-semibold text-subtle">
-            {{ chef.tags }}
-          </p>
+          <!-- <p class="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-subtle">
+            <Icon name="material-symbols:restaurant-outline" class="size-3.5 shrink-0" aria-hidden="true" />
+            {{ $t('l_Cook_dishes_count', { count: chef.countDishes }) }}
+          </p> -->
           <div class="mt-2 flex gap-1.5">
-            <button type="button" class="rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-white"
+            <!-- <button type="button" class="rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-white"
               @click.stop="
                 navigateTo(`/cooks/${encodeURIComponent(chef.id)}/menu`)
                 ">
-              Блюда
-            </button>
+              {{ $t('l_Dishes') }}
+            </button> -->
             <button type="button"
               class="rounded-full border border-black/10 bg-white px-3 py-1 text-[10px] font-bold text-icon-secondary"
               @click.stop="navigateTo(`/cooks/${chef.id}/menu`)">
-              Профиль
+              {{ $t('l_Cook_profile_btn') }}
             </button>
           </div>
         </div>
@@ -96,6 +90,7 @@ import type { Cook } from "~/types";
 import { fetchCooksPage } from "~/utils/cookApi";
 import { dishImageSrc } from "~/utils/dishApi";
 
+const { t } = useI18n();
 const search = ref("");
 
 const { $api } = useNuxtApp();
@@ -124,7 +119,7 @@ const {
 );
 
 const listError = computed(() =>
-  error.value ? "Не удалось загрузить данные. Попробуйте позже." : "",
+  error.value ? t("l_Failed_load_data") : "",
 );
 
 function specialtiesLine(s: string[] | undefined): string {
@@ -142,9 +137,9 @@ function businessInitials(name: string | undefined): string {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (!words.length) return "П";
+  if (!words.length) return t("l_Initial_fallback");
   const initials = words.slice(0, 2).map((word) => word[0] ?? "").join("");
-  return (initials || words[0][0] || "П").toUpperCase();
+  return (initials || words[0][0] || t("l_Initial_fallback")).toUpperCase();
 }
 
 const cookCards = computed(() => {
@@ -159,6 +154,10 @@ const cookCards = computed(() => {
     isAvailable: c.isAvailable !== false,
     meta: specialtiesLine(c.specialties),
     tags: specialtiesTags(c.specialties),
+    countDishes:
+      typeof c.countDishes === "number" && Number.isFinite(c.countDishes)
+        ? Math.max(0, Math.trunc(c.countDishes))
+        : 0,
   }));
 });
 

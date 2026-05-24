@@ -55,7 +55,7 @@
           class="absolute left-0 z-40 w-full overflow-hidden rounded-xl border border-border bg-white py-1 shadow-floating ring-1 ring-black/5"
           :class="direction === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'"
           role="listbox"
-          :aria-label="label || 'Выбор'"
+          :aria-label="label || $t('l_Choice')"
         >
           <button
             v-for="opt in options"
@@ -120,10 +120,12 @@ const rootRef = ref<HTMLElement | null>(null);
 const open = ref(false);
 const direction = ref<"top" | "bottom">("bottom");
 
+const { t } = useI18n();
+
 const selectedLabel = computed(() => {
   return (
     props.options.find((o) => o.value === props.modelValue)?.label ??
-    "Выберите…"
+    t("l_Select_placeholder")
   );
 });
 

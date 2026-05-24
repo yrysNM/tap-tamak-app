@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 definePageMeta({
   hideBottomNav: true,
 });
@@ -37,7 +38,7 @@ const {
 } = useAsyncData(
   () => `public-cook-menu:${cookId.value}:${todayYmd}`,
   async () => {
-    if (!cookId.value) throw new Error("Некорректный идентификатор повара.");
+    if (!cookId.value) throw new Error(t("l_Invalid_cook_id"));
     return await fetchPublicCookMenuInformation(api, cookId.value, todayYmd);
   },
   { watch: [cookId] },
@@ -75,12 +76,12 @@ const cookInitials = computed(() => {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  if (!words.length) return "П";
+  if (!words.length) return t("l_Initial_fallback");
   const initials = words
     .slice(0, 2)
     .map((word) => word[0] ?? "")
     .join("");
-  return (initials || words[0]?.[0] || "П").toUpperCase();
+  return (initials || words[0]?.[0] || t("l_Initial_fallback")).toUpperCase();
 });
 
 const cookingWindow = computed(() => {
@@ -90,7 +91,7 @@ const cookingWindow = computed(() => {
   if (!mins.length) return "—";
   const min = Math.min(...mins);
   const max = Math.max(...mins);
-  return min === max ? `${min} мин` : `${min}-${max} мин`;
+  return min === max ? t("l_Cooking_time_single", { min }) : t("l_Cooking_time_range", { min, max });
 });
 
 const cookTotals = computed(() => cartStore.totalsForCook(cookId.value));
@@ -142,7 +143,7 @@ async function checkoutThisCook(): Promise<void> {
 
   if (!items.length) {
     toast.show(
-      "В корзине нет позиций для этого повара. Добавьте блюда.",
+      t("l_No_cart_items_for_cook"),
       "error",
     );
     return;
@@ -157,7 +158,7 @@ async function checkoutThisCook(): Promise<void> {
     await navigateTo("/basket");
   } catch (err: unknown) {
     toast.show(
-      apiMessage(err, "Не удалось отправить заказ в корзину. Попробуйте ещё раз."),
+      apiMessage(err, 'l_Failed_add_to_cart'),
       "error",
     );
   } finally {
@@ -176,7 +177,7 @@ const checkoutDisabled = computed(
     <div class="mb-5 flex items-center">
       <button type="button"
         class="flex size-11 items-center justify-center rounded-2xl border border-black/10 bg-white text-dark shadow-sm"
-        aria-label="Назад" @click="router.push('/')">
+:aria-label="t('l_Back')" @click="router.push('/')">
         <Icon name="material-symbols:chevron-left-rounded" class="size-6" />
       </button>
     </div>
@@ -193,9 +194,9 @@ const checkoutDisabled = computed(
     </div>
 
     <div v-else-if="error" class="rounded-[22px] border border-red-200 bg-red-50/80 p-4 text-sm text-red-700">
-      <p>Не удалось загрузить меню повара.</p>
+      <p>{{ t("l_Failed_load_cook_menu") }}</p>
       <button type="button" class="mt-3 rounded-xl bg-white px-4 py-2 font-semibold text-dark" @click="refresh()">
-        Повторить
+        {{ t("l_Retry") }}
       </button>
     </div>
 
@@ -214,7 +215,7 @@ const checkoutDisabled = computed(
             </p>
             <span class="size-1.5 rounded-full bg-black/25" />
             <p class="text-xs font-bold" :class="cook.isAvailable ? 'text-[#6B8E23]' : 'text-muted'">
-              {{ cook.isAvailable ? "Онлайн" : "Оффлайн" }}
+              {{ cook.isAvailable ? t("l_Online") : t("l_Offline") }}
             </p>
           </div>
           <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-dark">
@@ -233,40 +234,40 @@ const checkoutDisabled = computed(
     </div>
 
     <h2 class="mt-7 text-[28px] font-bold text-dark">
-      Как {{ cook?.businessName || "повар" }} готовит?
+      {{ t("l_How_cook_prepares", { name: cook?.businessName || t("l_Cook_name_fallback") }) }}
     </h2>
     <div class="mt-3 rounded-[22px] border border-black/6 bg-white/90 p-4 shadow-elevated">
       <div class="space-y-3">
         <div class="rounded-2xl border border-black/10 bg-black/2 p-3">
           <p class="text-sm font-bold text-dark">
-            Свежие продукты - только под заказ
+            {{ t("l_Fresh_products") }}
           </p>
           <p class="mt-1 text-xs font-semibold leading-5 text-[#6B6B6B]">
-            Готовка начинается только после подтверждения заказа.
-          </p>
-        </div>
-        <div class="rounded-2xl border border-black/10 bg-black/2 p-3">
-          <p class="text-sm font-bold text-dark">Тайминг: готовка + доставка</p>
-          <p class="mt-1 text-xs font-semibold leading-5 text-[#6B6B6B]">
-            В карточке блюда указан срок готовки; доставка считается отдельно.
+            {{ t("l_Cook_after_confirm") }}
           </p>
         </div>
         <div class="rounded-2xl border border-black/10 bg-black/2 p-3">
-          <p class="text-sm font-bold text-dark">Упаковка как в кафе</p>
+          <p class="text-sm font-bold text-dark">{{ t("l_Timing_cook_delivery") }}</p>
           <p class="mt-1 text-xs font-semibold leading-5 text-[#6B6B6B]">
-            Плотные контейнеры и соусы отдельно для аккуратной доставки.
+            {{ t("l_Timing_hint") }}
+          </p>
+        </div>
+        <div class="rounded-2xl border border-black/10 bg-black/2 p-3">
+          <p class="text-sm font-bold text-dark">{{ t("l_Packaging_cafe") }}</p>
+          <p class="mt-1 text-xs font-semibold leading-5 text-[#6B6B6B]">
+            {{ t("l_Packaging_containers_hint") }}
           </p>
         </div>
       </div>
     </div>
 
-    <h2 class="mt-7 text-[28px] font-bold text-dark">Меню</h2>
-    <p class="mt-1 text-xs font-semibold text-muted">Дата: {{ todayYmd }}</p>
+    <h2 class="mt-7 text-[28px] font-bold text-dark">{{ t("l_Menu") }}</h2>
+    <p class="mt-1 text-xs font-semibold text-muted">{{ t("l_Menu_date_label") }} {{ todayYmd }}</p>
 
     <div v-if="!dishes.length"
       class="mt-4 rounded-2xl border border-dashed border-black/15 bg-white/90 p-6 text-center">
-      <p class="text-sm font-semibold text-dark">На сегодня блюд нет</p>
-      <p class="mt-1 text-xs text-muted">Попробуйте открыть меню позже.</p>
+      <p class="text-sm font-semibold text-dark">{{ t("l_No_dishes_today") }}</p>
+      <p class="mt-1 text-xs text-muted">{{ t("l_Try_menu_later") }}</p>
     </div>
 
     <div v-else class="mt-3 grid grid-cols-2 gap-3">
@@ -275,7 +276,7 @@ const checkoutDisabled = computed(
         <div class="relative h-28 bg-surface-muted">
           <img v-if="dishImage(dish)" :src="dishImage(dish)" :alt="dish.name" class="size-full object-cover" />
           <div class="absolute right-2 top-2 rounded-full bg-[#ff7a008f] px-2.5 py-1 text-[10px] font-bold text-dark">
-            ⏱ {{ dish.cookingTime }} мин
+            ⏱ {{ t("l_Cooking_time_single", { min: dish.cookingTime }) }}
           </div>
         </div>
         <div class="p-2.5">
@@ -283,7 +284,7 @@ const checkoutDisabled = computed(
             {{ dish.name }}
           </p>
           <p class="mt-1 line-clamp-2 text-[10px] font-semibold text-[#6B6B6B]">
-            {{ dish.description || "Домашнее блюдо" }}
+            {{ dish.description || t("l_Homemade_dish") }}
           </p>
           <div class="mt-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -312,10 +313,10 @@ const checkoutDisabled = computed(
             <p v-if="atMaxPortions(dish) && hasFinitePortionCap(dish)"
               class="mt-1 text-right text-[10px] font-semibold leading-tight text-muted">
               <template v-if="maxPortionsFor(dish) === 0">
-                Нет порций (0 шт)
+                {{ t("l_No_portions_zero") }}
               </template>
               <template v-else>
-                Максимум {{ maxPortionsFor(dish) }} шт
+                {{ t("l_Max_portions", { count: maxPortionsFor(dish) }) }}
               </template>
             </p>
           </div>
@@ -329,10 +330,10 @@ const checkoutDisabled = computed(
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="text-[13px] font-bold text-dark">
-            Корзина: {{ totalItems }} шт
+            {{ t("l_Cart_summary", { count: totalItems }) }}
           </p>
           <p class="text-xs font-semibold text-[#6B6B6B]">
-            Итого: {{ formatPrice(totalAmount) }}
+            {{ t("l_Total_amount", { amount: formatPrice(totalAmount) }) }}
           </p>
         </div>
         <button type="button"
@@ -342,7 +343,7 @@ const checkoutDisabled = computed(
             : 'bg-[#FF7A00]'
             " :disabled="checkoutDisabled" :aria-busy="checkoutSubmitting" :aria-disabled="checkoutDisabled"
           @click="checkoutThisCook">
-          {{ checkoutSubmitting ? "Отправка…" : "Оформить" }}
+          {{ checkoutSubmitting ? t("l_Submitting") : t("l_Checkout_btn") }}
         </button>
       </div>
     </div>

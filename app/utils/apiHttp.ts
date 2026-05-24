@@ -10,6 +10,17 @@ const AUTH_PATHS_SKIP_401_REFRESH = [
   '/auth/refresh',
 ] as const
 
+const HTTP_ERROR_KEYS: Record<number, string> = {
+  400: 'l_Bad_request',
+  401: 'l_Unauthorized',
+  403: 'l_Forbidden',
+  404: 'l_Not_found',
+  408: 'l_Timeout',
+  409: 'l_Conflict',
+  422: 'l_Unprocessable',
+  429: 'l_Too_many_requests',
+}
+
 export function pathFromNitroRequest(request: NitroFetchRequest): string {
   if (typeof request === 'string') {
     const base = request.split('?')[0] ?? request
@@ -49,16 +60,10 @@ export function getFetchErrorStatus(err: unknown): number | undefined {
 }
 
 export function defaultHttpErrorMessage(status: number): string {
-  if (status === 400) return 'Некорректный запрос.'
-  if (status === 401) return 'Требуется вход в систему или неверные учётные данные.'
-  if (status === 403) return 'Недостаточно прав для этого действия.'
-  if (status === 404) return 'Ресурс не найден.'
-  if (status === 408) return 'Превышено время ожидания ответа сервера.'
-  if (status === 409) return 'Конфликт данных. Обновите страницу и попробуйте снова.'
-  if (status === 422) return 'Не удалось обработать отправленные данные.'
-  if (status === 429) return 'Слишком много запросов. Попробуйте позже.'
-  if (status >= 500 && status < 600) return 'Ошибка сервера. Попробуйте позже.'
-  return 'Не удалось выполнить запрос.'
+  const key = HTTP_ERROR_KEYS[status]
+  if (key) return appT(key)
+  if (status >= 500 && status < 600) return appT('l_Server_error')
+  return appT('l_Request_failed')
 }
 
 export function normalizeApiError(err: unknown): ApiClientError {
@@ -66,7 +71,7 @@ export function normalizeApiError(err: unknown): ApiClientError {
   const statusCode = getFetchErrorStatus(err) ?? 0
   const data = (err as { data?: unknown }).data
   const fallback =
-    statusCode > 0 ? defaultHttpErrorMessage(statusCode) : 'Не удалось выполнить запрос.'
-  const message = apiMessage(err, fallback)
+    statusCode > 0 ? defaultHttpErrorMessage(statusCode) : appT('l_Request_failed')
+  const message = apiMessage(err, 'l_Request_failed')
   return new ApiClientError(message, statusCode, data)
 }

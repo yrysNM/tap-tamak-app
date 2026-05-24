@@ -2,45 +2,47 @@
   <section class="px-4 py-8">
     <div class="mx-auto w-full max-w-md">
       <p class="text-center text-xs font-semibold text-primary">
-        Добро пожаловать в TapTamak
+        {{ $t('l_Welcome_to_TapTamaq') }}
       </p>
 
-      <h1 class="mt-3 text-center text-2xl font-bold text-dark">Вход</h1>
+      <h1 class="mt-3 text-center text-2xl font-bold text-dark">{{ $t('l_Login_title') }}</h1>
 
-      <p class="mt-2 text-center text-sm text-muted">
-        Введите номер телефона и пароль, чтобы войти в аккаунт.
+      <p class="mt-2 text-center text-sm font-semibold text-muted">
+        {{ $t('l_Login_hint') }}
       </p>
 
-      <div class="mt-7 space-y-4">
-        <UiInput type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" phone-mask autocomplete="tel" v-model="phone" />
+      <div class="mt-7 rounded-3xl border border-black/5 bg-white/90 p-4 shadow-card">
+        <UiInput type="tel" :label="$t('l_Phone')" :placeholder="$t('l_Phone_mask_placeholder')" phone-mask
+          autocomplete="tel" v-model="phone" />
+        <div class="h-3" />
+        <UiInput :label="$t('l_Password')" type="password" :placeholder="$t('l_Password_placeholder')"
+          v-model="password" />
 
-        <UiInput label="Пароль" type="password" placeholder="Введите пароль" v-model="password" />
+        <p v-if="error" class="mt-3 text-center text-xs text-red-500">
+          {{ error }}
+        </p>
+
+        <UiButton variant="primary" size="md" fullWidth :disabled="loading"
+          class="mt-5 rounded-[20px] text-[15px] font-bold shadow-[0_16px_32px_rgba(244,123,32,0.22)]"
+          @click="onSubmit">
+          {{ loading ? $t('l_Loading') : $t('l_Sign_in') }}
+        </UiButton>
+
+        <p class="mt-5 text-center text-xs font-semibold">
+          {{ $t('l_No_account') }}
+          <button type="button" class="font-bold text-primary" @click="navigateTo('/role')">
+            {{ $t('l_Register_link') }}
+          </button>
+        </p>
       </div>
-
-      <p v-if="error" class="mt-3 text-center text-xs text-red-500">
-        {{ error }}
-      </p>
-
-      <UiButton variant="primary" size="md" fullWidth :disabled="loading"
-        class="mt-6 rounded-[20px] text-[15px] font-bold shadow-[0_16px_32px_rgba(244,123,32,0.22)]" @click="onSubmit">
-        {{ loading ? "Загрузка..." : "Войти" }}
-      </UiButton>
-
-      <p class="mt-3 text-center text-xs text-muted">
-        Нет аккаунта?
-        <button type="button" class="font-semibold text-primary" @click="navigateTo('/role')">
-          Зарегистрироваться
-        </button>
-      </p>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ redirectTo?: string }>();
-
 const auth = useAuthStore();
 const { normalizePhone } = useNormalizationPhone();
+const { t } = useI18n();
 
 const phone = ref("");
 const password = ref("");
@@ -56,21 +58,9 @@ async function onSubmit() {
       phone: normalizePhone(phone.value).e164,
       password: password.value,
     });
-    let next: string
-    if (auth.isCook) {
-      const r = props.redirectTo
-      next =
-        r?.startsWith("/cook") && r.length > "/cook".length
-          ? r
-          : getCookHomePath(auth.user, auth.verificationStatus)
-    } else {
-      const r = props.redirectTo
-      next =
-        r && !r.startsWith("/cook") ? r : "/"
-    }
-    await navigateTo(next);
+    await navigateTo("/");
   } catch (e: any) {
-    error.value = e?.data?.message ?? "Неверный телефон или пароль";
+    error.value = e?.data?.message ?? t("l_Invalid_phone_or_password");
   } finally {
     loading.value = false;
   }

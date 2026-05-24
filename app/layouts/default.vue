@@ -3,24 +3,9 @@
     <header
       class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 py-3">
       <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
-        <!-- <span class="block size-8 shrink-0 overflow-hidden" aria-hidden>
-          <img src="/logo.png" alt="" class="h-10 w-10 max-w-none object-cover object-left" />
-        </span> -->
-        <span>TapTamak</span>
+        <span>TapTamaq</span>
       </NuxtLink>
-      <div class="flex items-center gap-3">
-        <!-- <NuxtLink
-          to="/"
-          class="rounded-full p-2 text-dark transition-colors hover:bg-white/80"
-          aria-label="Search"
-        >
-          <Icon name="material-symbols:search" class="size-6" />
-        </NuxtLink> -->
-        <!-- <NuxtLink to="/favorites" class="rounded-full p-2 text-dark transition-colors hover:bg-white/80"
-          aria-label="Favorites">
-          <Icon name="material-symbols:bookmark-outline" class="size-6" />
-        </NuxtLink> -->
-      </div>
+      <div class="flex items-center gap-3" />
     </header>
 
     <main class="min-h-0 flex-1 overflow-auto pb-10" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
@@ -32,31 +17,25 @@
       <NuxtLink to="/" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
         <Icon name="material-symbols:home-outline" class="size-6" />
-        <span class="text-xs">Главная</span>
+        <span class="text-xs">{{ $t('l_Home') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/orders" class="relative flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
         <Icon name="material-symbols:receipt-long-outline" class="size-6" />
-        <span class="text-xs">Заказы</span>
-        <!-- <span
-          v-if="cartCount > 0"
-          class="absolute -right-1 -top-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white"
-        >
-          {{ cartCount > 99 ? "99+" : cartCount }}
-        </span> -->
+        <span class="text-xs">{{ $t('l_Orders') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/cooks" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
         <Icon name="material-symbols:map-outline" class="size-6" />
-        <span class="text-xs">Карта</span>
+        <span class="text-xs">{{ $t('l_Map') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/profile" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
         <Icon name="material-symbols:person-outline" class="size-6" />
-        <span class="text-xs">Профиль</span>
+        <span class="text-xs">{{ $t('l_Profile') }}</span>
       </NuxtLink>
     </nav>
   </div>

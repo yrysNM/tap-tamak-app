@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 import { DatePicker } from 'v-calendar'
 import { ymdFromLocalDate } from '~/composables/useUtcMenuDates'
 
@@ -65,7 +66,7 @@ onBeforeUnmount(() => {
 })
 
 const label = computed(() => {
-  if (!props.from || !props.to) return 'Выберите период'
+  if (!props.from || !props.to) return t('l_Select_period')
   return `${props.from} → ${props.to}`
 })
 </script>
@@ -109,7 +110,7 @@ const label = computed(() => {
             class="menu-range-picker"
           />
           <template #fallback>
-            <div class="p-6 text-center text-sm text-caption">Загрузка календаря…</div>
+            <div class="p-6 text-center text-sm text-caption">{{ t("l_Loading_calendar") }}</div>
           </template>
         </ClientOnly>
         <div class="flex justify-end border-t border-border bg-peach-wash/40 px-3 py-2">
@@ -118,7 +119,7 @@ const label = computed(() => {
             class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-primary-cta transition hover:bg-primary-hover"
             @click="panelOpen = false"
           >
-            Готово
+            {{ t("l_Done") }}
           </button>
         </div>
       </div>

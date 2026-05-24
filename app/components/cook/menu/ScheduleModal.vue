@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 import type { CookSchedulePatchPayload } from "~/types";
 import {
   buildSchedulePatchPayload,
@@ -52,11 +53,11 @@ onBeforeUnmount(() => {
 function submit() {
   formError.value = "";
   if (!dateYmd.value || !startHm.value || !endHm.value) {
-    formError.value = "Заполните дату и оба времени.";
+    formError.value = t("l_Fill_date_and_times");
     return;
   }
   if (endHm.value <= startHm.value) {
-    formError.value = "Время окончания должно быть позже времени начала.";
+    formError.value = t("l_End_after_start");
     return;
   }
   emit("submit", buildSchedulePatchPayload(dateYmd.value, startHm.value, endHm.value));
@@ -80,15 +81,15 @@ function submit() {
           <div class="flex items-start justify-between gap-3">
             <div>
               <h2 id="schedule-modal-title" class="text-lg font-bold text-dark">
-                Расписание работы
+                {{ t("l_Work_schedule_modal") }}
               </h2>
-              <p class="mt-1 text-[13px] text-caption">Время сохраняется в UTC.</p>
+              <p class="mt-1 text-[13px] text-caption">{{ t("l_Schedule_utc_hint") }}</p>
             </div>
             <button
               type="button"
               class="flex size-10 items-center justify-center rounded-xl text-caption transition hover:bg-surface-muted hover:text-dark"
               :disabled="saving"
-              aria-label="Закрыть"
+              :aria-label="t('l_Close')"
               @click="close"
             >
               <Icon name="material-symbols:close-rounded" class="size-6" />
@@ -98,7 +99,7 @@ function submit() {
 
         <div class="space-y-4 px-5 py-4">
           <label class="block">
-            <span class="text-[13px] font-medium text-dark">Дата (UTC)</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_Date_utc") }}</span>
             <input
               v-model="dateYmd"
               type="date"
@@ -108,7 +109,7 @@ function submit() {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Начало</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_Start") }}</span>
               <input
                 v-model="startHm"
                 type="time"
@@ -116,7 +117,7 @@ function submit() {
               />
             </label>
             <label class="block">
-              <span class="text-[13px] font-medium text-dark">Окончание</span>
+              <span class="text-[13px] font-medium text-dark">{{ t("l_End") }}</span>
               <input
                 v-model="endHm"
                 type="time"
@@ -138,7 +139,7 @@ function submit() {
               :disabled="saving"
               @click="close"
             >
-              Отмена
+              {{ t("l_Cancel") }}
             </button>
             <button
               type="button"
@@ -146,7 +147,7 @@ function submit() {
               :disabled="saving"
               @click="submit"
             >
-              {{ saving ? "Сохранение…" : "Сохранить" }}
+              {{ saving ? t("l_Saving") : t("l_Save") }}
             </button>
           </div>
         </footer>

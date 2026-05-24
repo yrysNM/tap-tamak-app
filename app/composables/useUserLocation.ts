@@ -14,6 +14,7 @@ const DEFAULT_ALMATY_CENTER: UserLocationState = {
 }
 
 export function useUserLocation() {
+  const { t } = useI18n()
   const coords = ref<UserLocationState>({ ...DEFAULT_ALMATY_CENTER })
   const permission = ref<UserLocationPermission>('prompt')
   const loading = ref(false)
@@ -66,7 +67,7 @@ export function useUserLocation() {
 
       if (permission.value !== 'granted') {
         hasExactLocation.value = false
-        error.value = 'Геопозиция недоступна. Используем центр Алматы.'
+        error.value = t('l_Geo_unavailable_almaty')
         return
       }
 
@@ -76,7 +77,7 @@ export function useUserLocation() {
     }
     catch {
       hasExactLocation.value = false
-      error.value = 'Не удалось получить точные координаты. Используем центр Алматы.'
+      error.value = t('l_Geo_failed_almaty')
     }
     finally {
       loading.value = false

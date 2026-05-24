@@ -3,7 +3,7 @@
     <!-- Sticky header -->
     <header class="sticky top-0 z-20 border-b border-black/6 bg-page-cream/92 px-4 pb-2.5 pt-3.5 backdrop-blur-[5px]">
       <div class="mx-auto flex max-w-[390px] items-center gap-4">
-        <h1 class="text-2xl font-bold leading-tight text-heading">Профиль</h1>
+        <h1 class="text-2xl font-bold leading-tight text-heading">{{ $t("l_Profile") }}</h1>
       </div>
     </header>
 
@@ -32,14 +32,14 @@
           </button> -->
         </div>
         <p class="mt-2 text-[11px] leading-relaxed text-subtle">
-          Здесь можно управлять адресами и языком интерфейса.
+          {{ $t("l_Profile_settings_hint") }}
         </p>
       </section>
 
       <!-- Настройки: адреса + язык only -->
       <section class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
         data-name="Настройки">
-        <h2 class="mb-1.5 text-[15px] font-bold text-section">Настройки</h2>
+        <h2 class="mb-1.5 text-[15px] font-bold text-section">{{ $t("l_Profile_settings") }}</h2>
 
         <NuxtLink to="#" class="flex items-center gap-3 border-b border-black/8 py-3 first:pt-0" @click.prevent>
           <div
@@ -47,8 +47,8 @@
             <i class="fi fi-rr-marker text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[14.5px] font-bold text-body">Адреса доставки</p>
-            <p class="mt-1 text-[11.3px] text-subtle">Дом, школа, другое…</p>
+            <p class="text-[14.5px] font-bold text-body">{{ $t("l_Delivery_addresses") }}</p>
+            <p class="mt-1 text-[11.3px] text-subtle">{{ $t("l_Delivery_addresses_hint") }}</p>
           </div>
           <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
         </NuxtLink>
@@ -59,12 +59,13 @@
             <i class="fi fi-rr-world text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[14.5px] font-bold text-body">Язык</p>
-            <p class="mt-1 text-[11.1px] text-subtle">Русский</p>
+            <p class="text-[14.5px] font-bold text-body">{{ t("l_Language") }}</p>
+            <p class="mt-1 text-[11.1px] text-subtle">{{ currentLocaleName }}</p>
           </div>
           <button type="button"
-            class="shrink-0 rounded-xl border border-soft-border bg-white px-[11px] py-2 text-[12.7px] font-bold text-body">
-            Сменить
+            class="shrink-0 rounded-xl border border-soft-border bg-white px-[11px] py-2 text-[12.7px] font-bold text-body"
+            @click="languagePickerOpen = true">
+            {{ t("l_Switch") }}
           </button>
         </div>
       </section>
@@ -102,7 +103,7 @@
       <!-- Помощь + выход внизу блока -->
       <section class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
         data-name="Помощь">
-        <h2 class="mb-1.5 text-[15px] font-bold text-section">Помощь</h2>
+        <h2 class="mb-1.5 text-[15px] font-bold text-section">{{ $t("l_Help") }}</h2>
 
         <NuxtLink to="#" class="flex items-center gap-3 border-b border-black/8 pb-3 pt-0" @click.prevent>
           <div
@@ -110,8 +111,8 @@
             <i class="fi fi-rr-headset text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[13.8px] font-bold text-body">Поддержка</p>
-            <p class="mt-1 text-[11.1px] text-subtle">Чат, вопросы, помощь</p>
+            <p class="text-[13.8px] font-bold text-body">{{ $t("l_Support") }}</p>
+            <p class="mt-1 text-[11.1px] text-subtle">{{ $t("l_Support_hint") }}</p>
           </div>
           <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
         </NuxtLink>
@@ -124,17 +125,19 @@
             <Icon name="material-symbols:logout-rounded" class="text-[15px] text-danger-foreground" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[15px] font-bold text-danger-foreground">Выйти</p>
-            <p class="mt-1 text-[11.3px] text-subtle">Завершить сеанс</p>
+            <p class="text-[15px] font-bold text-danger-foreground">{{ $t("l_Log_out") }}</p>
+            <p class="mt-1 text-[11.3px] text-subtle">{{ $t("l_End_session") }}</p>
           </div>
           <button type="button"
             class="shrink-0 rounded-xl border border-danger-foreground/25 bg-danger-foreground/10 px-[11px] py-2 text-[13px] font-bold text-danger-foreground"
             @click="onLogout">
-            Выйти
+            {{ t("l_Log_out") }}
           </button>
         </div>
       </section>
     </main>
+
+    <UiLanguagePickerModal v-model="languagePickerOpen" />
   </div>
 </template>
 
@@ -143,14 +146,18 @@ definePageMeta({
   layout: "default",
 });
 
+const { t } = useI18n();
+const { currentLocaleName } = useLocaleDisplayName();
+
 const router = useRouter();
 const auth = useAuthStore();
+const languagePickerOpen = ref(false);
 
 const user = computed(() => auth.user);
 
 const displayName = computed(() => {
   const u = user.value;
-  if (!u) return "Гость";
+  if (!u) return t("l_Guest");
   const last = u.lastName ? ` ${u.lastName.charAt(0)}.` : "";
   return `${u.firstName}${last}`.trim() || u.phone;
 });

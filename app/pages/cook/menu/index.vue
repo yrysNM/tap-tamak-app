@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 import { useDebounceFn } from "@vueuse/core";
 import type { CookDish } from "~/types";
 import { apiMessage } from "~/utils/apiMessage";
@@ -170,7 +171,7 @@ async function loadHistory(append: boolean) {
       historyItems.value = items;
     }
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось загрузить историю меню."), "error");
+    toast.show(apiMessage(err, 'l_Failed_load_menu_history'), "error");
     if (!append) historyItems.value = [];
     historyMeta.value = null;
   } finally {
@@ -201,7 +202,7 @@ async function loadTodayMenu() {
     } else {
       todayError.value = apiMessage(
         err,
-        "Не удалось проверить меню на сегодня.",
+        t("l_Failed_check_menu_today"),
       );
       todayMenu.value = null;
     }
@@ -232,7 +233,7 @@ async function loadDishes() {
     dishes.value = items;
     dishListMeta.value = meta;
   } catch (err) {
-    listError.value = apiMessage(err, "Не удалось загрузить блюда.");
+    listError.value = apiMessage(err, 'l_Failed_load_dishes');
     dishes.value = [];
     dishListMeta.value = null;
   } finally {
@@ -250,7 +251,7 @@ async function loadSchedule() {
     );
     schedule.value = unwrapCookSchedule(raw);
   } catch (err) {
-    scheduleError.value = apiMessage(err, "Не удалось загрузить расписание.");
+    scheduleError.value = apiMessage(err, 'l_Failed_load_schedule');
     schedule.value = null;
   } finally {
     scheduleLoading.value = false;
@@ -265,10 +266,10 @@ async function onScheduleSubmit(payload: CookSchedulePatchPayload) {
       { method: "PATCH", body: payload },
     );
     scheduleModalOpen.value = false;
-    toast.show("Расписание сохранено.", "success");
+    toast.show(t("l_Schedule_saved"), "success");
     await loadSchedule();
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось сохранить расписание."), "error");
+    toast.show(apiMessage(err, 'l_Failed_save_schedule'), "error");
   } finally {
     scheduleSaving.value = false;
   }
@@ -281,10 +282,10 @@ async function onDeleteDish(id: string) {
       $api as (url: string, opts?: object) => Promise<unknown>,
       id,
     );
-    toast.show("Блюдо удалено.", "success");
+    toast.show(t("l_Dish_deleted"), "success");
     await loadDishes();
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось удалить блюдо."), "error");
+    toast.show(apiMessage(err, 'l_Failed_delete_dish'), "error");
   } finally {
     deletingId.value = null;
   }
@@ -292,30 +293,30 @@ async function onDeleteDish(id: string) {
 
 async function onDeleteMenu(menuKey: string) {
   const apiFn = $api as (url: string, opts?: object) => Promise<unknown>;
-  if (!confirm("Удалить это меню? Действие необратимо.")) {
+  if (!confirm(t("l_Delete_menu_confirm"))) {
     return;
   }
   deletingMenuId.value = menuKey;
   try {
     await deleteMenuById(apiFn, menuKey);
-    toast.show("Меню удалено.", "success");
+    toast.show(t("l_Menu_deleted"), "success");
     await loadTodayMenu();
     await loadHistory(false);
   } catch (err) {
-    toast.show(apiMessage(err, "Не удалось удалить меню."), "error");
+    toast.show(apiMessage(err, 'l_Failed_delete_menu'), "error");
   } finally {
     deletingMenuId.value = null;
   }
 }
 
 function onMenuCreated() {
-  toast.show("Меню успешно создано.", "success");
+  toast.show(t("l_Menu_created"), "success");
   void loadTodayMenu();
   void loadHistory(false);
 }
 
 function onDishCreated() {
-  toast.show("Блюдо создано.", "success");
+  toast.show(t("l_Dish_created"), "success");
   void loadDishes();
   if (activeTab.value === "menus") void loadHistory(false);
 }
@@ -347,7 +348,7 @@ onMounted(() => {
             ? 'bg-primary text-white shadow-primary-cta'
             : 'text-muted hover:text-dark'
             " @click="activeTab = 'dishes'">
-          Блюда
+          {{ t("l_Dishes") }}
         </button>
         <button type="button" role="tab" :aria-selected="activeTab === 'menus'"
           class="flex-1 rounded-pill py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -355,7 +356,7 @@ onMounted(() => {
             ? 'bg-primary text-white shadow-primary-cta'
             : 'text-muted hover:text-dark'
             " @click="activeTab = 'menus'">
-          Меню
+          {{ t("l_Menu") }}
         </button>
       </div>
 
@@ -374,13 +375,13 @@ onMounted(() => {
         <button type="button"
           class="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-dark shadow-sm transition hover:border-primary/40 disabled:opacity-40"
           :disabled="dishPage <= 1 || listLoading" @click="dishPage--">
-          Назад
+          {{ t("l_Back") }}
         </button>
-        <span class="text-sm text-muted">Стр. {{ dishPage }}</span>
+        <span class="text-sm text-muted">{{ t("l_Page_short", { page: dishPage }) }}</span>
         <button type="button"
           class="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-dark shadow-sm transition hover:border-primary/40 disabled:opacity-40"
           :disabled="!canDishNext || listLoading" @click="dishPage++">
-          Далее
+          {{ t("l_Next") }}
         </button>
       </div>
     </div>

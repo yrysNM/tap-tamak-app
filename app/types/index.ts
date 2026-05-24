@@ -94,6 +94,8 @@ export interface Cook {
   deliveryRadius: number
   rating: number
   totalReviews: number
+  /** Total dishes in the cook's catalog (GET /cooks). */
+  countDishes?: number
 }
 
 export type PreparationType = 'FAST' | 'LONG'
