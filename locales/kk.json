@@ -450,5 +450,19 @@
   "l_Month_sep": "қыркүйек",
   "l_Month_oct": "қазан",
   "l_Month_nov": "қараша",
-  "l_Month_dec": "желтоқсан"
+  "l_Month_dec": "желтоқсан",
+  "l_Loading_stats": "Статистика жүктелуде…",
+  "l_Failed_load_stats": "Статистиканы жүктеу мүмкін болмады.",
+  "l_Retry": "Қайталау",
+  "l_Kitchen_status": "Асхана күйі",
+  "l_Quick_actions": "Жылдам әрекеттер",
+  "l_Stats_orders_today": "Бүгінгі тапсырыстар",
+  "l_Stats_pending_orders": "Өңделуде",
+  "l_Stats_revenue_today": "Бүгінгі табыс",
+  "l_Stats_revenue_total": "Жалпы табыс",
+  "l_Stats_catalog_dishes": "Каталогтағы тағамдар",
+  "l_Stats_rating": "Рейтинг",
+  "l_Stats_reviews_count": "{count} пікір",
+  "l_Stats_no_reviews": "Әзірше пікір жоқ",
+  "l_Pending_orders_count": "{count} өңделуде"
 }

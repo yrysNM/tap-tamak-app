@@ -251,9 +251,9 @@ import type {
 } from "~/types";
 
 const imgCamera =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/2b693848-fc60-4beb-8e56-e9fb0758e4b6.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/8e334890-6a0d-43aa-9f68-547c511445bd.png";
 const imgPdf =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/a91b035d-8949-4831-a91a-12290db79e7d.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/55800c1c-5aa4-4b1c-ad50-f9ca7581ad2b.png";
 
 const MAX_KITCHEN = 6;
 const MIN_KITCHEN = 3;

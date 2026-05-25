@@ -127,9 +127,9 @@ const selectedRole = ref<"client" | "cook" | null>(null);
 
 
 const imgCustomer2 =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/10187a2f-7d29-41ba-9bb9-d5d16867056a.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/3788fe15-e57f-4794-ad78-d30e832298e3.png";
 const imgChefHat1 =
-  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/dd560a3a-defc-4b38-b1cf-59ad0a9bc3dd.png";
+  "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/f10bf43f-50d4-45e6-928e-eac220b9f8e7.png";
 
 const customerCardStyle = {
   backgroundImage:

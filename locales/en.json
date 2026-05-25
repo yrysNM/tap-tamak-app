@@ -450,5 +450,19 @@
   "l_Month_sep": "September",
   "l_Month_oct": "October",
   "l_Month_nov": "November",
-  "l_Month_dec": "December"
+  "l_Month_dec": "December",
+  "l_Loading_stats": "Loading statistics…",
+  "l_Failed_load_stats": "Could not load dashboard statistics.",
+  "l_Retry": "Retry",
+  "l_Kitchen_status": "Kitchen status",
+  "l_Quick_actions": "Quick actions",
+  "l_Stats_orders_today": "Orders today",
+  "l_Stats_pending_orders": "Pending orders",
+  "l_Stats_revenue_today": "Revenue today",
+  "l_Stats_revenue_total": "Total revenue",
+  "l_Stats_catalog_dishes": "Catalog dishes",
+  "l_Stats_rating": "Rating",
+  "l_Stats_reviews_count": "{count} reviews",
+  "l_Stats_no_reviews": "No reviews yet",
+  "l_Pending_orders_count": "{count} in progress"
 }

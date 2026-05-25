@@ -450,5 +450,19 @@
   "l_Month_sep": "сентября",
   "l_Month_oct": "октября",
   "l_Month_nov": "ноября",
-  "l_Month_dec": "декабря"
+  "l_Month_dec": "декабря",
+  "l_Loading_stats": "Загрузка статистики…",
+  "l_Failed_load_stats": "Не удалось загрузить статистику.",
+  "l_Retry": "Повторить",
+  "l_Kitchen_status": "Статус кухни",
+  "l_Quick_actions": "Быстрые действия",
+  "l_Stats_orders_today": "Заказов сегодня",
+  "l_Stats_pending_orders": "В работе",
+  "l_Stats_revenue_today": "Выручка сегодня",
+  "l_Stats_revenue_total": "Выручка всего",
+  "l_Stats_catalog_dishes": "Блюд в каталоге",
+  "l_Stats_rating": "Рейтинг",
+  "l_Stats_reviews_count": "{count} отзывов",
+  "l_Stats_no_reviews": "Пока нет отзывов",
+  "l_Pending_orders_count": "{count} в работе"
 }
