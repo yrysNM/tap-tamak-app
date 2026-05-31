@@ -41,7 +41,7 @@
         data-name="Настройки">
         <h2 class="mb-1.5 text-[15px] font-bold text-section">{{ $t("l_Profile_settings") }}</h2>
 
-        <NuxtLink to="#" class="flex items-center gap-3 border-b border-black/8 py-3 first:pt-0" @click.prevent>
+        <!-- <NuxtLink to="#" class="flex items-center gap-3 border-b border-black/8 py-3 first:pt-0" @click.prevent>
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
             <i class="fi fi-rr-marker text-[15px] text-primary" />
@@ -51,7 +51,23 @@
             <p class="mt-1 text-[11.3px] text-subtle">{{ $t("l_Delivery_addresses_hint") }}</p>
           </div>
           <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
-        </NuxtLink>
+        </NuxtLink> -->
+
+        <div class="flex items-center gap-3 border-b border-black/8 py-3">
+          <div
+            class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
+            <i class="fi fi-rr-lock text-[15px] text-primary" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[14.5px] font-bold text-body">{{ t("l_Password") }}</p>
+            <p class="mt-1 text-[11.1px] text-subtle">{{ t("l_Change_password_hint") }}</p>
+          </div>
+          <button type="button"
+            class="shrink-0 rounded-xl border border-soft-border bg-white px-[11px] py-2 text-[12.7px] font-bold text-body"
+            @click="changePasswordOpen = true">
+            {{ t("l_Change") }}
+          </button>
+        </div>
 
         <div class="flex items-center gap-3 pt-3">
           <div
@@ -138,6 +154,7 @@
     </main>
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
+    <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
   </div>
 </template>
 
@@ -148,10 +165,12 @@ definePageMeta({
 
 const { t } = useI18n();
 const { currentLocaleName } = useLocaleDisplayName();
+const toast = usePageToast();
 
 const router = useRouter();
 const auth = useAuthStore();
 const languagePickerOpen = ref(false);
+const changePasswordOpen = ref(false);
 
 const user = computed(() => auth.user);
 
@@ -190,6 +209,12 @@ function goBack() {
 }
 
 async function onLogout() {
+  auth.logout();
+  await navigateTo("/login");
+}
+
+async function onPasswordChanged() {
+  toast.show(t("l_Password_changed"), "success");
   auth.logout();
   await navigateTo("/login");
 }

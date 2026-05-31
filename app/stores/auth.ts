@@ -46,15 +46,18 @@ export const useAuthStore = defineStore('auth', {
 
     async refreshAccessToken() {
       const config = useRuntimeConfig()
-      const res = await $fetch<{ accessToken: string; refreshToken: string }>(
+      const res = await $fetch<ApiResponse<LoginResponse>>(
         `${config.public.apiBaseUrl}/auth/refresh`,
         {
           method: 'POST',
           body: { refreshToken: this.refreshToken },
-        }
+        },
       )
-      this.accessToken = res.accessToken
-      this.refreshToken = res.refreshToken
+      this.accessToken = res.data.accessToken
+      this.refreshToken = res.data.refreshToken
+      if (res.data.user) {
+        this.user = res.data.user
+      }
     },
 
     logout() {

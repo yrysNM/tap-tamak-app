@@ -15,8 +15,17 @@
         <UiInput type="tel" :label="$t('l_Phone')" :placeholder="$t('l_Phone_mask_placeholder')" phone-mask
           autocomplete="tel" v-model="phone" />
         <div class="h-3" />
-        <UiInput :label="$t('l_Password')" type="password" :placeholder="$t('l_Password_placeholder')"
-          v-model="password" />
+        <UiInput :label="$t('l_Password')" :type="showPassword ? 'text' : 'password'"
+          :placeholder="$t('l_Password_placeholder')" v-model="password">
+          <template #suffix>
+            <button type="button" class="flex items-center justify-center text-muted transition hover:text-dark"
+              :aria-label="showPassword ? $t('l_Hide_password') : $t('l_Show_password')"
+              @click="showPassword = !showPassword">
+              <Icon :name="showPassword ? 'material-symbols:visibility-off-outline' : 'material-symbols:visibility-outline'"
+                class="size-5" />
+            </button>
+          </template>
+        </UiInput>
 
         <p v-if="error" class="mt-3 text-center text-xs text-red-500">
           {{ error }}
@@ -46,6 +55,7 @@ const { t } = useI18n();
 
 const phone = ref("");
 const password = ref("");
+const showPassword = ref(false);
 const error = ref("");
 const loading = ref(false);
 

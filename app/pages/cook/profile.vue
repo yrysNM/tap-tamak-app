@@ -103,6 +103,18 @@
 
         <div class="flex items-center justify-between gap-3 border-t border-border pt-4">
           <div class="min-w-0">
+            <p class="text-sm font-semibold text-dark">{{ t("l_Password") }}</p>
+            <p class="mt-0.5 text-xs text-muted">{{ t("l_Change_password_hint") }}</p>
+          </div>
+          <button type="button"
+            class="shrink-0 rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-dark transition hover:bg-surface-muted/50"
+            @click="changePasswordOpen = true">
+            {{ t("l_Change") }}
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div class="min-w-0">
             <p class="text-sm font-semibold text-dark">{{ t("l_Language") }}</p>
             <p class="mt-0.5 text-xs text-muted">{{ currentLocaleName }}</p>
           </div>
@@ -122,12 +134,14 @@
     </section>
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
+    <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
   </div>
 </template>
 
 <script setup lang="ts">
 const { t } = useI18n()
 const { currentLocaleName } = useLocaleDisplayName()
+const toast = usePageToast()
 
 definePageMeta({ layout: "cook" });
 
@@ -156,6 +170,7 @@ const avatarError = ref("");
 const uploadingAvatar = ref(false);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const languagePickerOpen = ref(false);
+const changePasswordOpen = ref(false);
 
 const user = computed(() => auth.user);
 const cook = computed(
@@ -286,6 +301,12 @@ async function onPickAvatar(event: Event) {
 }
 
 async function onLogout() {
+  auth.logout();
+  await navigateTo("/login");
+}
+
+async function onPasswordChanged() {
+  toast.show(t("l_Password_changed"), "success");
   auth.logout();
   await navigateTo("/login");
 }

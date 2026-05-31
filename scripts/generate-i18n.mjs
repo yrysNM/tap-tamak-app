@@ -200,6 +200,13 @@ const T = {
     en: 'Enter address and phone — we will calculate delivery.',
   },
   l_Delivery_address: { ru: 'Адрес доставки', kk: 'Жеткізу мекенжайы', en: 'Delivery address' },
+  l_Delivery_districts_notice: {
+    ru: 'На данный момент обслуживаются только Ауэзовский и Бостандыкский районы',
+    kk: 'Қазір тек Ауэзов және Бостандық аудандары қызмет көрсетіледі',
+    en: 'Currently only Auezov and Bostandyk districts are served',
+  },
+  l_District: { ru: 'Район', kk: 'Аудан', en: 'District' },
+  l_Select_district: { ru: 'Выберите район', kk: 'Ауданды таңдаңыз', en: 'Select a district' },
   l_Address: { ru: 'Адрес', kk: 'Мекенжай', en: 'Address' },
   l_Address_placeholder: { ru: 'Город, улица, дом', kk: 'Қала, көше, үй', en: 'City, street, building' },
   l_Entrance: { ru: 'Подъезд', kk: 'Кіреберіс', en: 'Entrance' },
@@ -661,6 +668,11 @@ const T = {
     ru: 'Не удалось получить точные координаты. Используем центр Алматы.',
     kk: 'Нақты координаттарды алу сәтсіз. Алматы орталығын қолданамыз.',
     en: 'Could not get precise coordinates. Using Almaty center.',
+  },
+  l_My_location: {
+    ru: 'Моё местоположение',
+    kk: 'Менің орналасқан жерім',
+    en: 'My location',
   },
 
   l_Request_failed: { ru: 'Не удалось выполнить запрос.', kk: 'Сұрау орындалмады.', en: 'Could not complete request.' },

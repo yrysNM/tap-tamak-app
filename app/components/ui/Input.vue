@@ -10,11 +10,15 @@
       <input :id="inputId" :value="modelValue" :type="type" :placeholder="placeholder" :disabled="disabled"
         :autocomplete="autocomplete" :class="[
           'w-full rounded-xl border bg-white py-3 text-dark placeholder:text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:opacity-60',
-          $slots.icon ? 'pl-10 pr-4' : 'px-4',
+          $slots.icon ? 'pl-10' : 'pl-4',
+          $slots.suffix ? 'pr-10' : 'pr-4',
           error
             ? 'border-error focus:ring-error'
             : 'border-border hover:border-muted',
         ]" @input="onInput" />
+      <span v-if="$slots.suffix" class="absolute right-3 top-1/2 -translate-y-1/2">
+        <slot name="suffix" />
+      </span>
     </div>
     <p v-if="error" class="mt-1 text-sm text-error">
       {{ error }}

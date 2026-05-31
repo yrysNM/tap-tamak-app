@@ -20,15 +20,19 @@ export function useUserLocation() {
   const loading = ref(false)
   const error = ref('')
   const hasExactLocation = ref(false)
+  const accuracy = ref<number | null>(null)
 
-  async function resolveCurrentPosition(): Promise<UserLocationState> {
+  async function resolveCurrentPosition(): Promise<{ coords: UserLocationState; accuracy: number | null }> {
     if (Capacitor.getPlatform() === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
       return await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
+              coords: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              },
+              accuracy: position.coords.accuracy ?? null,
             })
           },
           (err) => reject(err),
@@ -47,8 +51,11 @@ export function useUserLocation() {
       maximumAge: 20000,
     })
     return {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
+      coords: {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      },
+      accuracy: position.coords.accuracy ?? null,
     }
   }
 
@@ -67,16 +74,19 @@ export function useUserLocation() {
 
       if (permission.value !== 'granted') {
         hasExactLocation.value = false
+        accuracy.value = null
         error.value = t('l_Geo_unavailable_almaty')
         return
       }
 
       const current = await resolveCurrentPosition()
-      coords.value = current
+      coords.value = current.coords
+      accuracy.value = current.accuracy
       hasExactLocation.value = true
     }
     catch {
       hasExactLocation.value = false
+      accuracy.value = null
       error.value = t('l_Geo_failed_almaty')
     }
     finally {
@@ -90,6 +100,7 @@ export function useUserLocation() {
     loading,
     error,
     hasExactLocation,
+    accuracy,
     updateLocation,
     DEFAULT_ALMATY_CENTER,
   }

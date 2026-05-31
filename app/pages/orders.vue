@@ -110,12 +110,16 @@ function paymentDeadlineStorageKey(orderId: string): string {
   return `tap-tamak-payment-deadline-${orderId}`;
 }
 
-function readPaymentDeadline(orderId: string): number {
+function readPaymentDeadline(order: Order): number {
+  const createdMs = order.createdAt ? Date.parse(order.createdAt) : NaN;
+  if (Number.isFinite(createdMs)) {
+    return createdMs + ORDER_PAYMENT_TIMEOUT_MS;
+  }
   if (!import.meta.client) return Date.now() + ORDER_PAYMENT_TIMEOUT_MS;
-  const key = paymentDeadlineStorageKey(orderId);
+  const key = paymentDeadlineStorageKey(order.id);
   const stored = sessionStorage.getItem(key);
   const parsed = stored ? Number(stored) : NaN;
-  if (Number.isFinite(parsed) && parsed > Date.now()) return parsed;
+  if (Number.isFinite(parsed)) return parsed;
   const deadline = Date.now() + ORDER_PAYMENT_TIMEOUT_MS;
   sessionStorage.setItem(key, String(deadline));
   return deadline;
@@ -150,7 +154,7 @@ function syncPaymentCountdowns(): void {
       delete next[order.id];
       continue;
     }
-    const deadline = readPaymentDeadline(order.id);
+    const deadline = readPaymentDeadline(order);
     const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
     next[order.id] = secondsLeft;
     if (secondsLeft <= 0) {
@@ -426,10 +430,8 @@ async function confirmDeliveryReject(): Promise<void> {
               </span>
             </div>
 
-            <div
-              v-if="isOrderAwaitingPayment(order)"
-              class="rounded-[14px] border border-[#FF7A00]/22 bg-[#FF7A00]/6 px-3 py-2.5"
-            >
+            <div v-if="isOrderAwaitingPayment(order)"
+              class="rounded-[14px] border border-[#FF7A00]/22 bg-[#FF7A00]/6 px-3 py-2.5">
               <p class="text-[11.5px] leading-relaxed text-subtle">
                 {{ t("l_Transfer_to_kaspi") }}
                 <span class="font-bold text-[#FF7A00]">{{ formatPrice(order.totalAmount) }} ₸</span>
@@ -522,7 +524,7 @@ async function confirmDeliveryReject(): Promise<void> {
 
             <template v-else-if="deliveryModal === 'accept'">
               <p class="text-center text-lg font-bold text-heading">
-                Thank you!
+                {{ t("l_Thank_you") }}
               </p>
               <p class="mt-2 text-center text-sm font-semibold text-subtle">
                 {{ t("l_Thanks_for_order") }}

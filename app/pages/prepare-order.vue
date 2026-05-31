@@ -28,6 +28,7 @@ const {
 } = useAsyncData("basket", async () => await fetchBasket(api), { immediate: true });
 
 const form = reactive({
+    district: "Ауэзовский",
     addressLine: "",
     entrance: "",
     intercom: "",
@@ -38,6 +39,11 @@ const form = reactive({
     saveAddress: false,
 });
 
+const districtOptions = [
+    { value: "Ауэзовский", label: "Ауэзовский" },
+    { value: "Бостандыкский", label: "Бостандыкский" },
+];
+
 const promoInput = ref("");
 const paymentMethod = ref<"card" | "cash">("card");
 const prepareSnapshot = ref<PrepareOrderResponse | null>(null);
@@ -46,6 +52,7 @@ const submitting = ref(false);
 const clearing = ref(false);
 const manualDiscount = ref(0);
 const phoneTouched = ref(false);
+const addressTouched = ref(false);
 
 const paymentOptions = [
     { value: "card", label: t("l_Payment_card") },
@@ -65,6 +72,10 @@ function phoneLooksValid(phone: string): boolean {
     return d.length === 11;
 }
 
+function addressLooksValid(line: string): boolean {
+    return line.trim().length >= 4;
+}
+
 const phoneError = computed(() => {
     if (!phoneTouched.value) return "";
     if (phoneLooksValid(form.contactPhone)) return "";
@@ -72,6 +83,18 @@ const phoneError = computed(() => {
     if (d.length <= 1) return t("l_Enter_phone_number");
     return t("l_Enter_10_digits_after_7");
 });
+
+const addressError = computed(() => {
+    if (!addressTouched.value) return "";
+    if (addressLooksValid(form.addressLine)) return "";
+    return t("l_Enter_delivery_address");
+});
+
+function validateRequiredFields(): boolean {
+    addressTouched.value = true;
+    phoneTouched.value = true;
+    return addressLooksValid(form.addressLine) && phoneLooksValid(form.contactPhone);
+}
 
 function onPhoneSectionFocusOut(ev: FocusEvent): void {
     const rel = ev.relatedTarget as Node | null;
@@ -101,7 +124,7 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
 
 function canQuotePrepare(): boolean {
     return (
-        form.addressLine.trim().length >= 4
+        addressLooksValid(form.addressLine)
         && phoneLooksValid(form.contactPhone)
         && (basket.value?.items.length ?? 0) > 0
     );
@@ -221,13 +244,11 @@ async function submitOrder(): Promise<void> {
         toast.show(t("l_Basket_empty"), "error");
         return;
     }
-    if (form.addressLine.trim().length < 4) {
-        toast.show(t("l_Enter_delivery_address"), "error");
+    if (!validateRequiredFields()) {
         return;
     }
-    if (!phoneLooksValid(form.contactPhone)) {
-        phoneTouched.value = true;
-        toast.show(t("l_Enter_valid_phone"), "error");
+    if (!form.district.trim()) {
+        toast.show(t("l_Select_district"), "error");
         return;
     }
     submitting.value = true;
@@ -259,7 +280,7 @@ function retryBasket(): void {
             <div class="flex items-center gap-3">
                 <button type="button"
                     class="flex size-11 shrink-0 items-center justify-center rounded-[14px] border border-black/6 bg-white/96 shadow-[0_8px_20px_rgba(0,0,0,0.1)]"
-            :aria-label="t('l_Back')" @click="router.back()">
+                    :aria-label="t('l_Back')" @click="router.back()">
                     <Icon name="material-symbols:chevron-left-rounded" class="size-5 text-icon-secondary" />
                 </button>
                 <h1 class="min-w-0 flex-1 text-center text-[23px] font-bold leading-[26px] text-heading">
@@ -299,27 +320,27 @@ function retryBasket(): void {
                             <span>{{ t("l_Dish_amount") }}</span>
                             <span class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(dishesAmount)
-                            }}</span>
+                                }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>{{ t("l_Delivery") }}</span>
                             <span v-if="deliveryAmount != null" class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(deliveryAmount) }}</span>
                             <span v-else class="shrink-0 text-[13px] text-caption">{{ preparePending ? "…" : "—"
-                            }}</span>
+                                }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>{{ t("l_Discount") }}</span>
                             <span class="shrink-0 text-[15px] text-body">− {{
                                 formatPrice(discountShown)
-                            }}</span>
+                                }}</span>
                         </div>
                     </div>
                     <div class="mt-2.5 flex items-center justify-between border-t border-black/10 pt-3">
                         <span class="text-[15px] font-bold text-body">{{ t("l_Total") }}</span>
                         <span class="text-[20px] font-bold text-section">{{
                             formatPrice(totalAmount)
-                        }}</span>
+                            }}</span>
                     </div>
                     <p v-if="!prepareSnapshot && !preparePending" class="mt-2 text-[11px] leading-relaxed text-caption">
                         {{ t("l_Checkout_address_hint") }}
@@ -333,14 +354,36 @@ function retryBasket(): void {
                         {{ t("l_Delivery_address") }}
                     </h2>
 
-                    <div class="mt-5">
-                        <label class="block text-[13px] text-[#555555]">{{ t("l_Address") }}</label>
-                        <input v-model="form.addressLine" type="text" autocomplete="street-address"
-                            :placeholder="t('l_Address_placeholder')"
-                            class="mt-1.5 w-full rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[13px] text-body outline-none ring-[#FF7A00]/30 placeholder:text-[#767676] focus:ring-2">
+                    <p
+                        class="mt-4 rounded-[14px] border border-red-300 px-3 py-2.5 text-[12px] leading-relaxed text-red-700">
+                        {{ t("l_Delivery_districts_notice") }}
+                    </p>
+
+                    <div class="mt-4">
+                        <UiSelect v-model="form.district" :label="t('l_District')" :options="districtOptions" required
+                            class="[&_button]:rounded-[14px] [&_button]:border-[#d4d4d4] [&_button]:px-[15px] [&_button]:py-3 [&_button]:text-[13px] [&_label]:text-[13px] [&_label]:text-[#555555]" />
                     </div>
 
-                    <div class="mt-5 grid grid-cols-3 gap-2.5">
+                    <div class="mt-5">
+                        <label class="block text-[13px] text-[#555555]">
+                            {{ t("l_Address") }}
+                            <span class="text-red-600">*</span>
+                        </label>
+                        <input v-model="form.addressLine" type="text" autocomplete="street-address"
+                            :placeholder="t('l_Address_placeholder')"
+                            :class="[
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-[15px] py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                addressError
+                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                            ]"
+                            @blur="addressTouched = true">
+                        <p v-if="addressError" class="mt-1 text-[12px] text-red-600">
+                            {{ addressError }}
+                        </p>
+                    </div>
+
+                    <!--  <div class="mt-5 grid grid-cols-3 gap-2.5">
                         <div>
                             <label class="block text-[12px] font-semibold text-[#5a5a5a]">{{ t("l_Entrance") }}</label>
                             <input v-model="form.entrance" type="text" inputmode="numeric"
@@ -356,6 +399,16 @@ function retryBasket(): void {
                             <input v-model="form.floor" type="text" inputmode="numeric"
                                 class="mt-1.5 h-[42px] w-full rounded-[14px] border border-[#d9d9d9] bg-white px-2 text-center text-[13px] text-body outline-none focus:ring-2 focus:ring-[#FF7A00]/25">
                         </div>
+                    </div> -->
+
+                    <div class="mt-5" @focusout="onPhoneSectionFocusOut">
+                        <label class="block text-[13px] text-[#555555]">
+                            {{ t("l_Phone") }}
+                            <span class="text-red-600">*</span>
+                        </label>
+                        <UiInput v-model="form.contactPhone" type="tel" phone-mask autocomplete="tel"
+                            placeholder="+7 (700) 000-00-00" :error="phoneError"
+                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
                     </div>
 
                     <div class="mt-5">
@@ -364,24 +417,18 @@ function retryBasket(): void {
                             class="mt-1.5 w-full rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[13px] text-body outline-none focus:ring-2 focus:ring-[#FF7A00]/25">
                     </div>
 
-                    <div class="mt-5" @focusout="onPhoneSectionFocusOut">
-                        <label class="block text-[13px] text-[#555555]">{{ t("l_Phone") }}</label>
-                        <UiInput v-model="form.contactPhone" type="tel" phone-mask autocomplete="tel"
-                            placeholder="+7 (700) 000-00-00" :error="phoneError"
-                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
-                    </div>
-
                     <div class="mt-5">
                         <label class="block text-[13px] text-[#555555]">{{ t("l_Courier_comment") }}</label>
-                        <textarea v-model="form.courierComment" rows="3" :placeholder="t('l_Courier_comment_placeholder')"
+                        <textarea v-model="form.courierComment" rows="3"
+                            :placeholder="t('l_Courier_comment_placeholder')"
                             class="mt-1.5 min-h-[70px] w-full resize-none rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[14px] text-body outline-none placeholder:text-[#767676] focus:ring-2 focus:ring-[#FF7A00]/25" />
                     </div>
 
-                    <label class="mt-5 flex cursor-pointer items-start gap-2">
-                        <input v-model="form.saveAddress" type="checkbox"
+                    <!-- <label class="mt-5 flex cursor-pointer items-start gap-2">
+                        <input v-model="form.saveAddress" type="checkbox`"
                             class="mt-0.5 size-[13px] shrink-0 rounded border-[#767676] text-[#FF7A00] focus:ring-[#FF7A00]">
                         <span class="text-[13px] leading-snug text-[#555555]">{{ t("l_Save_address_for_next") }}</span>
-                    </label>
+                    </label> -->
                 </section>
 
                 <!-- Способ оплаты -->

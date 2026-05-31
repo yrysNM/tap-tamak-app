@@ -10,7 +10,7 @@
     </div>
 
     <div class="mt-3 flex items-center gap-2">
-      <UiInput v-model="search" class="flex-1 rounded-2xl p-3" :placeholder="$t('l_Search_cooks_placeholder')">
+      <UiInput v-model="search" class="flex-1 p-0 rounded-2xl" :placeholder="$t('l_Search_cooks_placeholder')">
         <template #icon>
           <Icon name="material-symbols:search-rounded" class="size-4" />
         </template>
@@ -27,7 +27,7 @@
     </p>
 
     <div class="mt-5 flex items-center justify-between">
-      <h2 class="text-[15px] font-bold text-heading">{{ $t('l_Popular_cooks') }}</h2>
+      <h2 class="text-[15px] font-bold text-heading">{{ $t('l_List_of_cooks') }}</h2>
       <NuxtLink to="/cooks" class="text-[11px] font-bold text-primary">{{ $t('l_See_all_cooks') }}</NuxtLink>
     </div>
 
@@ -139,7 +139,7 @@ function businessInitials(name: string | undefined): string {
     .filter(Boolean);
   if (!words.length) return t("l_Initial_fallback");
   const initials = words.slice(0, 2).map((word) => word[0] ?? "").join("");
-  return (initials || words[0][0] || t("l_Initial_fallback")).toUpperCase();
+  return (initials || words[0]?.[0] || t("l_Initial_fallback")).toUpperCase();
 }
 
 const cookCards = computed(() => {
@@ -152,8 +152,6 @@ const cookCards = computed(() => {
       "",
     initials: businessInitials(c.businessName),
     isAvailable: c.isAvailable !== false,
-    meta: specialtiesLine(c.specialties),
-    tags: specialtiesTags(c.specialties),
     countDishes:
       typeof c.countDishes === "number" && Number.isFinite(c.countDishes)
         ? Math.max(0, Math.trunc(c.countDishes))
@@ -165,7 +163,7 @@ const filteredCookCards = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return cookCards.value;
   return cookCards.value.filter((c) =>
-    [c.name, c.meta, c.tags].some((x) => x.toLowerCase().includes(q)),
+    [c.name].some((x) => x.toLowerCase().includes(q)),
   );
 });
 </script>

@@ -18,8 +18,17 @@
           <UiInput :label="$t('l_Name')" :placeholder="$t('l_Name_placeholder')" v-model="name" />
           <UiInput type="tel" :label="$t('l_Phone')" :placeholder="$t('l_Phone_mask_placeholder')" phone-mask
             autocomplete="tel" v-model="phone" />
-          <UiInput :label="$t('l_Password')" type="password" :placeholder="$t('l_Password_min_placeholder')"
-            v-model="password" />
+          <UiInput :label="$t('l_Password')" :type="showPassword ? 'text' : 'password'"
+            :placeholder="$t('l_Password_min_placeholder')" v-model="password">
+            <template #suffix>
+              <button type="button" class="flex items-center justify-center text-muted transition hover:text-dark"
+                :aria-label="showPassword ? $t('l_Hide_password') : $t('l_Show_password')"
+                @click="showPassword = !showPassword">
+                <Icon :name="showPassword ? 'material-symbols:visibility-off-outline' : 'material-symbols:visibility-outline'"
+                  class="size-5" />
+              </button>
+            </template>
+          </UiInput>
         </div>
 
         <label class="mt-2 flex cursor-pointer ml-1 items-center gap-2.5 text-left">
@@ -71,6 +80,7 @@ const role = computed(() => props.role);
 const name = ref("");
 const phone = ref("");
 const password = ref("");
+const showPassword = ref(false);
 const acceptedOffer = ref(false);
 const error = ref("");
 const loading = ref(false);
