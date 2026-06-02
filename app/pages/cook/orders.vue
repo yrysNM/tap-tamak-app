@@ -6,6 +6,8 @@ import { dishImageSrc } from '~/utils/dishApi'
 import {
   acceptOrderByCook,
   fetchOrders,
+  isOrderAwaitingCookAcceptance,
+  ORDER_COOK_ACCEPTANCE_TIMEOUT_MS,
   rejectOrderByCook,
 } from '~/utils/ordersApi'
 import { useOrderStatusLabel } from '~/composables/useOrderStatusLabel'
@@ -26,6 +28,7 @@ const VISIBLE_STATUSES = new Set([
 
 const toast = usePageToast()
 const { t } = useI18n()
+const COOK_ACCEPT_TIMEOUT_REASON = computed(() => t('l_Cook_accept_timeout_reason'))
 const orderStatusLabel = useOrderStatusLabel()
 const { $api } = useNuxtApp()
 const config = useRuntimeConfig()
@@ -80,6 +83,108 @@ const rejectReason = ref('')
 const acceptError = ref('')
 const rejectError = ref('')
 const submitting = ref(false)
+const acceptanceSecondsByOrderId = ref<Record<string, number>>({})
+const acceptanceAutoRejectTriggered = ref<Set<string>>(new Set())
+let acceptanceCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+function acceptanceDeadlineStorageKey(orderId: string): string {
+  return `tap-tamak-cook-accept-deadline-${orderId}`
+}
+
+function readAcceptanceDeadline(order: Order): number {
+  const anchorIso = order.updatedAt ?? order.createdAt
+  const anchorMs = anchorIso ? Date.parse(anchorIso) : NaN
+  if (Number.isFinite(anchorMs)) {
+    return anchorMs + ORDER_COOK_ACCEPTANCE_TIMEOUT_MS
+  }
+  if (!import.meta.client) return Date.now() + ORDER_COOK_ACCEPTANCE_TIMEOUT_MS
+  const key = acceptanceDeadlineStorageKey(order.id)
+  const stored = sessionStorage.getItem(key)
+  const parsed = stored ? Number(stored) : NaN
+  if (Number.isFinite(parsed)) return parsed
+  const deadline = Date.now() + ORDER_COOK_ACCEPTANCE_TIMEOUT_MS
+  sessionStorage.setItem(key, String(deadline))
+  return deadline
+}
+
+function clearAcceptanceDeadline(orderId: string): void {
+  if (!import.meta.client) return
+  sessionStorage.removeItem(acceptanceDeadlineStorageKey(orderId))
+}
+
+function stopAcceptanceCountdown(): void {
+  if (acceptanceCountdownTimer) {
+    clearInterval(acceptanceCountdownTimer)
+    acceptanceCountdownTimer = null
+  }
+}
+
+function acceptanceTimerLabel(orderId: string): string {
+  const sec = Math.max(0, acceptanceSecondsByOrderId.value[orderId] ?? 0)
+  const mm = Math.floor(sec / 60)
+    .toString()
+    .padStart(2, '0')
+  const ss = (sec % 60).toString().padStart(2, '0')
+  return `${mm}:${ss}`
+}
+
+function syncAcceptanceCountdowns(): void {
+  const next: Record<string, number> = { ...acceptanceSecondsByOrderId.value }
+  for (const order of orders.value ?? []) {
+    if (!isOrderAwaitingCookAcceptance(order)) {
+      clearAcceptanceDeadline(order.id)
+      delete next[order.id]
+      continue
+    }
+    const deadline = readAcceptanceDeadline(order)
+    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+    next[order.id] = secondsLeft
+    if (secondsLeft <= 0) {
+      void onAcceptanceTimeout(order)
+    }
+  }
+  acceptanceSecondsByOrderId.value = next
+}
+
+function startAcceptanceCountdown(): void {
+  stopAcceptanceCountdown()
+  syncAcceptanceCountdowns()
+  const hasAwaiting = (orders.value ?? []).some((o) => isOrderAwaitingCookAcceptance(o))
+  if (!hasAwaiting) return
+  acceptanceCountdownTimer = setInterval(() => {
+    syncAcceptanceCountdowns()
+  }, 1000)
+}
+
+async function onAcceptanceTimeout(order: Order): Promise<void> {
+  if (acceptanceAutoRejectTriggered.value.has(order.id) || !isOrderAwaitingCookAcceptance(order)) {
+    return
+  }
+  acceptanceAutoRejectTriggered.value = new Set(acceptanceAutoRejectTriggered.value).add(order.id)
+  try {
+    await rejectOrderByCook(api, order.id, { reason: COOK_ACCEPT_TIMEOUT_REASON.value })
+    clearAcceptanceDeadline(order.id)
+    toast.show(COOK_ACCEPT_TIMEOUT_REASON.value, 'error')
+    await refresh()
+  } catch (err: unknown) {
+    const next = new Set(acceptanceAutoRejectTriggered.value)
+    next.delete(order.id)
+    acceptanceAutoRejectTriggered.value = next
+    toast.show(apiMessage(err, 'l_Failed_reject_order'), 'error')
+  }
+}
+
+watch(
+  orders,
+  () => {
+    startAcceptanceCountdown()
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  stopAcceptanceCountdown()
+})
 
 function openAccept(order: Order): void {
   modalOrder.value = order
@@ -189,6 +294,7 @@ async function submitAccept(): Promise<void> {
     await acceptOrderByCook(api, order.id, {
       preparationTimeMinutes: Math.round(n),
     })
+    clearAcceptanceDeadline(order.id)
     closeModal()
     await refresh()
     toast.show(t('l_Order_accepted'), 'success')
@@ -211,6 +317,7 @@ async function submitReject(): Promise<void> {
   submitting.value = true
   try {
     await rejectOrderByCook(api, order.id, { reason })
+    clearAcceptanceDeadline(order.id)
     closeModal()
     await refresh()
     toast.show(t('l_Order_rejected'), 'info')
@@ -273,10 +380,17 @@ async function submitReject(): Promise<void> {
                   {{ formatOrderDate(order.createdAt) || t("l_Date_pending") }}
                 </p>
               </div>
-              <span class="inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[11px] font-bold"
-                :class="statusPillClass(order.status)">
-                {{ orderStatusLabel(order.status) }}
-              </span>
+              <div class="flex flex-wrap items-center justify-end gap-2">
+                <span v-if="isAwaitingCook(order.status)"
+                  class="inline-flex items-center gap-1 rounded-full border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2.5 py-1 text-[11px] font-bold leading-none text-[#FF7A00]">
+                  <Icon name="material-symbols:timer-outline" class="size-3.5" />
+                  {{ acceptanceTimerLabel(order.id) }}
+                </span>
+                <span class="inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[11px] font-bold"
+                  :class="statusPillClass(order.status)">
+                  {{ orderStatusLabel(order.status) }}
+                </span>
+              </div>
             </div>
 
             <p v-if="statusFootnote(order.status)"
@@ -327,10 +441,18 @@ async function submitReject(): Promise<void> {
               <span>{{ formatPrice(order.deliveryFee) }} ₸</span>
             </div>
 
-            <p class="border-t border-black/6 pt-3 text-right text-[20px] font-bold leading-none text-heading">
-              {{ formatPrice(order.totalAmount) }}
-              <span class="text-[12px] font-normal text-[#333]">₸</span>
-            </p>
+            <div class="border-t border-black/6 pt-3 text-right">
+              <p class="text-[20px] font-bold leading-none text-heading">
+                {{ formatPrice(order.totalAmount) }}
+                <span class="text-[12px] font-normal text-[#333]">₸</span>
+              </p>
+              <p v-if="order.commission != null && order.commission > 0" class="mt-2 text-[11px] font-semibold text-subtle">
+                {{ t('l_Order_commission') }}: −{{ formatPrice(order.commission) }} ₸
+              </p>
+              <p v-if="order.cookPayout != null && order.cookPayout > 0" class="mt-0.5 text-[13px] font-bold text-primary">
+                {{ t('l_Order_net_payout') }}: {{ formatPrice(order.cookPayout) }} ₸
+              </p>
+            </div>
 
             <div v-if="isAwaitingCook(order.status)" class="flex gap-2.5 border-t border-black/6 pt-3">
               <UiButton class="flex-1 rounded-[16px]! py-2.5! text-sm!" variant="primary" @click="openAccept(order)">

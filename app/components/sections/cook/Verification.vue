@@ -153,7 +153,7 @@
                 <p class="mt-1 text-[11px] leading-snug text-caption" data-node-id="178:814">
                   {{ t("l_Sanitary_book_size_hint") }}
                 </p>
-                <input ref="pdfInputRef" type="file" accept="application/pdf" class="sr-only" @change="onPdfFile" />
+                <input ref="pdfInputRef" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="sr-only" @change="onPdfFile" />
                 <div class="mt-2 flex flex-wrap gap-2" data-node-id="178:815">
                   <button type="button"
                     class="h-[42px] rounded-[14px] bg-primary px-3.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-primary-cta"
@@ -258,6 +258,8 @@ const imgPdf =
 const MAX_KITCHEN = 6;
 const MIN_KITCHEN = 3;
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_CERT_IMAGE_BYTES = 8 * 1024 * 1024;
+const CERT_ACCEPTED_TYPES = /^image\/(jpeg|png|webp)$/i;
 const ALMATY_CENTER: [number, number] = [43.238949, 76.889709];
 const MAP_DEFAULT_ZOOM = 12;
 
@@ -455,11 +457,17 @@ function onPdfFile(e: Event) {
   const file = input.files?.[0];
   input.value = "";
   if (!file) return;
-  if (file.type !== "application/pdf") {
+  const isPdf = file.type === "application/pdf";
+  const isImage = CERT_ACCEPTED_TYPES.test(file.type);
+  if (!isPdf && !isImage) {
     hint.value = t("l_Need_pdf_file");
     return;
   }
-  if (file.size > MAX_PDF_BYTES) {
+  if (isPdf && file.size > MAX_PDF_BYTES) {
+    hint.value = t("l_Pdf_max_10mb");
+    return;
+  }
+  if (isImage && file.size > MAX_CERT_IMAGE_BYTES) {
     hint.value = t("l_Pdf_max_10mb");
     return;
   }

@@ -17,6 +17,10 @@ export interface CookDashboardStats {
   pendingOrders: number
   revenueToday: number
   revenueTotal: number
+  commissionToday: number
+  commissionTotal: number
+  netPayoutToday: number
+  netPayoutTotal: number
   completedOrdersToday: number
   isActiveNow: boolean
 }

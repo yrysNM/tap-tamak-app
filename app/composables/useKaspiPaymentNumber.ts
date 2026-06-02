@@ -1,4 +1,4 @@
-const DEFAULT_KASPI_PAYMENT_NUMBER = '+7 (700) 000-00-00'
+const DEFAULT_KASPI_PAYMENT_NUMBER = '+7 (777) 779-91-97'
 
 export function useKaspiPaymentNumber() {
   const config = useRuntimeConfig()

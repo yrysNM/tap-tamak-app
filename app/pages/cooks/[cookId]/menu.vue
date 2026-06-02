@@ -130,6 +130,16 @@ function dishImage(dish: PublicCookMenuDish): string | undefined {
   return dishImageSrc(dish.imageUrl, apiBase.value);
 }
 
+function clearCookCartCache(): void {
+  const cid = cookId.value;
+  if (cid) cartStore.clearForCook(cid);
+}
+
+function goBack(): void {
+  clearCookCartCache();
+  router.back();
+}
+
 async function checkoutThisCook(): Promise<void> {
   const cid = cookId.value;
   if (!cid || checkoutSubmitting.value || totalItems.value === 0) return;
@@ -155,6 +165,7 @@ async function checkoutThisCook(): Promise<void> {
       method: "POST",
       body: { items },
     });
+    clearCookCartCache();
     await navigateTo("/basket");
   } catch (err: unknown) {
     toast.show(
@@ -177,7 +188,7 @@ const checkoutDisabled = computed(
     <div class="mb-5 flex items-center">
       <button type="button"
         class="flex size-11 items-center justify-center rounded-2xl border border-black/10 bg-white text-dark shadow-sm"
-:aria-label="t('l_Back')" @click="router.push('/')">
+        :aria-label="t('l_Back')" @click="goBack">
         <Icon name="material-symbols:chevron-left-rounded" class="size-6" />
       </button>
     </div>

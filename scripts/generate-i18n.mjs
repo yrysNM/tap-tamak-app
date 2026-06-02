@@ -307,6 +307,11 @@ const T = {
     kk: 'Төлем болмағандықтан тапсырыс болдырылмады',
     en: 'Order cancelled due to missing payment',
   },
+  l_Cook_accept_timeout_reason: {
+    ru: 'Заказ отменён — повар не принял заказ вовремя',
+    kk: 'Тапсырыс болдырылмады — аспаз уақытында қабылдамады',
+    en: 'Order cancelled — cook did not accept in time',
+  },
 
   l_Order_status_pending: { ru: 'В ожидании', kk: 'Күтуде', en: 'Pending' },
   l_Order_status_awaiting_cook: { ru: 'Ждем ответа от повара', kk: 'Аспаз жауабын күтуде', en: 'Awaiting cook response' },

@@ -111,6 +111,11 @@ export const useCartStore = defineStore(
       items.value = []
     }
 
+    function clearForCook(cookId: string): void {
+      if (!cookId) return
+      items.value = items.value.filter((line) => line.cook.id !== cookId)
+    }
+
     function quantityFor(cookId: string, dishId: string): number {
       const idx = findIndex(cookId, dishId)
       return idx === -1 ? 0 : items.value[idx]!.quantity
@@ -132,6 +137,7 @@ export const useCartStore = defineStore(
       removeLine,
       setQuantity,
       clear,
+      clearForCook,
       quantityFor,
       totalsForCook,
     }

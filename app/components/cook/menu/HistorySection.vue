@@ -6,6 +6,7 @@ import { formatMenuDateLabel } from "~/composables/useUtcMenuDates";
 import { apiMessage } from "~/utils/apiMessage";
 import { unwrapMenuPayload } from "~/utils/menuApi";
 import { dishImageSrc, unwrapDishesList } from "~/utils/dishApi";
+import { formatScheduleLocalRange } from "~/utils/scheduleApi";
 import type { CookDish } from "~/types";
 
 const from = defineModel<string>("from", { required: true });
@@ -113,13 +114,6 @@ function formatTime(iso?: string) {
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
 }
-
-function formatUtcHm(iso: string | null) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-}
 </script>
 
 <template>
@@ -153,7 +147,7 @@ function formatUtcHm(iso: string | null) {
         <p class="text-sm font-semibold text-dark">
           {{
             schedule?.workStartAt && schedule?.workEndAt
-              ? `${formatUtcHm(schedule.workStartAt)} - ${formatUtcHm(schedule.workEndAt)} UTC`
+              ? formatScheduleLocalRange(schedule.workStartAt, schedule.workEndAt)
               : t("l_Schedule_not_set")
           }}
         </p>

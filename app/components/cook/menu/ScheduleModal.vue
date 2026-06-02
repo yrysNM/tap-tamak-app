@@ -3,7 +3,9 @@ const { t } = useI18n()
 import type { CookSchedulePatchPayload } from "~/types";
 import {
   buildSchedulePatchPayload,
-  toUtcTimeFromIso,
+  toLocalDateYmd,
+  toLocalDateYmdFromIso,
+  toLocalTimeFromIso,
 } from "~/utils/scheduleApi";
 
 const props = defineProps<{
@@ -29,10 +31,10 @@ function close() {
 }
 
 function resetForm() {
-  const now = new Date();
-  dateYmd.value = now.toISOString().slice(0, 10);
-  startHm.value = toUtcTimeFromIso(props.initialStartAt) || "08:00";
-  endHm.value = toUtcTimeFromIso(props.initialEndAt) || "18:00";
+  dateYmd.value =
+    toLocalDateYmdFromIso(props.initialStartAt) ?? toLocalDateYmd();
+  startHm.value = toLocalTimeFromIso(props.initialStartAt) || "08:00";
+  endHm.value = toLocalTimeFromIso(props.initialEndAt) || "18:00";
   formError.value = "";
 }
 
@@ -83,7 +85,7 @@ function submit() {
               <h2 id="schedule-modal-title" class="text-lg font-bold text-dark">
                 {{ t("l_Work_schedule_modal") }}
               </h2>
-              <p class="mt-1 text-[13px] text-caption">{{ t("l_Schedule_utc_hint") }}</p>
+              <p class="mt-1 text-[13px] text-caption">{{ t("l_Schedule_local_hint") }}</p>
             </div>
             <button
               type="button"
@@ -99,7 +101,7 @@ function submit() {
 
         <div class="space-y-4 px-5 py-4">
           <label class="block">
-            <span class="text-[13px] font-medium text-dark">{{ t("l_Date_utc") }}</span>
+            <span class="text-[13px] font-medium text-dark">{{ t("l_Date") }}</span>
             <input
               v-model="dateYmd"
               type="date"

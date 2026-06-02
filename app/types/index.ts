@@ -177,6 +177,10 @@ export interface Order {
   cookId: string
   status: OrderStatus
   totalAmount: number
+  /** Platform commission (12%) deducted from totalAmount. */
+  commission?: number
+  /** Amount the cook receives after commission. */
+  cookPayout?: number
   deliveryFee: number
   deliveryAddress: string
   /** Customer phone from checkout; used on cook-facing order views. */

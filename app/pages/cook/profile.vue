@@ -237,7 +237,7 @@ async function loadCookProfile() {
         typeof payload.businessName === "string" ? payload.businessName : undefined,
       preparationTimeMin:
         typeof payload.avgTimeCooking === "number"
-          ? payload.avgTimeCooking
+          ? payload.avgTimeCooking.toFixed(2)
           : undefined,
       menuItemsCount:
         typeof payload.countDishes === "number"

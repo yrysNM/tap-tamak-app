@@ -21,7 +21,8 @@
             <button type="button" class="flex items-center justify-center text-muted transition hover:text-dark"
               :aria-label="showPassword ? $t('l_Hide_password') : $t('l_Show_password')"
               @click="showPassword = !showPassword">
-              <Icon :name="showPassword ? 'material-symbols:visibility-off-outline' : 'material-symbols:visibility-outline'"
+              <Icon
+                :name="showPassword ? 'material-symbols:visibility-off-outline' : 'material-symbols:visibility-outline'"
                 class="size-5" />
             </button>
           </template>
@@ -63,12 +64,20 @@ async function onSubmit() {
   if (!phone.value || !password.value) return;
   loading.value = true;
   error.value = "";
+  let redirectTo = "/";
   try {
     await auth.login({
       phone: normalizePhone(phone.value).e164,
       password: password.value,
     });
-    await navigateTo("/");
+
+    if (auth.user?.role === 'USER') {
+      redirectTo = "/cooks";
+    } else {
+      redirectTo = "/";
+    }
+
+    await navigateTo(redirectTo);
   } catch (e: any) {
     error.value = e?.data?.message ?? t("l_Invalid_phone_or_password");
   } finally {

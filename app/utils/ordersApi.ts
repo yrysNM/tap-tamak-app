@@ -49,6 +49,14 @@ export function isOrderCancellable(status: OrderStatus | string | undefined | nu
 
 export const ORDER_PAYMENT_TIMEOUT_MS = 5 * 60 * 1000
 
+/** Time limit for the cook to accept or reject a paid order. */
+export const ORDER_COOK_ACCEPTANCE_TIMEOUT_MS = 10 * 60 * 1000
+
+/** True when the cook must accept or reject the order. */
+export function isOrderAwaitingCookAcceptance(order: Order): boolean {
+  return (order.status ?? '').toString().toUpperCase() === 'AWAITING_COOK_ACCEPTANCE'
+}
+
 /** True when the customer must pay before the kitchen queue starts. */
 export function isOrderAwaitingPayment(order: Order): boolean {
   const status = (order.status ?? '').toString().toUpperCase()
@@ -154,6 +162,8 @@ function parseOrder(raw: unknown): Order | null {
     cookId: asString(o.cookId, ''),
     status: ((o.status as string) ?? 'PENDING') as OrderStatus,
     totalAmount: asNumber(o.totalAmount ?? o.itemsTotal, 0),
+    commission: asNumber(o.commission ?? o.platformFee, 0) || undefined,
+    cookPayout: asNumber(o.cookPayout, 0) || undefined,
     deliveryFee: asNumber(o.deliveryFee, 0),
     deliveryAddress: asString(o.deliveryAddress, ''),
     contactPhone:

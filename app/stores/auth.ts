@@ -72,10 +72,10 @@ export const useAuthStore = defineStore('auth', {
     },
   },
 
-  // Use Nuxt default (cookies via pinia-plugin-persistedstate) so SSR + middleware
-  // see the same session after refresh. localStorage-only breaks isAuthenticated on the server.
+  // localStorage survives Capacitor WebView restarts; cookies do not reliably persist in the APK.
   persist: {
     key: 'auth',
     pick: ['user', 'accessToken', 'refreshToken', 'verificationStatus'],
+    storage: piniaPluginPersistedstate.localStorage(),
   },
 })

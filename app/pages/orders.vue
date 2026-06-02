@@ -102,6 +102,19 @@ function itemSubtotal(item: OrderItem): number {
   return item.price * item.quantity;
 }
 
+function orderDeliveryFee(order: Order): number {
+  return Math.max(0, Math.round(order.deliveryFee ?? 0));
+}
+
+function orderDishesSubtotal(order: Order): number {
+  const fromItems = order.items.reduce((sum, item) => sum + itemSubtotal(item), 0);
+  const delivery = orderDeliveryFee(order);
+  if (delivery > 0 && order.totalAmount >= delivery) {
+    return order.totalAmount - delivery;
+  }
+  return fromItems;
+}
+
 function showHero(order: Order): OrderItem | undefined {
   return order.items[0];
 }
@@ -432,10 +445,22 @@ async function confirmDeliveryReject(): Promise<void> {
 
             <div v-if="isOrderAwaitingPayment(order)"
               class="rounded-[14px] border border-[#FF7A00]/22 bg-[#FF7A00]/6 px-3 py-2.5">
-              <p class="text-[11.5px] leading-relaxed text-subtle">
+              <p v-if="orderDeliveryFee(order) > 0"
+                class="text-[11.5px] font-semibold leading-relaxed text-[#FF7A00]">
+                {{ t("l_Order_awaiting_payment_delivery_warning", { amount: formatPrice(orderDeliveryFee(order)) }) }}
+              </p>
+              <p class="text-[11.5px] leading-relaxed text-subtle"
+                :class="orderDeliveryFee(order) > 0 ? 'mt-1.5' : ''">
                 {{ t("l_Transfer_to_kaspi") }}
                 <span class="font-bold text-[#FF7A00]">{{ formatPrice(order.totalAmount) }} ₸</span>
                 {{ t("l_Kaspi_payment_hint") }}
+              </p>
+              <p v-if="orderDeliveryFee(order) > 0"
+                class="mt-1 text-[11px] leading-relaxed text-subtle">
+                {{ t("l_Order_awaiting_payment_breakdown", {
+                  dishes: formatPrice(orderDishesSubtotal(order)),
+                  delivery: formatPrice(orderDeliveryFee(order)),
+                }) }}
               </p>
               <p class="mt-1 text-[11.5px] leading-relaxed text-subtle">
                 {{ t("l_Payment_number") }}

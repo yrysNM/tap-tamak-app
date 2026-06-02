@@ -74,12 +74,12 @@
           <Icon name="material-symbols:menu-book-2" class="size-6" />
           <span class="text-xs">{{ $t('l_Menu') }}</span>
         </NuxtLink>
-        <NuxtLink to="/cook/earnings"
+        <!-- <NuxtLink to="/cook/earnings"
           class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary">
           <Icon name="material-symbols:payments-outline" class="size-6" />
           <span class="text-xs">{{ $t('l_Earnings') }}</span>
-        </NuxtLink>
+        </NuxtLink> -->
         <NuxtLink to="/cook/profile"
           class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary">
