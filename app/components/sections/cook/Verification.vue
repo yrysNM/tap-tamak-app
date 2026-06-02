@@ -64,8 +64,53 @@
         </div>
       </div>
 
+      <!-- Статус: отклонено -->
+      <div v-else-if="showRejectedIntro" class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 shadow-soft"
+        role="region" aria-labelledby="verification-rejected-heading">
+        <p id="verification-rejected-heading" class="text-[15px] font-bold text-heading">
+          {{ t("l_Application_rejected") }}
+        </p>
+        <p class="mt-2 rounded-[14px] bg-error/10 px-3 py-2 text-[12px] font-bold text-error">
+          {{ statusLabel }}
+        </p>
+        <div v-if="rejectionReason" class="mt-3 rounded-[14px] border border-error/20 bg-error/5 px-3 py-2.5">
+          <p class="text-[11px] font-bold uppercase tracking-wide text-error">
+            {{ t("l_Rejection_reason") }}
+          </p>
+          <p class="mt-1 text-[12px] leading-relaxed text-heading">
+            {{ rejectionReason }}
+          </p>
+        </div>
+        <p class="mt-3 text-[12px] leading-relaxed text-caption">
+          {{ t("l_Rejected_resubmit_hint") }}
+        </p>
+        <button type="button"
+          class="mt-4 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2"
+          @click="editingDocuments = true">
+          {{ t("l_Edit_documents") }}
+        </button>
+
+        <div>
+          <button type="button"
+            class="mt-6 flex h-14 w-full items-center justify-center rounded-[18px] bg-primary text-[17px] font-bold text-white shadow-[0_10px_24px_rgba(244,123,32,0.28)] disabled:opacity-45"
+            @click="signOut">{{ $t('l_Log_out') }}</button>
+        </div>
+      </div>
+
       <!-- Форма загрузки -->
       <template v-else-if="showUploadForm && !verificationLoading">
+        <div
+          v-if="status === 'REJECTED' && rejectionReason"
+          class="mt-6 rounded-[20px] border border-error/20 bg-error/5 px-3.5 py-3 shadow-soft"
+        >
+          <p class="text-[11px] font-bold uppercase tracking-wide text-error">
+            {{ t("l_Rejection_reason") }}
+          </p>
+          <p class="mt-1 text-[12px] leading-relaxed text-heading">
+            {{ rejectionReason }}
+          </p>
+        </div>
+
         <!-- Фото кухни -->
         <div class="mt-6 rounded-[20px] border border-black/10 bg-white p-3.5 shadow-soft" data-node-id="178:770">
           <div class="flex items-center justify-between gap-2">
@@ -296,6 +341,12 @@ const statusLabel = computed(() => {
   return m[status.value as VerificationStatus] ?? status.value;
 });
 
+const rejectionReason = computed(() => {
+  const reason = documentsFromApi.value?.rejectionReason;
+  if (typeof reason !== "string") return "";
+  return reason.trim();
+});
+
 const showDocumentsIntro = computed(
   () =>
     !verificationLoading.value &&
@@ -305,19 +356,27 @@ const showDocumentsIntro = computed(
     !editingDocuments.value,
 );
 
+const showRejectedIntro = computed(
+  () =>
+    !verificationLoading.value &&
+    !fetchError.value &&
+    status.value === "REJECTED" &&
+    !editingDocuments.value,
+);
+
 const showUploadForm = computed(() => {
   if (status.value === "APPROVED" || status.value === "UNDER_REVIEW")
     return false;
-  if (status.value === "REJECTED") return true;
+  if (status.value === "REJECTED") return editingDocuments.value;
   if (documentsFromApi.value === null && !editingDocuments.value) return false;
   return true;
 });
 
 const showDocumentsBack = computed(
   () =>
-    status.value === "PENDING" &&
-    documentsFromApi.value === null &&
-    editingDocuments.value,
+    editingDocuments.value &&
+    (status.value === "REJECTED" ||
+      (status.value === "PENDING" && documentsFromApi.value === null)),
 );
 
 const mapCenter = computed<[number, number]>(() => [
@@ -391,7 +450,12 @@ onMounted(async () => {
   await loadVerification();
   redirectIfApproved();
 });
-watch(status, redirectIfApproved);
+watch(status, (next) => {
+  if (next === "REJECTED") {
+    editingDocuments.value = false;
+  }
+  redirectIfApproved();
+});
 
 const photoSlots = computed(() => {
   const slots: ({ previewUrl: string; file: File } | null)[] = [

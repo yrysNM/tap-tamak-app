@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  CookVerificationGetResponse,
   LoginDto,
   LoginResponse,
   RegisterDto,
@@ -34,6 +35,29 @@ export const useAuthStore = defineStore('auth', {
         cook?: { verificationStatus?: VerificationStatus }
       }
       this.verificationStatus = loginUser.cook?.verificationStatus ?? null
+      if (this.user?.role === 'COOK') {
+        await this.fetchVerificationStatus()
+      }
+    },
+
+    async fetchVerificationStatus() {
+      const nuxtApp = useNuxtApp()
+      try {
+        const raw = await (nuxtApp.$api as (
+          url: string,
+          opts: { method: string },
+        ) => Promise<CookVerificationGetResponse | ApiResponse<CookVerificationGetResponse>>)(
+          '/cooks/me/verification',
+          { method: 'GET' },
+        )
+        const body =
+          raw && typeof raw === 'object' && 'data' in raw
+            ? raw.data
+            : raw
+        this.verificationStatus = body.verificationStatus
+      } catch {
+        // Keep session; verification screen will retry.
+      }
     },
 
     async register(dto: RegisterDto) {

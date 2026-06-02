@@ -343,6 +343,8 @@
   "l_Verification_not_sent": "Documents not submitted yet. Upload kitchen photos and health book (PDF or photo), then tap Continue.",
   "l_Edit_documents": "Edit documents",
   "l_Application_under_review": "Application under review",
+  "l_Application_rejected": "Application rejected",
+  "l_Rejection_reason": "Rejection reason",
   "l_Under_review_hint": "Documents submitted. Moderation will review and update your account status. This usually takes a few business days.",
   "l_Status_under_review": "Status: under review",
   "l_Kitchen_photos": "Kitchen photos",

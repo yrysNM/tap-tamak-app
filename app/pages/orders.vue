@@ -15,6 +15,7 @@ import {
   rejectDeliveredOrder,
 } from "~/utils/ordersApi";
 import { useOrderStatusLabel } from "~/composables/useOrderStatusLabel";
+import { usePullToRefresh } from "~/composables/usePullToRefresh";
 
 const toast = usePageToast();
 const { t } = useI18n();
@@ -51,6 +52,32 @@ const {
 
 const isEmpty = computed(
   () => !pending.value && !error.value && (orders.value?.length ?? 0) === 0,
+);
+
+const initialLoadDone = ref(false);
+watch(
+  pending,
+  (isPending) => {
+    if (!isPending) initialLoadDone.value = true;
+  },
+  { immediate: true },
+);
+const isInitialLoad = computed(() => pending.value && !initialLoadDone.value);
+
+const pageRoot = ref<HTMLElement | null>(null);
+
+const { pullDistance, isRefreshing } = usePullToRefresh(
+  async () => {
+    await refresh();
+  },
+  {
+    getScrollTarget: () => pageRoot.value?.closest("main") ?? null,
+    disabled: computed(() => deliveryModal.value !== null),
+  },
+);
+
+const pullIndicatorHeight = computed(() =>
+  isRefreshing.value ? 40 : Math.round(pullDistance.value),
 );
 
 const localizedMonths = useLocalizedMonths();
@@ -323,15 +350,39 @@ async function confirmDeliveryReject(): Promise<void> {
 </script>
 
 <template>
-  <div class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
+  <div ref="pageRoot" class="relative mx-auto min-h-screen w-full max-w-md bg-page-cream">
     <header class="sticky top-0 z-30 border-b border-black/5 bg-page-cream/92 px-4 pb-3 pt-3.5 backdrop-blur-[6px]">
       <h1 class="text-[23.1px] font-bold leading-none tracking-[-0.2px] text-heading">
         {{ t("l_My_orders") }}
       </h1>
     </header>
 
-    <div class="px-4 pb-28 pt-4">
-      <div v-if="pending" class="flex flex-col gap-3">
+    <div
+      class="flex justify-center overflow-hidden transition-[height] duration-150 ease-out"
+      :style="{ height: `${pullIndicatorHeight}px` }"
+      aria-hidden="true"
+    >
+      <div
+        v-if="pullDistance > 0 || isRefreshing"
+        class="flex items-center gap-2 py-1 text-[#FF7A00]"
+      >
+        <Icon
+          name="material-symbols:refresh-rounded"
+          class="size-5 shrink-0"
+          :class="isRefreshing ? 'animate-spin' : ''"
+          :style="!isRefreshing ? { transform: `rotate(${Math.min(180, pullDistance * 2)}deg)` } : undefined"
+        />
+        <span v-if="isRefreshing" class="text-[11px] font-semibold text-subtle">
+          {{ t("l_Loading") }}
+        </span>
+      </div>
+    </div>
+
+    <div
+      class="px-4 pb-28 pt-4 transition-opacity duration-150"
+      :class="isRefreshing && !isInitialLoad ? 'pointer-events-none opacity-60' : ''"
+    >
+      <div v-if="isInitialLoad" class="flex flex-col gap-3">
         <div v-for="n in 2" :key="`sk-${n}`"
           class="rounded-[22px] border border-black/6 bg-white/92 p-4 shadow-[0_14px_34px_rgba(0,0,0,0.1)]">
           <div class="flex items-center gap-3">

@@ -73,6 +73,8 @@ async function onSubmit() {
 
     if (auth.user?.role === 'USER') {
       redirectTo = "/cooks";
+    } else if (auth.user?.role === 'COOK') {
+      redirectTo = getCookHomePath(auth.user, auth.verificationStatus);
     } else {
       redirectTo = "/";
     }

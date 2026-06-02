@@ -610,6 +610,16 @@ const T = {
   },
   l_Edit_documents: { ru: 'Редактировать документы', kk: 'Құжаттарды өңдеу', en: 'Edit documents' },
   l_Application_under_review: { ru: 'Заявка на проверке', kk: 'Өтінім тексеруде', en: 'Application under review' },
+  l_Application_rejected: {
+    ru: 'Заявка отклонена',
+    kk: 'Өтінім қабылданбады',
+    en: 'Application rejected',
+  },
+  l_Rejection_reason: {
+    ru: 'Причина отклонения',
+    kk: 'Қабылданбаған себебі',
+    en: 'Rejection reason',
+  },
   l_Under_review_hint: {
     ru: 'Документы отправлены. Модерация проверит их и изменит статус аккаунта. Обычно это занимает до нескольких рабочих дней.',
     kk: 'Құжаттар жіберілді. Модерация тексеріп, аккаунт мәртебесін өзгертеді. Әдетте бірнеше жұмыс күні алады.',
