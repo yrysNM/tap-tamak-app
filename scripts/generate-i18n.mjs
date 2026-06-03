@@ -343,6 +343,13 @@ const T = {
   l_Help: { ru: 'Помощь', kk: 'Көмек', en: 'Help' },
   l_Support: { ru: 'Поддержка', kk: 'Қолдау', en: 'Support' },
   l_Support_hint: { ru: 'Чат, вопросы, помощь', kk: 'Чат, сұрақтар, көмек', en: 'Chat, questions, help' },
+  l_Support_feedback_text: {
+    ru: 'Если у вас есть вопросы, предложения или отзыв — позвоните нам. Мы ответим и поможем разобраться с заказом или приложением.',
+    kk: 'Сұрақтарыңыз, ұсыныстарыңыз немесе пікіріңіз болса — бізге қоңырау шалыңыз. Тапсырыс немесе қосымша бойынша көмектесеміз.',
+    en: 'If you have questions, suggestions, or feedback — call us. We will help with your order or the app.',
+  },
+  l_Support_phone_label: { ru: 'Телефон поддержки', kk: 'Қолдау телефоны', en: 'Support phone' },
+  l_Call_support: { ru: 'Позвонить', kk: 'Қоңырау шалу', en: 'Call' },
   l_Log_out: { ru: 'Выйти', kk: 'Шығу', en: 'Log out' },
   l_End_session: { ru: 'Завершить сеанс', kk: 'Сеансты аяқтау', en: 'End session' },
 

@@ -121,7 +121,11 @@
         data-name="Помощь">
         <h2 class="mb-1.5 text-[15px] font-bold text-section">{{ $t("l_Help") }}</h2>
 
-        <NuxtLink to="#" class="flex items-center gap-3 border-b border-black/8 pb-3 pt-0" @click.prevent>
+        <button
+          type="button"
+          class="flex w-full items-center gap-3 border-b border-black/8 pb-3 pt-0 text-left"
+          @click="supportOpen = true"
+        >
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
             <i class="fi fi-rr-headset text-[15px] text-primary" />
@@ -131,7 +135,7 @@
             <p class="mt-1 text-[11.1px] text-subtle">{{ $t("l_Support_hint") }}</p>
           </div>
           <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
-        </NuxtLink>
+        </button>
 
         <div class="flex items-center gap-3 border-t border-black/8 pt-3">
           <div
@@ -155,6 +159,7 @@
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
     <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
+    <UiSupportModal v-model="supportOpen" />
   </div>
 </template>
 
@@ -171,6 +176,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const languagePickerOpen = ref(false);
 const changePasswordOpen = ref(false);
+const supportOpen = ref(false);
 
 const user = computed(() => auth.user);
 
