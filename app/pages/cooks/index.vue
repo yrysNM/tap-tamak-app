@@ -1,18 +1,18 @@
 <template>
   <section class="relative mx-auto h-[calc(100vh-8.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
     <ClientOnly>
-      <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full"
-        :options="{ zoomControl: false }" @ready="onMapReady">
+      <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full" :options="{ zoomControl: false }"
+        @ready="onMapReady">
         <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" layer-type="base" name="OpenStreetMap" />
 
-        <LCircle v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]"
-          :radius="locationAccuracy" color="#2aa4ff" :fill-color="'#2aa4ff'" :fill-opacity="0.12" :weight="1" />
+        <LCircle v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]" :radius="locationAccuracy"
+          color="#2aa4ff" :fill-color="'#2aa4ff'" :fill-opacity="0.12" :weight="1" />
 
         <LMarker v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]" :icon="userMarkerIcon"
           :z-index-offset="1000" />
 
-        <LMarker v-for="cook in filteredCooks" :key="cook.id" :lat-lng="[cook.latitude!, cook.longitude!]"
-          :icon="cookMarkerIcon" @click="selectCook(cook.id)" />
+        <LMarker v-for="cook in mapCooks" :key="cook.id" :lat-lng="[cook.latitude!, cook.longitude!]"
+          :icon="cookMarkerIconFor(cook)" :z-index-offset="cook.isAvailable ? 200 : 0" @click="selectCook(cook.id)" />
       </LMap>
     </ClientOnly>
 
@@ -85,9 +85,9 @@
                 {{ specialtiesLine(selectedCook.specialties) }}
               </p>
               <p class="mt-1 text-[12px] font-semibold text-subtle">
-                <!-- <span class="text-primary"
-                  >{{ selectedCook.rating.toFixed(1) }} ★</span
-                > -->
+                <span :class="selectedCook.isAvailable ? 'text-[#6B8E23]' : 'text-muted'">
+                  {{ selectedCook.isAvailable ? t("l_Online") : t("l_Offline") }}
+                </span>
                 <span class="mx-1 text-black/25">•</span>
                 {{ distanceLabel(selectedCook) }}
               </p>
@@ -141,16 +141,36 @@ const userMarkerIcon = computed(
     }) as L.Icon,
 );
 
-const cookMarkerIcon = computed(
+const onlineCookMarkerIcon = computed(
   (): L.Icon =>
     L.divIcon({
-      html: `<img src="https://api.iconify.design/glyphs-poly/map-marker-1.svg?color=%23ff7a00&width=32&height=32" alt="" />`,
-      className: "cook-map-marker",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -32],
+      html: `<div class="cook-map-marker-online">
+        <span class="cook-map-marker-online__pulse"></span>
+        <img src="https://api.iconify.design/fluent/person-available-32-light.svg?color=%23f47b20&width=32&height=32" alt="" class="cook-map-marker-online__icon" />
+      </div>`,
+      className: "cook-map-marker-online-wrap",
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
     }) as L.Icon,
 );
+
+const offlineCookMarkerIcon = computed(
+  (): L.Icon =>
+    L.divIcon({
+      html: `<img src="https://api.iconify.design/glyphs-poly/map-marker-1.svg?color=%239ca3af&width=28&height=28" alt="" />`,
+      className: "cook-map-marker-offline-wrap",
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      popupAnchor: [0, -28],
+    }) as L.Icon,
+);
+
+function cookMarkerIconFor(cook: Cook): L.Icon {
+  return cook.isAvailable === true
+    ? onlineCookMarkerIcon.value
+    : offlineCookMarkerIcon.value;
+}
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
 
@@ -173,7 +193,10 @@ const { data: list } = await useAsyncData(
   "map-cooks",
   async () => {
     const result = await fetchCooksPage(api, 1, 100);
-    return result.items;
+    return result.items.map((cook) => ({
+      ...cook,
+      isAvailable: cook.isAvailable === true,
+    }));
   },
 );
 
@@ -221,11 +244,14 @@ const filteredCooks = computed(() => {
   });
 });
 
+const mapCooks = computed(() => filteredCooks.value);
+
 const selectedCookId = ref<string>("");
 const selectedCook = computed(
   () =>
-    filteredCooks.value.find((c) => c.id === selectedCookId.value) ??
-    filteredCooks.value[0] ??
+    mapCooks.value.find((c) => c.id === selectedCookId.value) ??
+    mapCooks.value.find((c) => c.isAvailable) ??
+    mapCooks.value[0] ??
     null,
 );
 
@@ -262,7 +288,7 @@ function cookInitials(name: string | undefined): string {
 
 function selectCook(cookId: string) {
   selectedCookId.value = cookId;
-  const cook = filteredCooks.value.find((c) => c.id === cookId);
+  const cook = mapCooks.value.find((c) => c.id === cookId);
   if (cook?.latitude && cook?.longitude) {
     centerMapOn(cook.latitude, cook.longitude);
   }
@@ -295,9 +321,51 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:deep(.cook-map-marker) {
+:deep(.cook-map-marker-online-wrap),
+:deep(.cook-map-marker-offline-wrap) {
   background: transparent;
   border: none;
+}
+
+:deep(.cook-map-marker-online) {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+:deep(.cook-map-marker-online__icon) {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 4px rgba(244, 123, 32, 0.35));
+}
+
+:deep(.cook-map-marker-online__pulse) {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: rgba(244, 123, 32, 0.28);
+  transform: translate(-50%, -50%);
+  animation: cook-marker-pulse 2s ease-out infinite;
+}
+
+@keyframes cook-marker-pulse {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
 }
 
 :deep(.user-location-marker-wrap) {
