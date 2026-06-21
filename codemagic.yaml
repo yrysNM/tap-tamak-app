@@ -129,7 +129,7 @@ workflows:
           success: true
           failure: true
 
-      app_store_connect:
+      app_store_connect: TapTamaq App Store Connect
         auth: integration
         submit_to_testflight: true
         beta_groups:
