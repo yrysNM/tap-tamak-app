@@ -1,0 +1,137 @@
+workflows:
+  ios-app-store-release:
+    name: TapTamaq iOS App Store / TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      # Replace with the exact name from Codemagic → Team integrations → Developer Portal
+      app_store_connect: TapTamaq App Store Connect
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.taptamaq.app
+
+      groups:
+        # Create in Codemagic → Environment variables
+        - tap_tamaq_ios
+
+      vars:
+        # App Store Connect → Your App → General → App Information → Apple ID
+        APP_STORE_APPLE_ID: 6782316621
+
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_SCHEME: App
+        BUNDLE_ID: com.taptamaq.app
+        MARKETING_VERSION: "1.0.0"
+        NODE_ENV: production
+
+      node: 22
+      xcode: latest
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+        - pattern: release/*
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: "v*"
+          include: true
+
+    scripts:
+      - name: Install pnpm and Node dependencies
+        script: |
+          set -e
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile
+
+      - name: Build Nuxt static web assets
+        script: |
+          set -e
+          pnpm exec nuxi generate
+
+      - name: Add / sync Capacitor iOS project
+        script: |
+          set -e
+          if [ ! -d ios/App ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+          # Android-only patches; safe no-ops when android/ is absent
+          node scripts/patch-android-edge-to-edge.mjs || true
+          node scripts/patch-android-geolocation.mjs || true
+
+      - name: Patch iOS Info.plist permissions
+        script: |
+          set -e
+          INFO_PLIST="$CM_BUILD_DIR/ios/App/App/Info.plist"
+
+          /usr/libexec/PlistBuddy -c "Delete :NSLocationWhenInUseUsageDescription" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string 'TapTamaq uses your location to show nearby cooks on the map.'" "$INFO_PLIST"
+
+          /usr/libexec/PlistBuddy -c "Delete :NSPhotoLibraryUsageDescription" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'TapTamaq needs access to your photo library to upload profile, menu, and verification photos.'" "$INFO_PLIST"
+
+          /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$INFO_PLIST"
+
+      - name: Install CocoaPods dependencies
+        script: |
+          set -e
+          cd ios/App
+          pod install
+
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+
+      - name: Increment iOS build number
+        script: |
+          set -e
+          cd "$CM_BUILD_DIR/ios/App"
+
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" || true)
+          if [ -z "$LATEST_BUILD_NUMBER" ] || [ "$LATEST_BUILD_NUMBER" -lt 1 ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          fi
+
+          agvtool new-marketing-version "$MARKETING_VERSION"
+          agvtool new-version -all "$UPDATED_BUILD_NUMBER"
+          echo "Build number set to $UPDATED_BUILD_NUMBER"
+
+      - name: Build IPA for App Store distribution
+        script: |
+          set -e
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      email:
+        recipients:
+          - yrysbek.or.s@gmail.com
+        notify:
+          success: true
+          failure: true
+
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
+        submit_to_app_store: false
