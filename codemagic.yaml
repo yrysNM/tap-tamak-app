@@ -5,8 +5,8 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      # Replace with the exact name from Codemagic → Team integrations → Developer Portal
-      app_store_connect: TapTamaq App Store Connect
+      # Codemagic → Team settings → Team integrations → Developer Portal → key name
+      app_store_connect: "TapTamaq App Store Connect"
 
     environment:
       ios_signing:
@@ -129,8 +129,8 @@ workflows:
           success: true
           failure: true
 
-      app_store_connect: TapTamaq App Store Connect
-        auth: integration
+      app_store_connect:
+        auth: TapTamaq App Store Connect
         submit_to_testflight: true
         beta_groups:
           - Internal Testers
