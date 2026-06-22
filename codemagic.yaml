@@ -6,7 +6,7 @@ workflows:
 
     integrations:
       # Codemagic → Team settings → Team integrations → Developer Portal → key name
-      # app_store_connect: "TapTamaq App Store Connect"
+      app_store_connect: "TapTamaq App Store Connect"
 
     environment:
       ios_signing:
@@ -130,7 +130,7 @@ workflows:
           failure: true
 
       app_store_connect:
-        auth: TapTamaq App Store Connect
+        auth: integration
         submit_to_testflight: true
         beta_groups:
           - Internal Testers
