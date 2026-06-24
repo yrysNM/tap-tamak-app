@@ -6,7 +6,7 @@ workflows:
 
     integrations:
       # Codemagic → Team settings → Team integrations → Developer Portal → key name
-      app_store_connect: "Codemagic API key"
+      app_store_connect: "TapTamaq App Store Connect2"
 
     environment:
       ios_signing:
