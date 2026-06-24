@@ -9,9 +9,10 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "mobile:build": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs",
-    "mobile:android": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs && npx cap open android",
-    "mobile:ios": "nuxi generate && npx cap sync && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs && npx cap open ios",
+    "cap:assets": "capacitor-assets generate",
+    "mobile:build": "nuxi generate && npx cap sync && capacitor-assets generate && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs",
+    "mobile:android": "nuxi generate && npx cap sync && capacitor-assets generate && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs && npx cap open android",
+    "mobile:ios": "nuxi generate && npx cap sync && capacitor-assets generate && node scripts/patch-android-edge-to-edge.mjs && node scripts/patch-android-geolocation.mjs && npx cap open ios",
     "mobile:dev": "npx cap run android -l --port 32206"
   },
   "dependencies": {

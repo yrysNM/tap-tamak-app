@@ -69,6 +69,8 @@ workflows:
             pnpm exec cap add ios
           fi
           pnpm exec cap sync ios
+          # Regenerate iOS app icon + splash from assets/ (cap add/sync leaves Capacitor defaults)
+          pnpm exec capacitor-assets generate --ios
           # Android-only patches; safe no-ops when android/ is absent
           node scripts/patch-android-edge-to-edge.mjs || true
           node scripts/patch-android-geolocation.mjs || true
