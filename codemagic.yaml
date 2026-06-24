@@ -6,12 +6,12 @@ workflows:
 
     integrations:
       # Codemagic → Team settings → Team integrations → Developer Portal → key name
-      app_store_connect: "TapTamaq App Store Connect"
+      app_store_connect: "TapTamaq App Store Connect2"
 
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.taptamaq.app
+        bundle_identifier: "com.taptamaq.app"
 
       groups:
         # Create in Codemagic → Environment variables
