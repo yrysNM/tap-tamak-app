@@ -50,13 +50,15 @@ workflows:
       - name: Install pnpm and Node dependencies
         script: |
           set -e
+          cd "$CM_BUILD_DIR"
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@9.15.4 --activate
           pnpm install --frozen-lockfile
 
       - name: Build Nuxt static web assets
         script: |
           set -e
+          cd "$CM_BUILD_DIR"
           pnpm exec nuxi generate
 
       - name: Add / sync Capacitor iOS project
