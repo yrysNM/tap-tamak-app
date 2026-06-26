@@ -121,11 +121,8 @@
         data-name="Помощь">
         <h2 class="mb-1.5 text-[15px] font-bold text-section">{{ $t("l_Help") }}</h2>
 
-        <button
-          type="button"
-          class="flex w-full items-center gap-3 border-b border-black/8 pb-3 pt-0 text-left"
-          @click="supportOpen = true"
-        >
+        <button type="button" class="flex w-full items-center gap-3 border-b border-black/8 pb-3 pt-0 text-left"
+          @click="supportOpen = true">
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
             <i class="fi fi-rr-headset text-[15px] text-primary" />
@@ -137,11 +134,29 @@
           <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
         </button>
 
+
+
+        <div class="flex items-center gap-3 border-b border-black/8 py-3">
+          <div
+            class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-error/25 bg-error/10"
+            aria-hidden>
+            <Icon name="material-symbols:person-remove-outline" class="text-[15px] text-error" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[15px] font-bold text-error">{{ $t("l_Delete_account") }}</p>
+            <!-- <p class="mt-1 text-[11.3px] text-subtle">{{ $t("l_Delete_account_hint") }}</p> -->
+          </div>
+          <button type="button"
+            class="shrink-0 rounded-xl border border-error/25 bg-error/10 px-[11px] py-2 text-[13px] font-bold text-error"
+            @click="deleteAccountOpen = true">
+            {{ t("l_Delete") }}
+          </button>
+        </div>
+
         <div class="flex items-center gap-3 border-t border-black/8 pt-3">
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-danger-foreground/25 bg-danger-foreground/10"
             aria-hidden>
-            <!-- <i class="fi fi-rr-sign-out text-[15px] text-danger-foreground" /> -->
             <Icon name="material-symbols:logout-rounded" class="text-[15px] text-danger-foreground" />
           </div>
           <div class="min-w-0 flex-1">
@@ -159,6 +174,7 @@
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
     <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
+    <UiDeleteAccountModal v-model="deleteAccountOpen" @success="onAccountDeleted" />
     <UiSupportModal v-model="supportOpen" />
   </div>
 </template>
@@ -176,6 +192,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const languagePickerOpen = ref(false);
 const changePasswordOpen = ref(false);
+const deleteAccountOpen = ref(false);
 const supportOpen = ref(false);
 
 const user = computed(() => auth.user);
@@ -223,5 +240,11 @@ async function onPasswordChanged() {
   toast.show(t("l_Password_changed"), "success");
   auth.logout();
   await navigateTo("/login");
+}
+
+async function onAccountDeleted() {
+  auth.logout();
+  await navigateTo("/login");
+  toast.show(t("l_Account_deleted"), "success");
 }
 </script>

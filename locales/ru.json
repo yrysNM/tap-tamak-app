@@ -80,6 +80,11 @@
   "l_Offer_agreement_required": "Примите условия договора оферты",
   "l_Offer_agreement_title": "Договор оферты",
   "l_Offer_agreement_load_error": "Не удалось загрузить документ",
+  "l_Privacy_policy_prefix": "Я принимаю ",
+  "l_Privacy_policy_link": "политику конфиденциальности",
+  "l_Privacy_policy_required": "Примите политику конфиденциальности",
+  "l_Privacy_policy_title": "Политика конфиденциальности",
+  "l_Privacy_policy_load_error": "Не удалось загрузить документ",
   "l_Role_page_tagline": "Кдиен",
   "l_Role_and_account": "Роль и аккаунт",
   "l_Role_intro": "Сначала выбираем роль, потом вводим пару данных — и можно пользоваться.",
@@ -492,5 +497,11 @@
   "l_New_password": "Новый пароль",
   "l_Confirm_password": "Подтвердить пароль", 
   "l_Change_password": "Изменить пароль",
+  "l_Delete_account": "Удалить аккаунт",
+  "l_Delete_account_hint": "Ваши персональные данные будут удалены, вход в аккаунт станет невозможен. Записи о заказах могут храниться в соответствии с законом.",
+  "l_Delete_account_confirm": "Удалить мой аккаунт",
+  "l_Delete_account_active_orders": "Завершите или отмените активные заказы перед удалением аккаунта.",
+  "l_Failed_delete_account": "Не удалось удалить аккаунт. Попробуйте ещё раз.",
+  "l_Account_deleted": "Ваш аккаунт удалён.",
   "l_Thank_you": "Спасибо!"
 }

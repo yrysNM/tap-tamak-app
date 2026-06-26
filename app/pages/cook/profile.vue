@@ -127,6 +127,12 @@
 
         <button type="button"
           class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
+          @click="deleteAccountOpen = true">
+          {{ t("l_Delete_account") }}
+        </button>
+
+        <button type="button"
+          class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
           @click="onLogout">
           {{ t("l_Log_out") }}
         </button>
@@ -135,6 +141,7 @@
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
     <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
+    <UiDeleteAccountModal v-model="deleteAccountOpen" @success="onAccountDeleted" />
   </div>
 </template>
 
@@ -171,6 +178,7 @@ const uploadingAvatar = ref(false);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const languagePickerOpen = ref(false);
 const changePasswordOpen = ref(false);
+const deleteAccountOpen = ref(false);
 
 const user = computed(() => auth.user);
 const cook = computed(
@@ -309,5 +317,11 @@ async function onPasswordChanged() {
   toast.show(t("l_Password_changed"), "success");
   auth.logout();
   await navigateTo("/login");
+}
+
+async function onAccountDeleted() {
+  auth.logout();
+  await navigateTo("/login");
+  toast.show(t("l_Account_deleted"), "success");
 }
 </script>

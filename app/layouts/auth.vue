@@ -36,6 +36,7 @@ function onBack() {
 
 const isRolePage = computed(() => router.currentRoute.value.path.includes('/role'))
 const isOfferPage = computed(() => router.currentRoute.value.path.includes('/legal/offer'))
+const isPrivacyPage = computed(() => router.currentRoute.value.path.includes('/legal/privacy'))
 const isRegisterPage = computed(() => router.currentRoute.value.path.includes('/register'))
-const showBackButton = computed(() => isRolePage.value || isOfferPage.value || isRegisterPage.value)
+const showBackButton = computed(() => isRolePage.value || isOfferPage.value || isPrivacyPage.value || isRegisterPage.value)
 </script>

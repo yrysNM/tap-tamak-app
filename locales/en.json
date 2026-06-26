@@ -80,6 +80,11 @@
   "l_Offer_agreement_required": "Please accept the offer agreement",
   "l_Offer_agreement_title": "Offer agreement",
   "l_Offer_agreement_load_error": "Could not load the document",
+  "l_Privacy_policy_prefix": "I accept the ",
+  "l_Privacy_policy_link": "privacy policy",
+  "l_Privacy_policy_required": "Please accept the privacy policy",
+  "l_Privacy_policy_title": "Privacy policy",
+  "l_Privacy_policy_load_error": "Could not load the document",
   "l_Role_page_tagline": "Client",
   "l_Role_and_account": "Role and account",
   "l_Role_intro": "Choose a role first, enter a few details, and you are ready to go.",
@@ -492,5 +497,11 @@
   "l_New_password": "New password",
   "l_Confirm_password": "Confirm password", 
   "l_Change_password": "Change password",
+  "l_Delete_account": "Delete account",
+  "l_Delete_account_hint": "Your personal data will be removed and you will not be able to sign in again. Order records may be kept as required by law.",
+  "l_Delete_account_confirm": "Delete my account",
+  "l_Delete_account_active_orders": "Complete or cancel active orders before deleting your account.",
+  "l_Failed_delete_account": "Could not delete account. Please try again.",
+  "l_Account_deleted": "Your account has been deleted.",
   "l_Thank_you": "Thank you"
 }
