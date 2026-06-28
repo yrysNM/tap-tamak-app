@@ -14,8 +14,8 @@
     </header>
 
     <div class="flex min-h-0 flex-1 px-4 pb-4"
-      :class="isOfferPage ? 'items-start pt-1' : 'items-center justify-center'">
-      <div class="flex w-full max-w-md min-h-0 flex-col" :class="isOfferPage ? 'flex-1' : ''">
+      :class="isLegalDocPage ? 'items-start pt-1' : 'items-center justify-center'">
+      <div class="flex w-full max-w-md min-h-0 flex-col" :class="isLegalDocPage ? 'flex-1' : ''">
         <slot />
       </div>
     </div>
@@ -35,8 +35,10 @@ function onBack() {
 }
 
 const isRolePage = computed(() => router.currentRoute.value.path.includes('/role'))
-const isOfferPage = computed(() => router.currentRoute.value.path.includes('/legal/offer'))
-const isPrivacyPage = computed(() => router.currentRoute.value.path.includes('/legal/privacy'))
+const isLegalDocPage = computed(() => {
+  const path = router.currentRoute.value.path
+  return path.includes('/legal/offer') || path.includes('/legal/privacy') || path.includes('/legal/terms')
+})
 const isRegisterPage = computed(() => router.currentRoute.value.path.includes('/register'))
-const showBackButton = computed(() => isRolePage.value || isOfferPage.value || isPrivacyPage.value || isRegisterPage.value)
+const showBackButton = computed(() => isRolePage.value || isLegalDocPage.value || isRegisterPage.value)
 </script>

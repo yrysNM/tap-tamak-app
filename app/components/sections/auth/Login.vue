@@ -28,15 +28,20 @@
           </template>
         </UiInput>
 
-        <label class="mt-2 flex cursor-pointer ml-1 items-center gap-2.5 text-left">
-          <input v-model="acceptedPrivacy" type="checkbox"
-            class="size-4 shrink-0 rounded border-black/20 text-primary focus:ring-primary" />
+        <label class="mt-2 flex cursor-pointer ml-1 items-start gap-2.5 text-left">
+          <input v-model="acceptedLegal" type="checkbox"
+            class="mt-0.5 size-4 shrink-0 rounded border-black/20 text-primary focus:ring-primary" />
           <span class="text-[11px] font-semibold leading-snug text-black/55">
-            {{ $t('l_Privacy_policy_prefix') }}
+            {{ $t('l_Login_legal_prefix') }}
             <button type="button" class="font-bold text-primary underline underline-offset-2"
               @click.prevent="navigateTo('/legal/privacy')">
-              {{ $t('l_Privacy_policy_link') }}
+              {{ $t('l_Login_legal_privacy_link') }}
             </button>
+            {{ $t('l_Login_legal_and') }}
+            <button type="button" class="font-bold text-primary underline underline-offset-2"
+              @click.prevent="navigateTo('/legal/terms')">
+              {{ $t('l_Login_legal_terms_link') }}
+            </button>{{ $t('l_Login_legal_suffix') }}
           </span>
         </label>
 
@@ -44,7 +49,7 @@
           {{ error }}
         </p>
 
-        <UiButton variant="primary" size="md" fullWidth :disabled="loading || !acceptedPrivacy"
+        <UiButton variant="primary" size="md" fullWidth :disabled="loading || !acceptedLegal"
           class="mt-5 rounded-[20px] text-[15px] font-bold shadow-[0_16px_32px_rgba(244,123,32,0.22)]"
           @click="onSubmit">
           {{ loading ? $t('l_Loading') : $t('l_Sign_in') }}
@@ -69,14 +74,14 @@ const { t } = useI18n();
 const phone = ref("");
 const password = ref("");
 const showPassword = ref(false);
-const acceptedPrivacy = ref(true);
+const acceptedLegal = ref(true);
 const error = ref("");
 const loading = ref(false);
 
 async function onSubmit() {
   if (!phone.value || !password.value) return;
-  if (!acceptedPrivacy.value) {
-    error.value = t("l_Privacy_policy_required");
+  if (!acceptedLegal.value) {
+    error.value = t("l_Login_legal_required");
     return;
   }
   loading.value = true;

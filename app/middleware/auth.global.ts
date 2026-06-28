@@ -3,7 +3,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const { isAuthenticated, isCook, verificationStatus } = storeToRefs(authStore)
   const isCookRoute = to.path === '/cook' || to.path.startsWith('/cook/')
 
-  const authFlowPaths = ['/login', '/register', '/forgot-password', '/role', '/legal/offer', '/legal/privacy']
+  const authFlowPaths = ['/login', '/register', '/forgot-password', '/role', '/legal/offer', '/legal/privacy', '/legal/terms']
 
   if (!isAuthenticated.value) {
     if (!authFlowPaths.includes(to.path)) {
