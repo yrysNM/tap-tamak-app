@@ -45,6 +45,8 @@ export default defineNuxtConfig({
       wsUrl:  process.env.NODE_ENV === 'production' || true ? 'https://tap-tamak-production.up.railway.app' : 'http://localhost:3000',
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
       supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE ?? '+77777799197',
+      legalTermsVersion: process.env.NUXT_PUBLIC_LEGAL_TERMS_VERSION ?? '2026-06-28',
+      legalPrivacyVersion: process.env.NUXT_PUBLIC_LEGAL_PRIVACY_VERSION ?? '2026-06-28',
     },
   },
   ssr: false,

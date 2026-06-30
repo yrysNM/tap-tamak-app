@@ -90,6 +90,17 @@
 
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
+        {{ t("l_Legal_section") }}
+      </h2>
+      <div class="mt-4 space-y-2 text-sm font-semibold">
+        <NuxtLink to="/legal/privacy" class="block text-primary underline underline-offset-2">{{ t("l_Legal_privacy") }}</NuxtLink>
+        <NuxtLink to="/legal/terms" class="block text-primary underline underline-offset-2">{{ t("l_Legal_terms") }}</NuxtLink>
+        <NuxtLink to="/legal/offer?role=cook" class="block text-primary underline underline-offset-2">{{ t("l_Legal_offer") }}</NuxtLink>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
         {{ t("l_Account") }}
       </h2>
 

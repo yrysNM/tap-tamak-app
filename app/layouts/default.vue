@@ -46,6 +46,13 @@ import { useCartStore } from "../stores/cart";
 
 const cartStore = useCartStore();
 const route = useRoute();
+const auth = useAuthStore();
+
+onMounted(() => {
+  if (auth.isAuthenticated) {
+    useModerationStore().refreshBlocks().catch(() => undefined);
+  }
+});
 
 const cartCount = computed(() => cartStore.totalItems);
 const showBottomNav = computed(() => !route.meta.hideBottomNav);

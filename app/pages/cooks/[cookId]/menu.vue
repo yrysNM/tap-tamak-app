@@ -20,6 +20,35 @@ const { $api } = useNuxtApp();
 const config = useRuntimeConfig();
 
 const checkoutSubmitting = ref(false);
+const moderation = useModerationStore();
+const reportOpen = ref(false);
+const blockOpen = ref(false);
+const reportTargetType = ref<import('~/types/moderation').ReportTargetType>('COOK');
+const reportTargetId = ref('');
+const reportTargetLabel = ref('');
+
+function openReportCook() {
+  if (!cook.value) return;
+  reportTargetType.value = 'COOK';
+  reportTargetId.value = cook.value.id;
+  reportTargetLabel.value = cook.value.businessName;
+  reportOpen.value = true;
+}
+
+function openReportDish(dish: PublicCookMenuDish) {
+  reportTargetType.value = 'DISH';
+  reportTargetId.value = dish.id;
+  reportTargetLabel.value = dish.name;
+  reportOpen.value = true;
+}
+
+function openBlockCook() {
+  blockOpen.value = true;
+}
+
+async function onCookBlocked() {
+  await navigateTo('/cooks');
+}
 
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
@@ -185,12 +214,13 @@ const checkoutDisabled = computed(
 <template>
   <section
     class="mx-auto min-h-dvh w-full max-w-md bg-page-cream px-4 pb-[calc(13rem+var(--safe-area-bottom))] pt-4 mb-20">
-    <div class="mb-5 flex items-center">
+    <div class="mb-5 flex items-center justify-between gap-2">
       <button type="button"
         class="flex size-11 items-center justify-center rounded-2xl border border-black/10 bg-white text-dark shadow-sm"
         :aria-label="t('l_Back')" @click="goBack">
         <Icon name="material-symbols:chevron-left-rounded" class="size-6" />
       </button>
+
     </div>
 
     <div v-if="pending" class="rounded-[22px] border border-black/6 bg-white/90 p-4 shadow-elevated">
@@ -230,6 +260,18 @@ const checkoutDisabled = computed(
             </p>
           </div>
           <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-dark">
+            <div v-if="cook" class="flex items-center gap-2">
+              <button type="button"
+                class="rounded-xl border border-black/10 bg-white px-3 py-2 text-[11px] font-bold text-dark"
+                @click="openReportCook">
+                {{ t('l_Report_cook') }}
+              </button>
+              <button type="button"
+                class="rounded-xl border border-error/25 bg-error/10 px-3 py-2 text-[11px] font-bold text-error"
+                @click="openBlockCook">
+                {{ t('l_Block_cook') }}
+              </button>
+            </div>
             <!-- <span class="rounded-full border border-[#ff7a0038] bg-[#ff7a0018] px-3 py-1.5">
               ⭐ {{ cook.rating.toFixed(1) }}
             </span> -->
@@ -286,6 +328,11 @@ const checkoutDisabled = computed(
         class="overflow-hidden rounded-[22px] border border-black/8 bg-white/95 shadow-md">
         <div class="relative h-28 bg-surface-muted">
           <img v-if="dishImage(dish)" :src="dishImage(dish)" :alt="dish.name" class="size-full object-cover" />
+          <button type="button"
+            class="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[9px] font-bold text-dark shadow"
+            @click="openReportDish(dish)">
+            {{ t('l_Report_dish') }}
+          </button>
           <div class="absolute right-2 top-2 rounded-full bg-[#ff7a008f] px-2.5 py-1 text-[10px] font-bold text-dark">
             ⏱ {{ t("l_Cooking_time_single", { min: dish.cookingTime }) }}
           </div>
@@ -358,6 +405,11 @@ const checkoutDisabled = computed(
         </button>
       </div>
     </div>
+
+    <UiReportContentModal v-model="reportOpen" :target-type="reportTargetType" :target-id="reportTargetId"
+      :target-label="reportTargetLabel" />
+    <UiBlockUserModal v-model="blockOpen" :cook-id="cookId" :target-label="cook?.businessName"
+      @blocked="onCookBlocked" />
 
     <Teleport to="body">
       <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0"

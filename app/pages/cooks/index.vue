@@ -98,9 +98,26 @@
             class="mt-3 flex h-11 items-center justify-center rounded-[16px] bg-primary text-[14px] font-bold text-white shadow-[0_10px_16px_rgba(255,122,0,0.24)]">
             {{ t("l_View_dishes") }}
           </NuxtLink>
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button type="button"
+              class="rounded-[14px] border border-black/10 bg-white px-3 py-2 text-[11px] font-bold text-dark"
+              @click="openReportSelectedCook">
+              {{ t('l_Report_cook') }}
+            </button>
+            <button type="button"
+              class="rounded-[14px] border border-error/25 bg-error/10 px-3 py-2 text-[11px] font-bold text-error"
+              @click="openBlockSelectedCook">
+              {{ t('l_Block_cook') }}
+            </button>
+          </div>
         </template>
       </div>
     </div>
+
+    <UiReportContentModal v-model="reportOpen" :target-type="reportTargetType" :target-id="reportTargetId"
+      :target-label="reportTargetLabel" />
+    <UiBlockUserModal v-if="selectedCook" v-model="blockOpen" :cook-id="selectedCook.id"
+      :target-label="selectedCook.businessName" @blocked="onCookBlocked" />
   </section>
 </template>
 
@@ -153,6 +170,12 @@ const cookMarkerIcon = computed(
 );
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
+const moderation = useModerationStore();
+const reportOpen = ref(false);
+const blockOpen = ref(false);
+const reportTargetType = ref<import('~/types/moderation').ReportTargetType>('COOK');
+const reportTargetId = ref('');
+const reportTargetLabel = ref('');
 
 const {
   coords: userCoords,
@@ -212,6 +235,7 @@ function matchesCategory(cook: Cook): boolean {
 const filteredCooks = computed(() => {
   const query = search.value.trim().toLowerCase();
   return cooksWithCoords.value.filter((cook) => {
+    if (moderation.isCookBlocked(cook.id)) return false;
     if (!matchesCategory(cook)) return false;
     if (!query) return true;
     const hay = [cook.businessName, ...(cook.specialties ?? [])]
@@ -266,6 +290,22 @@ function selectCook(cookId: string) {
   if (cook?.latitude && cook?.longitude) {
     centerMapOn(cook.latitude, cook.longitude);
   }
+}
+
+function openReportSelectedCook() {
+  if (!selectedCook.value) return;
+  reportTargetType.value = 'COOK';
+  reportTargetId.value = selectedCook.value.id;
+  reportTargetLabel.value = selectedCook.value.businessName;
+  reportOpen.value = true;
+}
+
+function openBlockSelectedCook() {
+  blockOpen.value = true;
+}
+
+function onCookBlocked() {
+  selectedCookId.value = '';
 }
 
 function distanceLabel(cook: Cook): string {

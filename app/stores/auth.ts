@@ -38,6 +38,8 @@ export const useAuthStore = defineStore('auth', {
       if (this.user?.role === 'COOK') {
         await this.fetchVerificationStatus()
       }
+      const moderation = useModerationStore()
+      await moderation.refreshBlocks()
     },
 
     async fetchVerificationStatus() {
@@ -89,6 +91,7 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = null
       this.refreshToken = null
       this.verificationStatus = null
+      useModerationStore().clear()
     },
 
     setVerificationStatus(status: VerificationStatus | null) {

@@ -3,10 +3,12 @@ export default defineNuxtRouteMiddleware((to) => {
   const { isAuthenticated, isCook, verificationStatus } = storeToRefs(authStore)
   const isCookRoute = to.path === '/cook' || to.path.startsWith('/cook/')
 
-  const authFlowPaths = ['/login', '/register', '/forgot-password', '/role', '/legal/offer', '/legal/privacy', '/legal/terms']
+  const publicPaths = ['/login', '/register', '/forgot-password', '/role', '/legal/offer', '/legal/privacy', '/legal/terms']
+  const legalPaths = ['/legal/offer', '/legal/privacy', '/legal/terms']
+  const authOnlyPaths = ['/login', '/register', '/forgot-password', '/role']
 
   if (!isAuthenticated.value) {
-    if (!authFlowPaths.includes(to.path)) {
+    if (!publicPaths.includes(to.path)) {
       return navigateTo({
         path: '/login',
         query: { redirect: to.fullPath },
@@ -18,7 +20,11 @@ export default defineNuxtRouteMiddleware((to) => {
   const user = authStore.user
   const cookHome = getCookHomePath(user, verificationStatus.value)
 
-  if (authFlowPaths.includes(to.path)) {
+  if (legalPaths.includes(to.path)) {
+    return
+  }
+
+  if (authOnlyPaths.includes(to.path)) {
     return navigateTo(isCook.value ? cookHome : '/')
   }
 
