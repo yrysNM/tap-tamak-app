@@ -71,7 +71,7 @@ const auth = useAuthStore();
 const { normalizePhone } = useNormalizationPhone();
 const { t } = useI18n();
 
-const phone = ref("");
+const phone = ref("+7");
 const password = ref("");
 const showPassword = ref(false);
 const acceptedLegal = ref(true);

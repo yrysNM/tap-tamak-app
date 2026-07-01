@@ -15,7 +15,7 @@
           error
             ? 'border-error focus:ring-error'
             : 'border-border hover:border-muted',
-        ]" @input="onInput" />
+        ]" @input="onInput" @focus="onFocus" @keydown="onKeydown" @click="onCaretGuard" />
       <span v-if="$slots.suffix" class="absolute right-3 top-1/2 -translate-y-1/2">
         <slot name="suffix" />
       </span>
@@ -51,11 +51,13 @@ const emit = defineEmits<{
 }>()
 
 const inputId = useId()
+const PHONE_PREFIX = '+7'
+const PHONE_PREFIX_LEN = PHONE_PREFIX.length
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, '').replace(/^7/, '').slice(0, 10)
 
-  let result = '+7'
+  let result = PHONE_PREFIX
 
   if (digits.length > 0) {
     result += ' (' + digits.slice(0, 3)
@@ -102,7 +104,7 @@ function onInput(event: Event) {
       const prevChar = prevFormatted.charAt(caret) // char that was removed from prev -> current
 
       const digitsTrimmed = digitsBefore.slice(0, Math.max(0, digitsBefore.length - 1))
-      value = `+7${digitsTrimmed}`
+      value = `${PHONE_PREFIX}${digitsTrimmed}`
     }
 
     value = formatPhone(value)
@@ -110,5 +112,54 @@ function onInput(event: Event) {
   }
 
   emit('update:modelValue', value)
+}
+
+function onFocus(event: Event) {
+  if (!props.phoneMask) return
+
+  const target = event.target as HTMLInputElement
+  const current = String(props.modelValue ?? '')
+
+  if (!current.startsWith(PHONE_PREFIX)) {
+    const next = formatPhone(current)
+    emit('update:modelValue', next)
+    target.value = next
+  }
+
+  requestAnimationFrame(() => guardPhoneCaret(target))
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (!props.phoneMask) return
+
+  const target = event.target as HTMLInputElement
+  const start = target.selectionStart ?? 0
+  const end = target.selectionEnd ?? 0
+
+  if (
+    (event.key === 'Backspace' && start <= PHONE_PREFIX_LEN && end <= PHONE_PREFIX_LEN) ||
+    (event.key === 'Delete' && start < PHONE_PREFIX_LEN && end <= PHONE_PREFIX_LEN)
+  ) {
+    event.preventDefault()
+  }
+}
+
+function guardPhoneCaret(target: HTMLInputElement) {
+  if (!props.phoneMask) return
+
+  const start = target.selectionStart ?? 0
+  const end = target.selectionEnd ?? 0
+
+  if (start < PHONE_PREFIX_LEN || end < PHONE_PREFIX_LEN) {
+    target.setSelectionRange(
+      Math.max(start, PHONE_PREFIX_LEN),
+      Math.max(end, PHONE_PREFIX_LEN),
+    )
+  }
+}
+
+function onCaretGuard(event: Event) {
+  if (!props.phoneMask) return
+  guardPhoneCaret(event.target as HTMLInputElement)
 }
 </script>
