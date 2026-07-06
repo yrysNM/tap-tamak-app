@@ -1,5 +1,5 @@
 <template>
-  <div class="safe-x safe-t flex min-h-dvh bg-primary-light">
+  <div class="safe-x flex min-h-dvh bg-primary-light">
     <aside class="hidden w-56 shrink-0 border-r border-border bg-white lg:block">
       <div class="sticky top-0 flex flex-col gap-1 p-4">
         <NuxtLink to="/cook/dashboard"
@@ -40,7 +40,8 @@
     </aside>
 
     <div class="flex flex-1 flex-col">
-      <header class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-white px-4 py-3">
+      <header
+        class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-white px-4 pb-3 pt-[calc(var(--safe-area-top)+0.75rem)]">
         <h1 class="text-lg font-semibold text-dark">
           {{ pageTitle }}
         </h1>

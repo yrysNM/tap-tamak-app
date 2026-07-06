@@ -1,7 +1,7 @@
 <template>
-  <div class="safe-x safe-t flex min-h-dvh flex-col bg-page-cream">
+  <div class="safe-x flex min-h-dvh flex-col bg-page-cream">
     <header
-      class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 py-3">
+      class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3 pt-[calc(var(--safe-area-top)+0.75rem)]">
       <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
         <span>TapTamaq</span>
       </NuxtLink>

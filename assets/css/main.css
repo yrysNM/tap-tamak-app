@@ -57,6 +57,11 @@ body {
   min-height: 100dvh;
 }
 
+/* iPad and some iOS layouts report 0 inset without viewport-fit; ensure status bar clearance in the app shell */
+html.capacitor-native {
+  --safe-area-top: max(env(safe-area-inset-top, 0px), 20px);
+}
+
 /* Horizontal + top insets on layout shells */
 .safe-x {
   padding-left: var(--safe-area-left);
