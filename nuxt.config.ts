@@ -38,7 +38,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss() as any],
   },
-  css: ['~/assets/css/main.css', 'leaflet/dist/leaflet.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/safe-area.css', 'leaflet/dist/leaflet.css'],
   runtimeConfig: {
     public: {
       apiBaseUrl: defaultApiBaseUrl,

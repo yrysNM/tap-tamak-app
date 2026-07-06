@@ -100,32 +100,11 @@ function submit() {
         </header>
 
         <div class="space-y-4 px-5 py-4">
-          <label class="block">
-            <span class="text-[13px] font-medium text-dark">{{ t("l_Date") }}</span>
-            <input
-              v-model="dateYmd"
-              type="date"
-              class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-            />
-          </label>
+          <UiInput v-model="dateYmd" type="date" :label="t('l_Date')" />
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label class="block">
-              <span class="text-[13px] font-medium text-dark">{{ t("l_Start") }}</span>
-              <input
-                v-model="startHm"
-                type="time"
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
-            </label>
-            <label class="block">
-              <span class="text-[13px] font-medium text-dark">{{ t("l_End") }}</span>
-              <input
-                v-model="endHm"
-                type="time"
-                class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2"
-              />
-            </label>
+            <UiInput v-model="startHm" type="time" :label="t('l_Start')" />
+            <UiInput v-model="endHm" type="time" :label="t('l_End')" />
           </div>
 
           <p v-if="formError" class="text-[13px] text-error">

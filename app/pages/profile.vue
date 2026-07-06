@@ -2,7 +2,7 @@
   <div class="relative min-h-dvh bg-page-cream font-sans text-body" data-name="Профиль">
     <!-- Sticky header -->
     <header
-      class="safe-x sticky top-0 z-20 border-b border-black/6 bg-page-cream/92 px-4 pb-2.5 pt-[calc(var(--safe-area-top)+0.875rem)] backdrop-blur-[5px]">
+      class="safe-app-header sticky top-0 z-20 border-b border-black/6 bg-page-cream/92 px-4 pb-2.5 backdrop-blur-[5px]">
       <div class="mx-auto flex max-w-[390px] items-center gap-4">
         <h1 class="text-2xl font-bold leading-tight text-heading">{{ $t("l_Profile") }}</h1>
       </div>

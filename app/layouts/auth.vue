@@ -1,6 +1,6 @@
 <template>
-  <div class="safe-x safe-t safe-b flex min-h-dvh flex-col bg-primary-light">
-    <header class="flex shrink-0 items-center justify-between px-4 py-3">
+  <div class="safe-x safe-b flex min-h-dvh flex-col bg-primary-light">
+    <header class="safe-app-header flex shrink-0 items-center justify-between px-4 pb-3">
       <button type="button" v-if="showBackButton"
         class="flex size-11 items-center justify-center rounded-[14px] border border-black/6 bg-white/96 shadow-[0_8px_10px_rgba(0,0,0,0.1)]"
         :aria-label="$t('l_Back')" @click="onBack">

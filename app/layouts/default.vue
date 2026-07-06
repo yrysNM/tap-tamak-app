@@ -1,14 +1,14 @@
 <template>
   <div class="safe-x flex min-h-dvh flex-col bg-page-cream">
     <header
-      class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3 pt-[calc(var(--safe-area-top)+0.75rem)]">
+      class="safe-app-header sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3">
       <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
         <span>TapTamaq</span>
       </NuxtLink>
       <div class="flex items-center gap-3" />
     </header>
 
-    <main class="min-h-0 flex-1 overflow-auto pb-10" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
+    <main class="min-h-0 flex-1 overflow-auto" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
       <slot />
     </main>
 

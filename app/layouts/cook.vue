@@ -41,18 +41,18 @@
 
     <div class="flex flex-1 flex-col">
       <header
-        class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-white px-4 pb-3 pt-[calc(var(--safe-area-top)+0.75rem)]">
+        class="safe-app-header sticky top-0 z-100 flex items-center justify-between border-b border-border bg-white px-8! pb-3">
         <h1 class="text-lg font-semibold text-dark">
           {{ pageTitle }}
         </h1>
       </header>
 
-      <main class="flex-1 overflow-auto p-4 mb-10">
+      <main class="safe-pb-bottom-nav flex-1 overflow-auto p-4">
         <slot />
       </main>
 
       <nav
-        class="safe-b fixed bottom-0 z-100 flex w-full max-w-full items-center border-t border-border bg-white py-2 lg:hidden">
+        class="safe-fixed-bottom-nav fixed bottom-0 z-100 flex w-full max-w-full items-center border-t border-border bg-white py-2 lg:hidden">
         <NuxtLink to="/cook/dashboard"
           class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-center text-muted"
           active-class="!text-primary">

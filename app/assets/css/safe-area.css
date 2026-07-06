@@ -1,0 +1,68 @@
+/* Safe area utilities — kept outside Tailwind bundle so they are not tree-shaken */
+
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --app-header-padding: 0.75rem;
+  --app-bottom-nav-height: 3.75rem;
+}
+
+.safe-app-header {
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--app-header-padding));
+  padding-left: env(safe-area-inset-left, 4px);
+  padding-right: env(safe-area-inset-right, 4px);
+}
+
+html.capacitor-native .safe-app-header {
+  padding-top: calc(max(env(safe-area-inset-top, 0px), 20px) + var(--app-header-padding));
+}
+
+.safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-t {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-b {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-pb-bottom-nav {
+  padding-bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+.safe-fixed-bottom-nav {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-fixed-bottom-bar {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.safe-bottom-above-nav {
+  bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+.safe-bottom-toast {
+  bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+.safe-bottom-floating {
+  bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.safe-bottom-floating-sm {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
