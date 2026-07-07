@@ -8,7 +8,7 @@
       </div>
     </header>
 
-    <main class="mx-auto max-w-[390px] space-y-2.5 px-4 pt-6">
+    <main class="space-y-2.5 px-4 pt-6">
       <!-- Profile card -->
       <section class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
         data-name="Profile card">
