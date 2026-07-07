@@ -24,7 +24,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
         BUNDLE_ID: com.taptamaq.app
-        MARKETING_VERSION: "1.0.0"
+        MARKETING_VERSION: "1.0.1"
         NODE_ENV: production
 
       node: 22
@@ -108,14 +108,17 @@ workflows:
 
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" || true)
           if [ -z "$LATEST_BUILD_NUMBER" ] || [ "$LATEST_BUILD_NUMBER" -lt 1 ]; then
-            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+            UPDATED_BUILD_NUMBER=${BUILD_NUMBER:-1}
           else
             UPDATED_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           fi
 
           agvtool new-marketing-version "$MARKETING_VERSION"
           agvtool new-version -all "$UPDATED_BUILD_NUMBER"
+          echo "Marketing version: $MARKETING_VERSION"
           echo "Build number set to $UPDATED_BUILD_NUMBER"
+          agvtool what-marketing-version
+          agvtool what-version
 
       - name: Build IPA for App Store distribution
         script: |
