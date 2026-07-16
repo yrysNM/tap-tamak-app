@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 const productionApiBaseUrl =
   'https://tap-tamak-production.up.railway.app/api/v1'
 const defaultApiBaseUrl =
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production' || true
     ? productionApiBaseUrl
     : 'http://localhost:3000/api/v1'
 
