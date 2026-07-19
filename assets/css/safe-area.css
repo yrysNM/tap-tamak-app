@@ -32,6 +32,28 @@ html.capacitor-native .safe-app-header {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Bottom sheets flush to the screen edge — keeps CTAs above the system nav */
+.safe-sheet {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 640px) {
+  .safe-sheet {
+    padding-bottom: 0;
+  }
+}
+
+/* Floating sheets with base inset (e.g. p-4 overlays) */
+.safe-sheet-inset {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .safe-sheet-inset {
+    padding-bottom: 1rem;
+  }
+}
+
 .safe-pb-bottom-nav {
   padding-bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 }

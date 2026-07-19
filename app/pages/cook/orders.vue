@@ -505,7 +505,7 @@ function openBlockClient(order: Order) {
         enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100"
         leave-to-class="opacity-0">
         <div v-if="modal && modalOrder"
-          class="fixed inset-0 z-100 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog"
+          class="safe-sheet-inset fixed inset-0 z-100 flex items-end justify-center bg-black/45 px-4 pt-4 sm:items-center sm:p-4" role="dialog"
           aria-modal="true" @click.self="closeModal">
           <div
             class="w-full max-w-md rounded-[22px] border border-black/8 bg-white p-5 shadow-[0_24px_60px_rgba(0,0,0,0.18)]"

@@ -386,6 +386,8 @@
   "l_Verification_title": "Cook verification",
   "l_Verification_subtitle": "Upload kitchen photos and a health book (PDF or photo).",
   "l_Loading_verification": "Loading status…",
+  "l_Refresh_verification": "Refresh status",
+  "l_Refreshing_verification": "Refreshing…",
   "l_Verification_status": "Verification status",
   "l_Verification_not_sent": "Documents not submitted yet. Upload kitchen photos and health book (PDF or photo), then tap Continue.",
   "l_Edit_documents": "Edit documents",

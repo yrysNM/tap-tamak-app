@@ -1,5 +1,5 @@
 <template>
-  <section class="relative mx-auto h-[calc(100vh-8.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
+  <section class="relative mx-auto h-[calc(100vh-4.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
     <ClientOnly>
       <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full" :options="{ zoomControl: false }"
         @ready="onMapReady">
@@ -167,34 +167,17 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function cookAvatarFallbackText(cook: Cook): string {
-  const words = (cook.businessName ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length) return t("l_Initial_fallback");
-  const firstName = words[0] ?? "";
-  const secondInitial = (words[1] ?? "")[0] ?? "";
-  const fallback = secondInitial
-    ? `${firstName} ${secondInitial}.`
-    : firstName;
-  return fallback.toUpperCase();
-}
-
-function cookAvatarSrc(cook: Cook): string {
-  return dishImageSrc(cook.profileImageUrl, apiBase.value) ?? dishImageSrc(cook.kitchenPhotoUrls?.[0], apiBase.value) ?? "";
+function cookAvatarSrc(cook: Cook): string | undefined {
+  return dishImageSrc(cook.profileImageUrl, apiBase.value);
 }
 
 function cookMarkerIcon(cook: Cook): L.Icon {
   const avatarSrc = cookAvatarSrc(cook);
-  const fallbackName = escapeHtml(cookAvatarFallbackText(cook));
-  const rating = Number.isFinite(cook.rating)
-    ? cook.rating.toFixed(1).replace(".", ",")
-    : "0,0";
+  const fallbackInitial = escapeHtml(cookInitials(cook.businessName));
   const status = cook.isAvailable ? t("l_Online") : t("l_Offline");
   const avatarHtml = avatarSrc
     ? `<img class="cook-marker__avatar-img" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cook.businessName)}" />`
-    : `<span class="cook-marker__avatar-fallback">${fallbackName}</span>`;
+    : `<span class="cook-marker__avatar-fallback">${fallbackInitial}</span>`;
 
   return L.divIcon({
     html: `
@@ -391,15 +374,14 @@ onMounted(async () => {
 }
 
 :deep(.cook-marker__avatar) {
-  /* display: flex; */
+  display: flex;
   position: absolute;
   left: 16px;
   top: 0;
-  /* align-items: center; */
-  /* justify-content: center; */
+  align-items: center;
+  justify-content: center;
   width: 46px;
   height: 46px;
-  /* border: 3px solid #fff; */
   border-radius: 9999px;
   background: #f2f2f2;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
@@ -413,12 +395,11 @@ onMounted(async () => {
 }
 
 :deep(.cook-marker__avatar-fallback) {
-  max-width: 38px;
   text-align: center;
-  line-height: 1.1;
-  font-size: 10px;
+  line-height: 1;
+  font-size: 16px;
   font-weight: 800;
-  color: #333;
+  color: #6b7280;
 }
 
 :deep(.cook-marker__rating) {
