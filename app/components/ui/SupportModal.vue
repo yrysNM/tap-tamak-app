@@ -51,7 +51,7 @@ onBeforeUnmount(() => {
     <div v-if="modelValue" class="fixed inset-0 z-10000 flex items-end justify-center sm:items-center sm:p-4"
       role="dialog" aria-modal="true" aria-labelledby="support-modal-title">
       <div class="absolute inset-0 bg-black/45 backdrop-blur-[2px]" @click="close" />
-      <div class="relative w-full max-w-md rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
+      <div class="safe-sheet relative w-full max-w-md rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
         <header class="border-b border-border px-5 py-4">
           <div class="flex items-start justify-between gap-3">
             <h2 id="support-modal-title" class="text-lg font-bold text-dark">

@@ -1,13 +1,13 @@
 <template>
   <div class="relative min-h-dvh bg-page-cream font-sans text-body" data-name="Профиль">
     <!-- Sticky header -->
-    <header class="sticky top-0 z-20 border-b border-black/6 bg-page-cream/92 px-4 pb-2.5 backdrop-blur-[5px]">
+    <header class="sticky top-0 z-20 bg-page-cream/92 px-4 py-4 backdrop-blur-[6px]">
       <div class="mx-auto flex max-w-[390px] items-center gap-4">
-        <h1 class="text-2xl font-bold leading-tight text-heading">{{ $t("l_Profile") }}</h1>
+        <h1 class="text-2xl font-bold text-heading">{{ $t("l_Profile") }}</h1>
       </div>
     </header>
 
-    <main class="space-y-2.5 px-4 pt-6">
+    <main class="space-y-2.5 px-4 pt-4">
       <!-- Profile card -->
       <section class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
         data-name="Profile card">

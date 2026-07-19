@@ -387,6 +387,8 @@
   "l_Verification_title": "Верификация повара",
   "l_Verification_subtitle": "Загрузите фото кухни и санитарную книжку (PDF или фото).",
   "l_Loading_verification": "Загрузка статуса…",
+  "l_Refresh_verification": "Обновить статус",
+  "l_Refreshing_verification": "Обновление…",
   "l_Verification_status": "Статус верификации",
   "l_Verification_not_sent": "Документы ещё не отправлены. Загрузите фото кухни и санитарную книжку (PDF или фото), затем нажмите «Продолжить».",
   "l_Edit_documents": "Редактировать документы",

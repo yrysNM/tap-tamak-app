@@ -387,6 +387,8 @@
   "l_Verification_title": "Аспазды верификациялау",
   "l_Verification_subtitle": "Ас үй фотосын және санитариялық кітапшаны (PDF немесе фото) жүктеңіз.",
   "l_Loading_verification": "Мәртебе жүктелуде…",
+  "l_Refresh_verification": "Мәртебені жаңарту",
+  "l_Refreshing_verification": "Жаңартылуда…",
   "l_Verification_status": "Верификация мәртебесі",
   "l_Verification_not_sent": "Құжаттар әлі жіберілмеген. Ас үй фотосын және санитариялық кітапшаны (PDF немесе фото) жүктеп, «Жалғастыру» басыңыз.",
   "l_Edit_documents": "Құжаттарды өңдеу",

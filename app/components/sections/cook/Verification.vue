@@ -10,7 +10,20 @@
             {{ t("l_Verification_subtitle") }}
           </p>
         </div>
-        <div class="size-[38px] shrink-0" aria-hidden="true" />
+        <button
+          type="button"
+          class="flex size-[38px] shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-heading shadow-sm transition-colors hover:bg-black/2 disabled:opacity-45"
+          :disabled="verificationLoading || refreshing"
+          :aria-label="t('l_Refresh_verification')"
+          :aria-busy="refreshing || verificationLoading"
+          @click="onRefresh"
+        >
+          <Icon
+            name="material-symbols:refresh-rounded"
+            class="size-5"
+            :class="{ 'animate-spin': refreshing || verificationLoading }"
+          />
+        </button>
       </div>
 
       <div v-if="verificationLoading"
@@ -56,6 +69,19 @@
           {{ t("l_Status_under_review") }}
         </p>
 
+        <button
+          type="button"
+          class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-black/10 bg-white text-[14px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2 disabled:opacity-45"
+          :disabled="refreshing"
+          @click="onRefresh"
+        >
+          <Icon
+            name="material-symbols:refresh-rounded"
+            class="size-5"
+            :class="{ 'animate-spin': refreshing }"
+          />
+          {{ refreshing ? t("l_Refreshing_verification") : t("l_Refresh_verification") }}
+        </button>
 
         <div>
           <button type="button"
@@ -275,6 +301,19 @@
       <div v-else-if="fetchError"
         class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft">
         <p class="text-[13px] text-caption">{{ fetchError }}</p>
+        <button
+          type="button"
+          class="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-[16px] border border-black/10 bg-white px-4 text-[13px] font-bold text-heading shadow-sm transition-colors hover:bg-black/2 disabled:opacity-45"
+          :disabled="refreshing"
+          @click="onRefresh"
+        >
+          <Icon
+            name="material-symbols:refresh-rounded"
+            class="size-5"
+            :class="{ 'animate-spin': refreshing }"
+          />
+          {{ refreshing ? t("l_Refreshing_verification") : t("l_Retry") }}
+        </button>
       </div>
 
       <div v-else class="mt-8 rounded-[20px] border border-black/10 bg-white p-5 text-center shadow-soft">
@@ -320,6 +359,7 @@ const submitting = ref(false);
 const latitude = ref<number | null>(null);
 const longitude = ref<number | null>(null);
 const verificationLoading = ref(true);
+const refreshing = ref(false);
 const fetchError = ref("");
 const documentsFromApi = ref<
   CookVerificationGetResponse["documents"] | undefined
@@ -432,6 +472,17 @@ async function loadVerification(opts?: { skipLoading?: boolean }) {
     documentsFromApi.value = undefined;
   } finally {
     if (!opts?.skipLoading) verificationLoading.value = false;
+  }
+}
+
+async function onRefresh() {
+  if (verificationLoading.value || refreshing.value) return;
+  refreshing.value = true;
+  try {
+    await loadVerification({ skipLoading: true });
+    redirectIfApproved();
+  } finally {
+    refreshing.value = false;
   }
 }
 

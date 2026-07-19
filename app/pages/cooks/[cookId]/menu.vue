@@ -328,12 +328,12 @@ const checkoutDisabled = computed(
         class="overflow-hidden rounded-[22px] border border-black/8 bg-white/95 shadow-md">
         <div class="relative h-28 bg-surface-muted">
           <img v-if="dishImage(dish)" :src="dishImage(dish)" :alt="dish.name" class="size-full object-cover" />
-          <button type="button"
+          <!-- <button type="button"
             class="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[9px] font-bold text-dark shadow"
             @click="openReportDish(dish)">
             {{ t('l_Report_dish') }}
-          </button>
-          <div class="absolute right-2 top-2 rounded-full bg-[#ff7a008f] px-2.5 py-1 text-[10px] font-bold text-dark">
+          </button> -->
+          <div class="absolute right-2 top-2 rounded-full bg-[#ff7a008f] text-white px-2.5 py-1 text-[10px] font-bold ">
             ⏱ {{ t("l_Cooking_time_single", { min: dish.cookingTime }) }}
           </div>
         </div>

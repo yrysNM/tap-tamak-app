@@ -153,7 +153,7 @@ async function onSubmit() {
       aria-modal="true" aria-labelledby="create-dish-title">
       <div class="absolute inset-0 bg-black/45 backdrop-blur-[2px]" aria-hidden="true" @click="close(false)" />
       <div
-        class="relative flex max-h-[min(92vh,760px)] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
+        class="safe-sheet relative flex max-h-[min(92vh,760px)] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
         <header class="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <h2 id="create-dish-title" class="text-lg font-bold text-dark">
             {{ t("l_Create_dish") }}

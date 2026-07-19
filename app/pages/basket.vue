@@ -43,7 +43,8 @@ function formatPrice(value: number): string {
 
 function cookPhoto(cook: BasketCookSummary): string | undefined {
   return (
-    dishImageSrc(cook.profileImageUrl, apiBase.value)
+    dishImageSrc(cook.profileImageUrl, apiBase.value) ??
+    dishImageSrc(cook.kitchenPhotoUrls?.[0], apiBase.value)
   );
 }
 
@@ -237,7 +238,8 @@ function retryLoad(): void {
                       <span class="min-w-6 text-center text-sm font-bold text-body">{{ item.quantity }}</span>
                       <button type="button"
                         class="flex size-7 items-center justify-center rounded-[10px] border border-soft-border bg-white text-[13px] font-bold text-black disabled:opacity-40"
-                        :aria-label="$t('l_More')" :disabled="isUpdatingLine(item.id) || item.quantity >= maxPortions(item)"
+                        :aria-label="$t('l_More')"
+                        :disabled="isUpdatingLine(item.id) || item.quantity >= maxPortions(item)"
                         @click="increment(item)">
                         +
                       </button>

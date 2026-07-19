@@ -3,9 +3,9 @@ import tailwindcss from '@tailwindcss/vite'
 const productionApiBaseUrl =
   'https://tap-tamak-production.up.railway.app/api/v1'
 const defaultApiBaseUrl =
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production' 
     ? productionApiBaseUrl
-    : 'http://localhost:3000/api/v1'
+    : 'http://192.168.50.117:3000/api/v1'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -42,7 +42,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBaseUrl: defaultApiBaseUrl,
-      wsUrl:  process.env.NODE_ENV === 'production' || true ? 'https://tap-tamak-production.up.railway.app' : 'http://localhost:3000',
+      wsUrl:  process.env.NODE_ENV === 'production' ? 'https://tap-tamak-production.up.railway.app' : 'http://192.168.50.117:3000',
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
       supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE ?? '+77777799197',
       legalTermsVersion: process.env.NUXT_PUBLIC_LEGAL_TERMS_VERSION ?? '2026-06-28',
