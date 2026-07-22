@@ -243,9 +243,17 @@ export async function fetchOrderById(api: ApiRequest, orderId: string): Promise<
   return parsed
 }
 
-/** POST /orders/:id/cancel — cancel an order while it is still cancellable. */
-export async function cancelOrderById(api: ApiRequest, orderId: string): Promise<void> {
-  await api(`/orders/${encodeURIComponent(orderId)}/cancel`, { method: 'POST' })
+/** POST /orders/:id/cancel — cancel an order while it is still cancellable. Optional reason → rejectionReason. */
+export async function cancelOrderById(
+  api: ApiRequest,
+  orderId: string,
+  payload?: { reason?: string },
+): Promise<void> {
+  const reason = payload?.reason?.trim()
+  await api(`/orders/${encodeURIComponent(orderId)}/cancel`, {
+    method: 'POST',
+    body: reason ? { reason } : {},
+  })
 }
 
 /** Customer confirms a delivered order. POST /orders/:id/delivery/accept */
