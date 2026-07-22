@@ -261,7 +261,7 @@ function retryLoad(): void {
     </div>
 
     <div v-if="!pending && !error && basket && basket.items.length > 0"
-      class="safe-fixed-bottom-bar pointer-events-none fixed inset-x-0 bottom-10 mx-4 z-20 bg-linear-to-t from-page-cream from-65% to-transparent pt-3">
+      class="safe-fixed-bottom-bar pointer-events-none fixed inset-x-0 bottom-10 mx-4 z-20 bg-linear-to-t from-page-cream from-65% to-transparent pt-3 bg-white rounded-xl">
       <div class="pointer-events-auto mx-auto w-full max-w-md">
         <button type="button"
           class="flex h-12 w-full items-center justify-center rounded-[18px] bg-[#FF7A00] text-base font-bold text-white shadow-[0_10px_12px_rgba(255,122,0,0.28)]"

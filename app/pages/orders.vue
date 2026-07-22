@@ -203,7 +203,7 @@ async function onPaymentTimeout(order: Order): Promise<void> {
   if (paymentAutoCancelTriggered.value.has(order.id) || !isOrderAwaitingPayment(order)) return;
   paymentAutoCancelTriggered.value = new Set(paymentAutoCancelTriggered.value).add(order.id);
   try {
-    await cancelOrderById(api, order.id);
+    await cancelOrderById(api, order.id, { reason: PAYMENT_CANCEL_REASON.value });
     clearPaymentDeadline(order.id);
     toast.show(PAYMENT_CANCEL_REASON.value, "error");
     await refresh();
@@ -362,10 +362,10 @@ async function confirmDeliveryReject(): Promise<void> {
                 <div class="h-3 w-24 animate-pulse rounded bg-black/10" />
               </div>
             </div>
-            <div class="mt-4 h-[92px] animate-pulse rounded-[18px] bg-black/10" />
+            <div class="mt-4 h-23 animate-pulse rounded-[18px] bg-black/10" />
             <div class="mt-4 flex gap-2.5">
-              <div class="h-10 flex-1 animate-pulse rounded-[16px] bg-black/10" />
-              <div class="h-10 flex-1 animate-pulse rounded-[16px] bg-black/5" />
+              <div class="h-10 flex-1 animate-pulse rounded-2xl bg-black/10" />
+              <div class="h-10 flex-1 animate-pulse rounded-2xl bg-black/5" />
             </div>
           </div>
         </div>
@@ -433,14 +433,14 @@ async function confirmDeliveryReject(): Promise<void> {
 
               <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
                 <span
-                  class="inline-flex items-center gap-2 rounded-full border px-[11px] py-[9px] text-[11.6px] font-bold leading-none tracking-[-0.1px] text-[#2A2A2A]"
+                  class="inline-flex items-center gap-2 rounded-full border px-2.75 py-2.25 text-[11.6px] font-bold leading-none tracking-[-0.1px] text-[#2A2A2A]"
                   :class="orderStatusTone(order.status) === 'success'
                     ? 'border-[#6B8E23]/22 bg-[#6B8E23]/10'
                     : orderStatusTone(order.status) === 'danger'
                       ? 'border-[#B00020]/22 bg-[#B00020]/10'
                       : 'border-[#FF7A00]/22 bg-[#FF7A00]/10'">
                   <span
-                    class="flex size-[18px] shrink-0 items-center justify-center rounded-[10px] text-[12px] font-bold leading-none text-white"
+                    class="flex size-4.5 shrink-0 items-center justify-center rounded-[10px] text-[12px] font-bold leading-none text-white"
                     :class="orderStatusTone(order.status) === 'success'
                       ? 'bg-[#6B8E23]'
                       : orderStatusTone(order.status) === 'danger'
@@ -490,7 +490,7 @@ async function confirmDeliveryReject(): Promise<void> {
               </div>
 
               <div v-if="showHero(order)" class="flex gap-3 pt-0.5">
-                <div class="size-[92px] shrink-0 overflow-hidden rounded-[18px] border border-black/6 bg-surface-muted">
+                <div class="size-23 shrink-0 overflow-hidden rounded-2xl border border-black/6 bg-surface-muted">
                   <img v-if="itemPhotoSrc(showHero(order)!)" :src="itemPhotoSrc(showHero(order)!)"
                     :alt="itemName(showHero(order)!)" class="size-full object-cover" />
                   <div v-else class="flex size-full items-center justify-center text-[10px] font-semibold text-subtle">
@@ -501,7 +501,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 <div class="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div v-for="(item, idx) in order.items" :key="item.id || `${order.id}-${idx}`"
                     class="flex items-start justify-between gap-2">
-                    <p class="line-clamp-2 max-w-[160px] text-[13px] font-bold leading-tight text-[#444]">
+                    <p class="line-clamp-2 max-w-40 text-[13px] font-bold leading-tight text-[#444]">
                       {{ itemName(item) }}
                     </p>
                     <div class="flex shrink-0 flex-col items-end gap-0.5">
@@ -526,18 +526,18 @@ async function confirmDeliveryReject(): Promise<void> {
               <div class="mt-1 flex items-center justify-center gap-2.5">
                 <template v-if="showDeliveryActions(order)">
                   <button type="button"
-                    class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
+                    class="h-10.5 flex-1 rounded-2xl bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                     :disabled="deliverySubmitting" @click="openDeliveryAccept(order)">
                     {{ deliverySubmitting && deliveryModalOrder?.id === order.id ? t("l_Submitting") : t("l_Accept") }}
                   </button>
                   <button type="button"
-                    class="h-[42px] flex-1 rounded-[16px] border border-black/12 bg-white text-[13.7px] font-bold text-[#222]"
+                    class="h-10.5 flex-1 rounded-2xl border border-black/12 bg-white text-[13.7px] font-bold text-[#222]"
                     @click="openDeliveryReject(order)">
                     {{ t("l_Reject") }}
                   </button>
                 </template>
                 <button v-else-if="isOrderCancellable(order.status)" type="button"
-                  class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
+                  class="h-10.5 flex-1 rounded-2xl bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                   :disabled="isCancelling(order.id)" @click="onCancel(order)">
                   {{ isCancelling(order.id) ? t("l_Cancelling") : t("l_Cancel_order") }}
                 </button>
@@ -578,7 +578,7 @@ async function confirmDeliveryReject(): Promise<void> {
               {{ t("l_Thanks_for_order") }}
             </p>
             <button type="button"
-              class="mt-5 h-[42px] w-full rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)]"
+              class="mt-5 h-10.5 w-full rounded-2xl bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)]"
               @click="closeDeliveryThankYou">
               OK
             </button>
@@ -605,12 +605,12 @@ async function confirmDeliveryReject(): Promise<void> {
             </div>
             <div class="mt-5 flex gap-2.5">
               <button type="button"
-                class="h-[42px] flex-1 rounded-[16px] border border-black/12 bg-white text-[13.6px] font-bold text-[#222] disabled:opacity-60"
+                class="h-10.5 flex-1 rounded-2xl border border-black/12 bg-white text-[13.6px] font-bold text-[#222] disabled:opacity-60"
                 :disabled="deliverySubmitting" @click="closeDeliveryModal">
                 {{ t("l_Cancel") }}
               </button>
               <button type="button"
-                class="h-[42px] flex-1 rounded-[16px] bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
+                class="h-10.5 flex-1 rounded-2xl bg-[#FF7A00] text-[13.6px] font-bold text-white shadow-[0_12px_11px_rgba(255,122,0,0.22)] disabled:opacity-60"
                 :disabled="deliverySubmitting" @click="confirmDeliveryReject">
                 {{ deliverySubmitting ? t("l_Submitting") : t("l_Submit") }}
               </button>
