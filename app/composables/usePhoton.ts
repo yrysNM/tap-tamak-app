@@ -16,6 +16,7 @@ export interface GeocodedAddress {
 export interface StructuredAddressQuery {
   microdistrict: string;
   street: string;
+  district: string;
   houseNumber: string;
 }
 
@@ -51,8 +52,9 @@ function buildQuery(parts: StructuredAddressQuery): string {
   const house = parts.houseNumber.trim();
   const street = parts.street.trim();
   const micro = parts.microdistrict.trim();
+  const district = parts.district.trim();
 
-  return [micro, street, house, CITY]
+  return [micro, street, house, district, CITY]
     .filter(Boolean)
     .join(', ');
 }
@@ -86,6 +88,7 @@ function isAlmatyResult(props: PhotonProperties): boolean {
 export function usePhoton() {
   const geocoding = ref(false);
   const geocodeError = ref('');
+  const { locale } = useI18n();
 
   /**
    * Search addresses via Photon (OSM autocomplete geocoder).
@@ -110,7 +113,7 @@ export function usePhoton() {
         lat: String(ALMATY_LAT),
         lon: String(ALMATY_LNG),
         limit: String(RESULT_LIMIT),
-        lang: 'default',
+        lang: locale.value !== 'en' ? 'default' : locale.value,
       });
 
       const response = await fetch(`${PHOTON_BASE_URL}?${params.toString()}`, {

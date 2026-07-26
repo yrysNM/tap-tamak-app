@@ -5,6 +5,10 @@ import {
     usePhoton,
     type GeocodedAddress,
 } from "~/composables/usePhoton";
+
+interface AddressCandidate extends GeocodedAddress {
+    withinDeliveryRadius: boolean;
+}
 import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import { fetchBasket, updateBasketItemQuantity } from "~/utils/basketApi";
@@ -67,8 +71,8 @@ const phoneTouched = ref(false);
 const addressTouched = ref(false);
 const addressCoords = ref<{ lat: number; lng: number } | null>(null);
 const addressOutOfRange = ref(false);
-const addressCandidates = ref<GeocodedAddress[]>([]);
-const selectedAddress = ref<GeocodedAddress | null>(null);
+const addressCandidates = ref<AddressCandidate[]>([]);
+const selectedAddress = ref<AddressCandidate | null>(null);
 const { geocoding, geocodeError, geocodeAddress } = usePhoton();
 
 const paymentOptions = [
@@ -98,8 +102,9 @@ function buildAddressLine(): string {
 
 function addressLooksValid(): boolean {
     return (
-        form.microdistrict.trim().length >= 1
-        && form.street.trim().length >= 1
+        // form.microdistrict.trim().length >= 1
+        // && 
+        form.street.trim().length >= 1
         && form.houseNumber.trim().length >= 1
     );
 }
@@ -112,11 +117,18 @@ const phoneError = computed(() => {
     return t("l_Enter_10_digits_after_7");
 });
 
+const deliverableCandidates = computed(() =>
+    addressCandidates.value.filter((c) => c.withinDeliveryRadius),
+);
+
 const addressError = computed(() => {
     if (!addressTouched.value) return "";
     if (!addressLooksValid()) return t("l_Enter_delivery_address");
     if (geocoding.value) return "";
     if (addressCandidates.value.length > 1 && !selectedAddress.value) {
+        if (!deliverableCandidates.value.length) {
+            return t("l_Address_outside_delivery_zone");
+        }
         return t("l_Select_matched_address");
     }
     if (addressOutOfRange.value) return t("l_Address_outside_delivery_zone");
@@ -125,17 +137,21 @@ const addressError = computed(() => {
     return "";
 });
 
-function applySelectedAddress(result: GeocodedAddress): boolean {
-    selectedAddress.value = result;
-    addressCoords.value = { lat: result.lat, lng: result.lng };
-    const withinRadius = isWithinDeliveryRadius(
+function withDeliveryRadius(result: GeocodedAddress): AddressCandidate {
+    const withinDeliveryRadius = isWithinDeliveryRadius(
         result.lat,
         result.lng,
         DELIVERY_CENTER.lat,
         DELIVERY_CENTER.lng,
     );
-    addressOutOfRange.value = !withinRadius;
-    return withinRadius;
+    return { ...result, withinDeliveryRadius };
+}
+
+function applySelectedAddress(result: AddressCandidate): boolean {
+    selectedAddress.value = result;
+    addressCoords.value = { lat: result.lat, lng: result.lng };
+    addressOutOfRange.value = !result.withinDeliveryRadius;
+    return result.withinDeliveryRadius;
 }
 
 function resetAddressRadiusState(): void {
@@ -152,11 +168,12 @@ async function validateAddressRadius(): Promise<boolean> {
         return false;
     }
 
-    const results = await geocodeAddress({
+    const results = (await geocodeAddress({
         microdistrict: form.microdistrict,
         street: form.street,
         houseNumber: form.houseNumber,
-    });
+        district: form.district,
+    })).map(withDeliveryRadius);
 
     addressCandidates.value = results;
 
@@ -174,14 +191,14 @@ async function validateAddressRadius(): Promise<boolean> {
 
     // Multiple matches — wait for user selection
     if (selectedAddress.value) {
-        const stillValid = results.some(
+        const match = results.find(
             (r) =>
                 r.lat === selectedAddress.value!.lat
                 && r.lng === selectedAddress.value!.lng
                 && r.displayName === selectedAddress.value!.displayName,
         );
-        if (stillValid) {
-            return applySelectedAddress(selectedAddress.value);
+        if (match) {
+            return applySelectedAddress(match);
         }
     }
 
@@ -191,7 +208,8 @@ async function validateAddressRadius(): Promise<boolean> {
     return false;
 }
 
-function selectAddressCandidate(result: GeocodedAddress): void {
+function selectAddressCandidate(result: AddressCandidate): void {
+    if (!result.withinDeliveryRadius) return;
     addressTouched.value = true;
     applySelectedAddress(result);
 }
@@ -507,13 +525,13 @@ function retryBasket(): void {
                         <div>
                             <label class="block text-[13px] text-[#555555]">
                                 {{ t("l_Microdistrict") }}
-                                <span class="text-red-600">*</span>
+                                <!-- <span class="text-red-600">*</span> -->
                             </label>
                             <input v-model="form.microdistrict" type="text" autocomplete="address-level3" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
-                                addressError
-                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
-                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30 text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                // addressError
+                                // ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                // : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
                             ]" @blur="onAddressBlur">
                         </div>
                         <div>
@@ -522,7 +540,7 @@ function retryBasket(): void {
                                 <span class="text-red-600">*</span>
                             </label>
                             <input v-model="form.street" type="text" autocomplete="street-address" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30 text-body outline-none placeholder:text-[#767676] focus:ring-2',
                                 addressError
                                     ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
                                     : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
@@ -543,41 +561,38 @@ function retryBasket(): void {
                         <p v-if="geocoding" class="text-[12px] text-caption">
                             {{ t("l_Address_verifying") }}
                         </p>
-                        <div
-                            v-else-if="addressCandidates.length > 1"
-                            class="space-y-2"
-                        >
+                        <div v-else-if="addressCandidates.length > 1" class="space-y-2">
                             <p class="text-[12px] font-medium text-[#555555]">
                                 {{ t("l_Select_matched_address") }}
                             </p>
                             <ul class="space-y-1.5">
-                                <li
-                                    v-for="(candidate, idx) in addressCandidates"
-                                    :key="`${candidate.lat}-${candidate.lng}-${idx}`"
-                                >
-                                    <button
-                                        type="button"
-                                        class="w-full rounded-[14px] border px-3 py-2.5 text-left text-[12px] leading-snug transition-colors"
-                                        :class="
-                                            selectedAddress
-                                                && selectedAddress.lat === candidate.lat
-                                                && selectedAddress.lng === candidate.lng
-                                                && selectedAddress.displayName === candidate.displayName
-                                                ? 'border-[#FF7A00] bg-[#FF7A00]/8 text-body'
-                                                : 'border-[#d4d4d4] bg-white text-[#555555] hover:border-[#FF7A00]/60'
-                                        "
-                                        @click="selectAddressCandidate(candidate)"
-                                    >
-                                        {{ candidate.displayName }}
+                                <li v-for="(candidate, idx) in addressCandidates"
+                                    :key="`${candidate.lat}-${candidate.lng}-${idx}`">
+                                    <button type="button"
+                                        class="w-full rounded-[14px] border px-3 py-2.5 text-left transition-colors"
+                                        :disabled="!candidate.withinDeliveryRadius" :class="selectedAddress
+                                            && selectedAddress.lat === candidate.lat
+                                            && selectedAddress.lng === candidate.lng
+                                            && selectedAddress.displayName === candidate.displayName
+                                            ? 'border-primary bg-transparent  text-body'
+                                            : candidate.withinDeliveryRadius
+                                                ? 'border-[#d4d4d4] bg-white text-[#555555] hover:border-[#FF7A00]/60'
+                                                : 'cursor-not-allowed border-red-200 bg-red-50/60 text-[#767676] opacity-80'
+                                            " @click="selectAddressCandidate(candidate)">
+                                        <span class="block text-[12px] leading-snug">
+                                            {{ candidate.displayName }}
+                                        </span>
+                                        <span class="mt-1 block text-[11px] font-medium"
+                                            :class="candidate.withinDeliveryRadius ? 'text-[#5e7d1a]' : 'text-red-600'">
+                                            {{
+                                                candidate.withinDeliveryRadius
+                                                    ? t("l_Address_in_delivery_zone")
+                                                    : t("l_Address_outside_delivery_zone")
+                                            }}
+                                        </span>
                                     </button>
                                 </li>
                             </ul>
-                            <p
-                                v-if="selectedAddress && addressOutOfRange"
-                                class="text-[12px] text-red-600"
-                            >
-                                {{ t("l_Address_outside_delivery_zone") }}
-                            </p>
                         </div>
                         <p v-else-if="addressError" class="text-[12px] text-red-600">
                             {{ addressError }}

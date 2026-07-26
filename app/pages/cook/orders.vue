@@ -485,7 +485,7 @@ function openBlockClient(order: Order) {
               </UiButton>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 border-t border-black/6 pt-3">
+            <!-- <div class="grid grid-cols-2 gap-2 border-t border-black/6 pt-3">
               <button type="button"
                 class="rounded-[14px] border border-black/10 bg-white px-3 py-2 text-[11px] font-bold text-dark"
                 @click="openReportClient(order)">
@@ -496,7 +496,7 @@ function openBlockClient(order: Order) {
                 @click="openBlockClient(order)">
                 {{ t('l_Block_user') }}
               </button>
-            </div>
+            </div> -->
           </div>
         </article>
       </div>
