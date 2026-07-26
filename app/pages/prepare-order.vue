@@ -1,7 +1,10 @@
 <script setup lang="ts">
 const { t } = useI18n()
 import { useDebounceFn } from "@vueuse/core";
-import { useNominatim } from "~/composables/useNominatim";
+import {
+    usePhoton,
+    type GeocodedAddress,
+} from "~/composables/usePhoton";
 import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import { fetchBasket, updateBasketItemQuantity } from "~/utils/basketApi";
@@ -36,20 +39,21 @@ const {
 } = useAsyncData("basket", async () => await fetchBasket(api), { immediate: true });
 
 const form = reactive({
-    district: "Ауэзовский",
-    addressLine: "",
+    district: "Ауэзовский район",
+    microdistrict: "",
+    street: "",
+    houseNumber: "",
     entrance: "",
     intercom: "",
     floor: "",
-    apartment: "",
     contactPhone: "+7",
     courierComment: "",
     saveAddress: false,
 });
 
 const districtOptions = [
-    { value: "Ауэзовский", label: "Ауэзовский" },
-    { value: "Бостандыкский", label: "Бостандыкский" },
+    { value: "Ауэзовский район", label: "Ауэзовский" },
+    { value: "Бостандыкский район", label: "Бостандыкский" },
 ];
 
 const promoInput = ref("");
@@ -63,7 +67,9 @@ const phoneTouched = ref(false);
 const addressTouched = ref(false);
 const addressCoords = ref<{ lat: number; lng: number } | null>(null);
 const addressOutOfRange = ref(false);
-const { geocoding, geocodeError, geocodeAddress } = useNominatim();
+const addressCandidates = ref<GeocodedAddress[]>([]);
+const selectedAddress = ref<GeocodedAddress | null>(null);
+const { geocoding, geocodeError, geocodeAddress } = usePhoton();
 
 const paymentOptions = [
     { value: "card", label: t("l_Payment_card") },
@@ -83,8 +89,19 @@ function phoneLooksValid(phone: string): boolean {
     return d.length === 11;
 }
 
-function addressLooksValid(line: string): boolean {
-    return line.trim().length >= 4;
+function buildAddressLine(): string {
+    return [form.microdistrict, form.street, form.houseNumber]
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(", ");
+}
+
+function addressLooksValid(): boolean {
+    return (
+        form.microdistrict.trim().length >= 1
+        && form.street.trim().length >= 1
+        && form.houseNumber.trim().length >= 1
+    );
 }
 
 const phoneError = computed(() => {
@@ -97,41 +114,19 @@ const phoneError = computed(() => {
 
 const addressError = computed(() => {
     if (!addressTouched.value) return "";
-    if (!addressLooksValid(form.addressLine)) return t("l_Enter_delivery_address");
+    if (!addressLooksValid()) return t("l_Enter_delivery_address");
     if (geocoding.value) return "";
+    if (addressCandidates.value.length > 1 && !selectedAddress.value) {
+        return t("l_Select_matched_address");
+    }
     if (addressOutOfRange.value) return t("l_Address_outside_delivery_zone");
     if (geocodeError.value === "address_not_found") return t("l_Address_geocode_not_found");
     if (geocodeError.value === "geocode_failed") return t("l_Address_geocode_failed");
     return "";
 });
 
-function buildGeocodeQuery(): string {
-    return `${form.district}, Алматы, ${form.addressLine.trim()}`;
-}
-
-function resetAddressRadiusState(): void {
-    addressCoords.value = null;
-    addressOutOfRange.value = false;
-    geocodeError.value = "";
-}
-
-async function validateAddressRadius(): Promise<boolean> {
-    if (!addressLooksValid(form.addressLine)) {
-        resetAddressRadiusState();
-        return false;
-    }
-
-    // City is already in the free-form query; Nominatim forbids mixing `q` with `city`
-    const result = await geocodeAddress(buildGeocodeQuery(), {
-        country: "kz",
-    });
-
-    if (!result) {
-        addressCoords.value = null;
-        addressOutOfRange.value = false;
-        return false;
-    }
-
+function applySelectedAddress(result: GeocodedAddress): boolean {
+    selectedAddress.value = result;
     addressCoords.value = { lat: result.lat, lng: result.lng };
     const withinRadius = isWithinDeliveryRadius(
         result.lat,
@@ -143,6 +138,64 @@ async function validateAddressRadius(): Promise<boolean> {
     return withinRadius;
 }
 
+function resetAddressRadiusState(): void {
+    addressCoords.value = null;
+    addressOutOfRange.value = false;
+    addressCandidates.value = [];
+    selectedAddress.value = null;
+    geocodeError.value = "";
+}
+
+async function validateAddressRadius(): Promise<boolean> {
+    if (!addressLooksValid()) {
+        resetAddressRadiusState();
+        return false;
+    }
+
+    const results = await geocodeAddress({
+        microdistrict: form.microdistrict,
+        street: form.street,
+        houseNumber: form.houseNumber,
+    });
+
+    addressCandidates.value = results;
+
+    if (!results.length) {
+        addressCoords.value = null;
+        selectedAddress.value = null;
+        addressOutOfRange.value = false;
+        return false;
+    }
+
+    // Single match — apply automatically
+    if (results.length === 1) {
+        return applySelectedAddress(results[0]!);
+    }
+
+    // Multiple matches — wait for user selection
+    if (selectedAddress.value) {
+        const stillValid = results.some(
+            (r) =>
+                r.lat === selectedAddress.value!.lat
+                && r.lng === selectedAddress.value!.lng
+                && r.displayName === selectedAddress.value!.displayName,
+        );
+        if (stillValid) {
+            return applySelectedAddress(selectedAddress.value);
+        }
+    }
+
+    selectedAddress.value = null;
+    addressCoords.value = null;
+    addressOutOfRange.value = false;
+    return false;
+}
+
+function selectAddressCandidate(result: GeocodedAddress): void {
+    addressTouched.value = true;
+    applySelectedAddress(result);
+}
+
 async function onAddressBlur(): Promise<void> {
     addressTouched.value = true;
     await validateAddressRadius();
@@ -151,7 +204,7 @@ async function onAddressBlur(): Promise<void> {
 async function validateRequiredFields(): Promise<boolean> {
     addressTouched.value = true;
     phoneTouched.value = true;
-    if (!addressLooksValid(form.addressLine) || !phoneLooksValid(form.contactPhone)) {
+    if (!addressLooksValid() || !phoneLooksValid(form.contactPhone)) {
         return false;
     }
     return await validateAddressRadius();
@@ -161,8 +214,9 @@ const canPlaceOrder = computed(() => {
     return (
         !submitting.value
         && !geocoding.value
-        && addressLooksValid(form.addressLine)
+        && addressLooksValid()
         && phoneLooksValid(form.contactPhone)
+        && !!selectedAddress.value
         && !addressOutOfRange.value
         && !geocodeError.value
     );
@@ -182,11 +236,11 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
             ? prepareSnapshot.value.discountAmount
             : manualDiscount.value;
     return {
-        addressLine: form.addressLine.trim(),
+        addressLine: buildAddressLine(),
         entrance: form.entrance.trim() || undefined,
         intercom: form.intercom.trim() || undefined,
         floor: form.floor.trim() || undefined,
-        apartment: form.apartment.trim() || undefined,
+        apartment: form.houseNumber.trim() || undefined,
         contactPhone: form.contactPhone.trim(),
         courierComment: form.courierComment.trim() || undefined,
         saveAddress: form.saveAddress,
@@ -196,7 +250,7 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
 
 function canQuotePrepare(): boolean {
     return (
-        addressLooksValid(form.addressLine)
+        addressLooksValid()
         && phoneLooksValid(form.contactPhone)
         && (basket.value?.items.length ?? 0) > 0
     );
@@ -210,11 +264,11 @@ async function runPrepare(): Promise<void> {
     preparePending.value = true;
     try {
         const payload: CheckoutOrderPayload = {
-            addressLine: form.addressLine.trim(),
+            addressLine: buildAddressLine(),
             entrance: form.entrance.trim() || undefined,
             intercom: form.intercom.trim() || undefined,
             floor: form.floor.trim() || undefined,
-            apartment: form.apartment.trim() || undefined,
+            apartment: form.houseNumber.trim() || undefined,
             contactPhone: form.contactPhone.trim(),
             courierComment: form.courierComment.trim() || undefined,
             saveAddress: form.saveAddress,
@@ -232,7 +286,7 @@ async function runPrepare(): Promise<void> {
 const debouncedPrepare = useDebounceFn(() => void runPrepare(), 650);
 
 watch(
-    () => [form.addressLine, form.district],
+    () => [form.microdistrict, form.street, form.houseNumber, form.district],
     () => {
         resetAddressRadiusState();
     },
@@ -240,11 +294,12 @@ watch(
 
 watch(
     () => [
-        form.addressLine,
+        form.microdistrict,
+        form.street,
+        form.houseNumber,
         form.entrance,
         form.intercom,
         form.floor,
-        form.apartment,
         form.contactPhone,
         form.courierComment,
         form.saveAddress,
@@ -367,13 +422,13 @@ function retryBasket(): void {
                     :aria-label="t('l_Back')" @click="router.back()">
                     <Icon name="material-symbols:chevron-left-rounded" class="size-5 text-icon-secondary" />
                 </button>
-                <h1 class="min-w-0 flex-1 text-center text-[23px] font-bold leading-[26px] text-heading">
+                <h1 class="min-w-0 flex-1 text-center text-[23px] font-bold leading-6.5 text-heading">
                     {{ t("l_Checkout") }}
                 </h1>
             </div>
         </header>
 
-        <div class="space-y-3 px-[18px] pt-4">
+        <div class="space-y-3 px-4.5 pt-4">
             <div v-if="basketPending"
                 class="rounded-2xl border border-soft-border bg-white p-4 shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
                 <div class="h-4 w-24 animate-pulse rounded bg-black/10" />
@@ -395,7 +450,7 @@ function retryBasket(): void {
             <template v-else-if="!isEmpty">
                 <!-- Сумма -->
                 <section
-                    class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
+                    class="rounded-2xl border border-soft-border bg-white p-4 shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
                     <p class="text-[15px] font-bold text-section">
                         {{ t("l_Amount") }}
                     </p>
@@ -433,7 +488,7 @@ function retryBasket(): void {
 
                 <!-- Адрес доставки -->
                 <section
-                    class="rounded-[20px] border border-soft-border bg-white p-[19px] shadow-[0_10px_12.5px_rgba(0,0,0,0.08)]">
+                    class="rounded-[20px] border border-soft-border bg-white p-4.75 shadow-[0_10px_12.5px_rgba(0,0,0,0.08)]">
                     <h2 class="text-[20px] font-semibold text-[#5e7d1a]">
                         {{ t("l_Delivery_address") }}
                     </h2>
@@ -445,25 +500,86 @@ function retryBasket(): void {
 
                     <div class="mt-4">
                         <UiSelect v-model="form.district" :label="t('l_District')" :options="districtOptions" required
-                            class="[&_button]:rounded-[14px] [&_button]:border-[#d4d4d4] [&_button]:px-[15px] [&_button]:py-3 [&_button]:text-[13px] [&_label]:text-[13px] [&_label]:text-[#555555]" />
+                            class="[&_button]:rounded-[14px] [&_button]:border-[#d4d4d4] [&_button]:px-3.75 [&_button]:py-3 [&_button]:text-[13px] [&_label]:text-[13px] [&_label]:text-[#555555]" />
                     </div>
 
-                    <div class="mt-5">
-                        <label class="block text-[13px] text-[#555555]">
-                            {{ t("l_Address") }}
-                            <span class="text-red-600">*</span>
-                        </label>
-                        <input v-model="form.addressLine" type="text" autocomplete="street-address"
-                            :placeholder="t('l_Address_placeholder')" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-[15px] py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                    <div class="mt-5 space-y-4">
+                        <div>
+                            <label class="block text-[13px] text-[#555555]">
+                                {{ t("l_Microdistrict") }}
+                                <span class="text-red-600">*</span>
+                            </label>
+                            <input v-model="form.microdistrict" type="text" autocomplete="address-level3" :class="[
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
                                 addressError
                                     ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
                                     : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
                             ]" @blur="onAddressBlur">
-                        <p v-if="geocoding" class="mt-1 text-[12px] text-caption">
+                        </div>
+                        <div>
+                            <label class="block text-[13px] text-[#555555]">
+                                {{ t("l_Street") }}
+                                <span class="text-red-600">*</span>
+                            </label>
+                            <input v-model="form.street" type="text" autocomplete="street-address" :class="[
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                addressError
+                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                            ]" @blur="onAddressBlur">
+                        </div>
+                        <div>
+                            <label class="block text-[13px] text-[#555555]">
+                                {{ t("l_House_apartment") }}
+                                <span class="text-red-600">*</span>
+                            </label>
+                            <input v-model="form.houseNumber" type="text" autocomplete="address-line2" :class="[
+                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                addressError
+                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                            ]" @blur="onAddressBlur">
+                        </div>
+                        <p v-if="geocoding" class="text-[12px] text-caption">
                             {{ t("l_Address_verifying") }}
                         </p>
-                        <p v-else-if="addressError" class="mt-1 text-[12px] text-red-600">
+                        <div
+                            v-else-if="addressCandidates.length > 1"
+                            class="space-y-2"
+                        >
+                            <p class="text-[12px] font-medium text-[#555555]">
+                                {{ t("l_Select_matched_address") }}
+                            </p>
+                            <ul class="space-y-1.5">
+                                <li
+                                    v-for="(candidate, idx) in addressCandidates"
+                                    :key="`${candidate.lat}-${candidate.lng}-${idx}`"
+                                >
+                                    <button
+                                        type="button"
+                                        class="w-full rounded-[14px] border px-3 py-2.5 text-left text-[12px] leading-snug transition-colors"
+                                        :class="
+                                            selectedAddress
+                                                && selectedAddress.lat === candidate.lat
+                                                && selectedAddress.lng === candidate.lng
+                                                && selectedAddress.displayName === candidate.displayName
+                                                ? 'border-[#FF7A00] bg-[#FF7A00]/8 text-body'
+                                                : 'border-[#d4d4d4] bg-white text-[#555555] hover:border-[#FF7A00]/60'
+                                        "
+                                        @click="selectAddressCandidate(candidate)"
+                                    >
+                                        {{ candidate.displayName }}
+                                    </button>
+                                </li>
+                            </ul>
+                            <p
+                                v-if="selectedAddress && addressOutOfRange"
+                                class="text-[12px] text-red-600"
+                            >
+                                {{ t("l_Address_outside_delivery_zone") }}
+                            </p>
+                        </div>
+                        <p v-else-if="addressError" class="text-[12px] text-red-600">
                             {{ addressError }}
                         </p>
                     </div>
@@ -493,13 +609,7 @@ function retryBasket(): void {
                         </label>
                         <UiInput v-model="form.contactPhone" type="tel" phone-mask autocomplete="tel"
                             placeholder="+7 (700) 000-00-00" :error="phoneError"
-                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
-                    </div>
-
-                    <div class="mt-5">
-                        <label class="block text-[13px] text-[#555555]">{{ t("l_Apartment_office") }}</label>
-                        <input v-model="form.apartment" type="text" autocomplete="address-line2"
-                            class="mt-1.5 w-full rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[13px] text-body outline-none focus:ring-2 focus:ring-[#FF7A00]/25">
+                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-3.75 [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
                     </div>
 
                     <div class="mt-5">

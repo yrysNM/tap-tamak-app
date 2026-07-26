@@ -103,7 +103,14 @@ async function onSubmit() {
 
     await navigateTo(redirectTo);
   } catch (e: any) {
-    error.value = e?.data?.message ?? t("l_Invalid_phone_or_password");
+    const message = String(e?.data?.message ?? "");
+    if (message.includes("not found user")) {
+      error.value = t("l_User_not_found");
+    } else if (message.includes("not valid password")) {
+      error.value = t("l_Incorrect_password");
+    } else {
+      error.value = message || t("l_Invalid_phone_or_password");
+    }
   } finally {
     loading.value = false;
   }
