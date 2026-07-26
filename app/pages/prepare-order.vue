@@ -1,14 +1,10 @@
 <script setup lang="ts">
 const { t } = useI18n()
-import { useDebounceFn } from "@vueuse/core";
+import { useDebounceFn, watchDebounced } from "@vueuse/core";
 import {
     usePhoton,
     type GeocodedAddress,
 } from "~/composables/usePhoton";
-
-interface AddressCandidate extends GeocodedAddress {
-    withinDeliveryRadius: boolean;
-}
 import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import { fetchBasket, updateBasketItemQuantity } from "~/utils/basketApi";
@@ -19,6 +15,10 @@ import {
     type CheckoutOrderPayload,
     type PrepareOrderResponse,
 } from "~/utils/ordersApi";
+
+interface AddressCandidate extends GeocodedAddress {
+    withinDeliveryRadius: boolean;
+}
 
 /** Delivery center used for the 2 km radius check (Almaty center). */
 const DELIVERY_CENTER = {
@@ -44,9 +44,7 @@ const {
 
 const form = reactive({
     district: "Ауэзовский район",
-    microdistrict: "",
-    street: "",
-    houseNumber: "",
+    address: "",
     entrance: "",
     intercom: "",
     floor: "",
@@ -73,6 +71,9 @@ const addressCoords = ref<{ lat: number; lng: number } | null>(null);
 const addressOutOfRange = ref(false);
 const addressCandidates = ref<AddressCandidate[]>([]);
 const selectedAddress = ref<AddressCandidate | null>(null);
+const syncingAddressFromSelection = ref(false);
+const addressSearchPending = ref(false);
+const ADDRESS_SEARCH_DEBOUNCE_MS = 500;
 const { geocoding, geocodeError, geocodeAddress } = usePhoton();
 
 const paymentOptions = [
@@ -94,19 +95,11 @@ function phoneLooksValid(phone: string): boolean {
 }
 
 function buildAddressLine(): string {
-    return [form.microdistrict, form.street, form.houseNumber]
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .join(", ");
+    return (selectedAddress.value?.displayName ?? form.address).trim();
 }
 
 function addressLooksValid(): boolean {
-    return (
-        // form.microdistrict.trim().length >= 1
-        // && 
-        form.street.trim().length >= 1
-        && form.houseNumber.trim().length >= 1
-    );
+    return form.address.trim().length >= 3;
 }
 
 const phoneError = computed(() => {
@@ -148,9 +141,14 @@ function withDeliveryRadius(result: GeocodedAddress): AddressCandidate {
 }
 
 function applySelectedAddress(result: AddressCandidate): boolean {
+    syncingAddressFromSelection.value = true;
     selectedAddress.value = result;
+    form.address = result.displayName;
     addressCoords.value = { lat: result.lat, lng: result.lng };
     addressOutOfRange.value = !result.withinDeliveryRadius;
+    nextTick(() => {
+        syncingAddressFromSelection.value = false;
+    });
     return result.withinDeliveryRadius;
 }
 
@@ -169,9 +167,7 @@ async function validateAddressRadius(): Promise<boolean> {
     }
 
     const results = (await geocodeAddress({
-        microdistrict: form.microdistrict,
-        street: form.street,
-        houseNumber: form.houseNumber,
+        address: form.address,
         district: form.district,
     })).map(withDeliveryRadius);
 
@@ -216,7 +212,9 @@ function selectAddressCandidate(result: AddressCandidate): void {
 
 async function onAddressBlur(): Promise<void> {
     addressTouched.value = true;
-    await validateAddressRadius();
+    if (syncingAddressFromSelection.value) return;
+    addressSearchPending.value = false;
+    await runAddressSearch();
 }
 
 async function validateRequiredFields(): Promise<boolean> {
@@ -232,6 +230,7 @@ const canPlaceOrder = computed(() => {
     return (
         !submitting.value
         && !geocoding.value
+        && !addressSearchPending.value
         && addressLooksValid()
         && phoneLooksValid(form.contactPhone)
         && !!selectedAddress.value
@@ -258,7 +257,6 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
         entrance: form.entrance.trim() || undefined,
         intercom: form.intercom.trim() || undefined,
         floor: form.floor.trim() || undefined,
-        apartment: form.houseNumber.trim() || undefined,
         contactPhone: form.contactPhone.trim(),
         courierComment: form.courierComment.trim() || undefined,
         saveAddress: form.saveAddress,
@@ -286,7 +284,6 @@ async function runPrepare(): Promise<void> {
             entrance: form.entrance.trim() || undefined,
             intercom: form.intercom.trim() || undefined,
             floor: form.floor.trim() || undefined,
-            apartment: form.houseNumber.trim() || undefined,
             contactPhone: form.contactPhone.trim(),
             courierComment: form.courierComment.trim() || undefined,
             saveAddress: form.saveAddress,
@@ -303,18 +300,44 @@ async function runPrepare(): Promise<void> {
 
 const debouncedPrepare = useDebounceFn(() => void runPrepare(), 650);
 
-watch(
-    () => [form.microdistrict, form.street, form.houseNumber, form.district],
+async function runAddressSearch(): Promise<void> {
+    if (syncingAddressFromSelection.value) return;
+
+    resetAddressRadiusState();
+
+    if (!addressLooksValid()) {
+        addressSearchPending.value = false;
+        return;
+    }
+
+    await validateAddressRadius();
+    addressSearchPending.value = false;
+}
+
+watchDebounced(
+    () => [form.address, form.district] as const,
     () => {
-        resetAddressRadiusState();
+        if (syncingAddressFromSelection.value) return;
+        addressSearchPending.value = addressLooksValid();
+        void runAddressSearch();
+    },
+    { debounce: ADDRESS_SEARCH_DEBOUNCE_MS },
+);
+
+watch(
+    () => form.address,
+    () => {
+        if (syncingAddressFromSelection.value) return;
+        if (!addressLooksValid()) {
+            addressSearchPending.value = false;
+            resetAddressRadiusState();
+        }
     },
 );
 
 watch(
     () => [
-        form.microdistrict,
-        form.street,
-        form.houseNumber,
+        form.address,
         form.entrance,
         form.intercom,
         form.floor,
@@ -396,7 +419,7 @@ async function submitOrder(): Promise<void> {
         toast.show(t("l_Basket_empty"), "error");
         return;
     }
-    if (geocoding.value) {
+    if (geocoding.value || addressSearchPending.value) {
         toast.show(t("l_Address_verifying"), "error");
         return;
     }
@@ -524,41 +547,24 @@ function retryBasket(): void {
                     <div class="mt-5 space-y-4">
                         <div>
                             <label class="block text-[13px] text-[#555555]">
-                                {{ t("l_Microdistrict") }}
-                                <!-- <span class="text-red-600">*</span> -->
-                            </label>
-                            <input v-model="form.microdistrict" type="text" autocomplete="address-level3" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30 text-body outline-none placeholder:text-[#767676] focus:ring-2',
-                                // addressError
-                                // ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
-                                // : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
-                            ]" @blur="onAddressBlur">
-                        </div>
-                        <div>
-                            <label class="block text-[13px] text-[#555555]">
-                                {{ t("l_Street") }}
+                                {{ t("l_Address") }}
                                 <span class="text-red-600">*</span>
                             </label>
-                            <input v-model="form.street" type="text" autocomplete="street-address" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30 text-body outline-none placeholder:text-[#767676] focus:ring-2',
-                                addressError
-                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
-                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
-                            ]" @blur="onAddressBlur">
+                            <input
+                                v-model="form.address"
+                                type="text"
+                                autocomplete="street-address"
+                                :placeholder="t('l_Address_placeholder')"
+                                :class="[
+                                    'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                    addressError
+                                        ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                        : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                                ]"
+                                @blur="onAddressBlur"
+                            >
                         </div>
-                        <div>
-                            <label class="block text-[13px] text-[#555555]">
-                                {{ t("l_House_apartment") }}
-                                <span class="text-red-600">*</span>
-                            </label>
-                            <input v-model="form.houseNumber" type="text" autocomplete="address-line2" :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
-                                addressError
-                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
-                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
-                            ]" @blur="onAddressBlur">
-                        </div>
-                        <p v-if="geocoding" class="text-[12px] text-caption">
+                        <p v-if="geocoding || addressSearchPending" class="text-[12px] text-caption">
                             {{ t("l_Address_verifying") }}
                         </p>
                         <div v-else-if="addressCandidates.length > 1" class="space-y-2">
@@ -669,7 +675,7 @@ function retryBasket(): void {
                 <button type="button"
                     class="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#FF7A00] text-[17.5px] font-bold text-white shadow-[0_10px_12px_rgba(255,122,0,0.28)] disabled:opacity-50"
                     :disabled="!canPlaceOrder" @click="submitOrder">
-                    {{ submitting || geocoding ? t("l_Submitting") : t("l_Place_order") }}
+                    {{ submitting || geocoding || addressSearchPending ? t("l_Submitting") : t("l_Place_order") }}
                 </button>
             </div>
         </div>

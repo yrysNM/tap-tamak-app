@@ -13,11 +13,9 @@ export interface GeocodedAddress {
   displayName: string;
 }
 
-export interface StructuredAddressQuery {
-  microdistrict: string;
-  street: string;
-  district: string;
-  houseNumber: string;
+export interface AddressSearchQuery {
+  address: string;
+  district?: string;
 }
 
 interface PhotonProperties {
@@ -48,13 +46,8 @@ interface PhotonResponse {
   features: PhotonFeature[];
 }
 
-function buildQuery(parts: StructuredAddressQuery): string {
-  const house = parts.houseNumber.trim();
-  const street = parts.street.trim();
-  const micro = parts.microdistrict.trim();
-  const district = parts.district.trim();
-
-  return [micro, street, house, district, CITY]
+function buildQuery(parts: AddressSearchQuery): string {
+  return [parts.address.trim(), parts.district?.trim(), CITY]
     .filter(Boolean)
     .join(', ');
 }
@@ -91,15 +84,14 @@ export function usePhoton() {
   const { locale } = useI18n();
 
   /**
-   * Search addresses via Photon (OSM autocomplete geocoder).
-   * Query includes microdistrict, street, house number + fixed city Алматы.
-   * Results are biased to Almaty and filtered to KZ / Алматы when possible.
+   * Search addresses via Photon (OSM geocoder).
+   * Free-form address + optional district, fixed city Алматы.
    */
   async function geocodeAddress(
-    parts: StructuredAddressQuery,
+    parts: AddressSearchQuery,
   ): Promise<GeocodedAddress[]> {
     const query = buildQuery(parts);
-    if (!query || query === CITY) {
+    if (!parts.address.trim()) {
       geocodeError.value = '';
       return [];
     }
