@@ -23,6 +23,9 @@ importers:
       '@capacitor/ios':
         specifier: ^7.4.4
         version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/local-notifications':
+        specifier: ^7.0.0
+        version: 7.0.7(@capacitor/core@7.6.2)
       '@iconify/vue':
         specifier: ^4.1.1
         version: 4.3.0(vue@3.5.29(typescript@5.9.3))
@@ -328,6 +331,11 @@ packages:
     resolution: {integrity: sha512-TZOXn7ZSEMsetrIEb8EHT4X9Nwsed1itqMwe+z5QOCDvm9XZ7i2YsjnrinUC1ZOIgva9IE2l+azus7qOpQ0aCg==}
     peerDependencies:
       '@capacitor/core': ^7.6.0
+
+  '@capacitor/local-notifications@7.0.7':
+    resolution: {integrity: sha512-3qSpa8PpVMONHqBOaJ4RbA/lB5vOdEngtep0myGmP3S56gShPScDCotbw7dwmQy3NCdY4Up9nH3ySrGvUh2jZg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/synapse@1.0.4':
     resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
@@ -6251,6 +6259,10 @@ snapshots:
       '@capacitor/synapse': 1.0.4
 
   '@capacitor/ios@7.6.2(@capacitor/core@7.6.2)':
+    dependencies:
+      '@capacitor/core': 7.6.2
+
+  '@capacitor/local-notifications@7.0.7(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 

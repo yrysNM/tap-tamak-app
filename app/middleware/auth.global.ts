@@ -19,6 +19,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const cookHome = getCookHomePath(user, verificationStatus.value)
 
   if (authFlowPaths.includes(to.path)) {
+    // COOK → cook home; USER and ADMIN → /
     return navigateTo(isCook.value ? cookHome : '/')
   }
 
@@ -41,6 +42,7 @@ export default defineNuxtRouteMiddleware((to) => {
     return
   }
 
+  // USER and ADMIN: block cook-only routes
   if (isCookRoute) {
     return navigateTo('/')
   }

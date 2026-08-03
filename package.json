@@ -21,6 +21,7 @@
     "@capacitor/core": "^7.4.4",
     "@capacitor/geolocation": "^7.1.8",
     "@capacitor/ios": "^7.4.4",
+    "@capacitor/local-notifications": "^7.0.0",
     "@iconify/vue": "^4.1.1",
     "@nuxtjs/i18n": "^10.4.0",
     "@pinia/nuxt": "^0.5.5",

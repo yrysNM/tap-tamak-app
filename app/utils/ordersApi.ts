@@ -207,12 +207,7 @@ function buildOrdersQuery(params?: FetchOrdersParams): string {
   return qs ? `?${qs}` : ''
 }
 
-/** GET /orders — list orders for the current user, cook, or admin; optional `status`, `page`, `limit`. Newest first when timestamps exist. */
-export async function fetchOrders(
-  api: ApiRequest,
-  params?: FetchOrdersParams,
-): Promise<Order[]> {
-  const raw = await api(`/orders${buildOrdersQuery(params)}`, { method: 'GET' })
+function parseOrderList(raw: unknown): Order[] {
   const body = unwrapBody<unknown>(raw)
   const list = Array.isArray(body)
     ? body
@@ -230,6 +225,27 @@ export async function fetchOrders(
     return bv - av
   })
   return orders
+}
+
+/** GET /orders — list orders for the current user, cook, or admin; optional `status`, `page`, `limit`. Newest first when timestamps exist. */
+export async function fetchOrders(
+  api: ApiRequest,
+  params?: FetchOrdersParams,
+): Promise<Order[]> {
+  const raw = await api(`/orders${buildOrdersQuery(params)}`, { method: 'GET' })
+  return parseOrderList(raw)
+}
+
+/** GET /orders/cook/pending-acceptance — cook orders awaiting accept/reject. */
+export async function fetchPendingCookAcceptanceOrders(
+  api: ApiRequest,
+  params?: FetchOrdersParams,
+): Promise<Order[]> {
+  const raw = await api(
+    `/orders/cook/pending-acceptance${buildOrdersQuery(params)}`,
+    { method: 'GET' },
+  )
+  return parseOrderList(raw)
 }
 
 /** GET /orders/:id — single order for the current user. */

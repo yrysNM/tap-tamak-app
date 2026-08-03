@@ -13,6 +13,7 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/.pnpm/@capacitor+ios@7.6.2_@capacitor+core@7.6.2/node_modules/@capacitor/ios'
   pod 'CapacitorCommunitySafeArea', :path => '../../node_modules/.pnpm/@capacitor-community+safe-area@7.0.0_@capacitor+core@7.6.2/node_modules/@capacitor-community/safe-area'
   pod 'CapacitorGeolocation', :path => '../../node_modules/.pnpm/@capacitor+geolocation@7.1.8_@capacitor+core@7.6.2/node_modules/@capacitor/geolocation'
+  pod 'CapacitorLocalNotifications', :path => '../../node_modules/.pnpm/@capacitor+local-notifications@7.0.7_@capacitor+core@7.6.2/node_modules/@capacitor/local-notifications'
 end
 
 target 'App' do

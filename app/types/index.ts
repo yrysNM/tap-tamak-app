@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'COOK' 
+export type Role = 'USER' | 'COOK' | 'ADMIN'
 
 export type OrderStatus =
   | 'PENDING'
