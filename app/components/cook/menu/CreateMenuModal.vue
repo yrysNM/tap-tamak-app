@@ -145,7 +145,7 @@ function caloriesOf(d: CookDish) {
       aria-modal="true" aria-labelledby="create-menu-title">
       <div class="absolute inset-0 bg-black/45 backdrop-blur-[2px]" aria-hidden="true" @click="close" />
       <div
-        class="relative flex max-h-[min(92dvh,760px)] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-white shadow-elevated sm:max-h-[min(88vh,720px)] sm:rounded-3xl">
+        class="safe-sheet relative flex max-h-[min(92dvh,760px)] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-white shadow-elevated sm:max-h-[min(88vh,720px)] sm:rounded-3xl">
         <header class="shrink-0 border-b border-border px-5 py-4">
           <div class="flex items-start justify-between gap-3">
             <div>

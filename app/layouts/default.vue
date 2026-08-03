@@ -1,14 +1,14 @@
 <template>
-  <div class="safe-x safe-t flex min-h-dvh flex-col bg-page-cream">
-    <header
-      class="sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 py-3">
+  <div class="safe-x flex min-h-dvh flex-col bg-page-cream safe-app-header">
+    <!-- <header
+      class="safe-app-header sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3">
       <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
         <span>TapTamaq</span>
       </NuxtLink>
       <div class="flex items-center gap-3" />
-    </header>
+    </header> -->
 
-    <main class="min-h-0 flex-1 overflow-auto pb-10" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
+    <main class="min-h-0 flex-1 overflow-auto" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
       <slot />
     </main>
 
@@ -46,6 +46,13 @@ import { useCartStore } from "../stores/cart";
 
 const cartStore = useCartStore();
 const route = useRoute();
+const auth = useAuthStore();
+
+onMounted(() => {
+  if (auth.isAuthenticated) {
+    useModerationStore().refreshBlocks().catch(() => undefined);
+  }
+});
 
 const cartCount = computed(() => cartStore.totalItems);
 const showBottomNav = computed(() => !route.meta.hideBottomNav);

@@ -294,7 +294,7 @@ function formatTime(iso?: string) {
         role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/45" @click="closePreview" />
         <div
-          class="relative max-h-[min(88vh,640px)] w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
+          class="safe-sheet relative max-h-[min(88vh,640px)] w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-white shadow-elevated sm:rounded-3xl">
           <header class="flex items-center justify-between border-b border-border px-4 py-3">
             <h3 class="text-base font-bold text-dark">
               {{ t("l_Menu_preview_title", { date: previewDate ? formatMenuDateLabel(previewDate) : "" }) }}

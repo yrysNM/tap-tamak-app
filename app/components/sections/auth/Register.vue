@@ -31,6 +31,23 @@
           </UiInput>
         </div>
 
+        <label class="mt-2 flex cursor-pointer ml-1 items-start gap-2.5 text-left">
+          <input v-model="acceptedLegal" type="checkbox"
+            class="mt-0.5 size-4 shrink-0 rounded border-black/20 text-primary focus:ring-primary" />
+          <span class="text-[11px] font-semibold leading-snug text-black/55">
+            {{ $t('l_Login_legal_prefix') }}
+            <button type="button" class="font-bold text-primary underline underline-offset-2"
+              @click.prevent="navigateTo('/legal/privacy')">
+              {{ $t('l_Login_legal_privacy_link') }}
+            </button>
+            {{ $t('l_Login_legal_and') }}
+            <button type="button" class="font-bold text-primary underline underline-offset-2"
+              @click.prevent="navigateTo('/legal/terms')">
+              {{ $t('l_Login_legal_terms_link') }}
+            </button>{{ $t('l_Login_legal_suffix') }}
+          </span>
+        </label>
+
         <label class="mt-2 flex cursor-pointer ml-1 items-center gap-2.5 text-left">
           <input v-model="acceptedOffer" type="checkbox"
             class="size-4 shrink-0 rounded border-black/20 text-primary focus:ring-primary" />
@@ -47,7 +64,7 @@
           {{ error }}
         </p>
 
-        <UiButton variant="primary" size="md" fullWidth :disabled="loading || !acceptedOffer"
+        <UiButton variant="primary" size="md" fullWidth :disabled="loading || !acceptedOffer || !acceptedLegal"
           class="mt-5 rounded-[20px] text-[15px] font-bold shadow-[0_16px_32px_rgba(244,123,32,0.22)]"
           data-node-id="178:272" @click="onSubmit">
           {{ loading ? $t('l_Loading') : $t('l_Create_account') }}
@@ -82,11 +99,17 @@ const phone = ref("");
 const password = ref("");
 const showPassword = ref(false);
 const acceptedOffer = ref(false);
+const acceptedLegal = ref(false);
+const config = useRuntimeConfig();
 const error = ref("");
 const loading = ref(false);
 
 async function onSubmit() {
   if (!name.value || !phone.value || !password.value) return;
+  if (!acceptedLegal.value) {
+    error.value = t("l_Login_legal_required");
+    return;
+  }
   if (!acceptedOffer.value) {
     error.value = t("l_Offer_agreement_required");
     return;
@@ -99,6 +122,8 @@ async function onSubmit() {
       phone: normalizePhone(phone.value).e164,
       password: password.value,
       role: props.role,
+      acceptedTermsVersion: config.public.legalTermsVersion as string,
+      acceptedPrivacyVersion: config.public.legalPrivacyVersion as string,
     });
     const redirect = props.role === "COOK" ? "/cook/verify" : "/";
     await navigateTo({ path: "/login", query: { redirect } });

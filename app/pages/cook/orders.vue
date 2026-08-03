@@ -78,6 +78,13 @@ const isEmpty = computed(
 type ModalKind = 'accept' | 'reject' | null
 const modal = ref<ModalKind>(null)
 const modalOrder = ref<Order | null>(null)
+const moderation = useModerationStore()
+const reportOpen = ref(false)
+const blockOpen = ref(false)
+const reportTargetType = ref<import('~/types/moderation').ReportTargetType>('USER')
+const reportTargetId = ref('')
+const reportTargetLabel = ref('')
+const blockUserId = ref('')
 const acceptMinutesStr = ref('30')
 const rejectReason = ref('')
 const acceptError = ref('')
@@ -327,6 +334,19 @@ async function submitReject(): Promise<void> {
     submitting.value = false
   }
 }
+
+function openReportClient(order: Order) {
+  reportTargetType.value = 'USER'
+  reportTargetId.value = order.userId
+  reportTargetLabel.value = order.contactPhone || t('l_Client')
+  reportOpen.value = true
+}
+
+function openBlockClient(order: Order) {
+  blockUserId.value = order.userId
+  reportTargetLabel.value = order.contactPhone || t('l_Client')
+  blockOpen.value = true
+}
 </script>
 
 <template>
@@ -446,22 +466,37 @@ async function submitReject(): Promise<void> {
                 {{ formatPrice(order.totalAmount) }}
                 <span class="text-[12px] font-normal text-[#333]">₸</span>
               </p>
-              <p v-if="order.commission != null && order.commission > 0" class="mt-2 text-[11px] font-semibold text-subtle">
+              <p v-if="order.commission != null && order.commission > 0"
+                class="mt-2 text-[11px] font-semibold text-subtle">
                 {{ t('l_Order_commission') }}: −{{ formatPrice(order.commission) }} ₸
               </p>
-              <p v-if="order.cookPayout != null && order.cookPayout > 0" class="mt-0.5 text-[13px] font-bold text-primary">
+              <p v-if="order.cookPayout != null && order.cookPayout > 0"
+                class="mt-0.5 text-[13px] font-bold text-primary">
                 {{ t('l_Order_net_payout') }}: {{ formatPrice(order.cookPayout) }} ₸
               </p>
             </div>
 
             <div v-if="isAwaitingCook(order.status)" class="flex gap-2.5 border-t border-black/6 pt-3">
-              <UiButton class="flex-1 rounded-[16px]! py-2.5! text-sm!" variant="primary" @click="openAccept(order)">
+              <UiButton class="flex-1 rounded-2xl! py-2.5! text-sm!" variant="primary" @click="openAccept(order)">
                 {{ t("l_Accept") }}
               </UiButton>
-              <UiButton class="flex-1 rounded-[16px]! py-2.5! text-sm!" variant="outline" @click="openReject(order)">
+              <UiButton class="flex-1 rounded-2xl! py-2.5! text-sm!" variant="outline" @click="openReject(order)">
                 {{ t("l_Reject") }}
               </UiButton>
             </div>
+
+            <!-- <div class="grid grid-cols-2 gap-2 border-t border-black/6 pt-3">
+              <button type="button"
+                class="rounded-[14px] border border-black/10 bg-white px-3 py-2 text-[11px] font-bold text-dark"
+                @click="openReportClient(order)">
+                {{ t('l_Report_user') }}
+              </button>
+              <button type="button"
+                class="rounded-[14px] border border-error/25 bg-error/10 px-3 py-2 text-[11px] font-bold text-error"
+                @click="openBlockClient(order)">
+                {{ t('l_Block_user') }}
+              </button>
+            </div> -->
           </div>
         </article>
       </div>
@@ -472,8 +507,8 @@ async function submitReject(): Promise<void> {
         enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100"
         leave-to-class="opacity-0">
         <div v-if="modal && modalOrder"
-          class="fixed inset-0 z-100 flex items-end justify-center bg-black/45 p-4 sm:items-center" role="dialog"
-          aria-modal="true" @click.self="closeModal">
+          class="safe-sheet-inset fixed inset-0 z-100 flex items-end justify-center bg-black/45 px-4 pt-4 sm:items-center sm:p-4"
+          role="dialog" aria-modal="true" @click.self="closeModal">
           <div
             class="w-full max-w-md rounded-[22px] border border-black/8 bg-white p-5 shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
             @click.stop>
@@ -483,14 +518,14 @@ async function submitReject(): Promise<void> {
                 {{ t("l_Accept_order_minutes_prompt", { orderNumber: modalOrder.orderNumber }) }}
               </p>
               <div class="mt-4">
-                <UiInput v-model="acceptMinutesStr" type="number" :label="t('l_Minutes')" :placeholder="t('l_Minutes_example')"
-                  :error="acceptError" autocomplete="off" />
+                <UiInput v-model="acceptMinutesStr" type="number" :label="t('l_Minutes')"
+                  :placeholder="t('l_Minutes_example')" :error="acceptError" autocomplete="off" />
               </div>
               <div class="mt-5 flex gap-2.5">
-                <UiButton variant="outline" class="flex-1 rounded-[16px]!" :disabled="submitting" @click="closeModal">
+                <UiButton variant="outline" class="flex-1 rounded-2xl!" :disabled="submitting" @click="closeModal">
                   {{ t("l_Cancel") }}
                 </UiButton>
-                <UiButton class="flex-1 rounded-[16px]!" :loading="submitting" @click="submitAccept">
+                <UiButton class="flex-1 rounded-2xl!" :loading="submitting" @click="submitAccept">
                   {{ t("l_Confirm") }}
                 </UiButton>
               </div>
@@ -514,10 +549,10 @@ async function submitReject(): Promise<void> {
                 </p>
               </div>
               <div class="mt-5 flex gap-2.5">
-                <UiButton variant="outline" class="flex-1 rounded-[16px]!" :disabled="submitting" @click="closeModal">
+                <UiButton variant="outline" class="flex-1 rounded-2xl!" :disabled="submitting" @click="closeModal">
                   {{ t("l_Cancel") }}
                 </UiButton>
-                <UiButton class="flex-1 rounded-[16px]!" variant="primary" :loading="submitting" @click="submitReject">
+                <UiButton class="flex-1 rounded-2xl!" variant="primary" :loading="submitting" @click="submitReject">
                   {{ t("l_Reject") }}
                 </UiButton>
               </div>
@@ -526,6 +561,10 @@ async function submitReject(): Promise<void> {
         </div>
       </Transition>
     </Teleport>
+
+    <UiReportContentModal v-model="reportOpen" :target-type="reportTargetType" :target-id="reportTargetId"
+      :target-label="reportTargetLabel" />
+    <UiBlockUserModal v-model="blockOpen" :blocked-user-id="blockUserId" :target-label="reportTargetLabel" />
 
     <Teleport to="body">
       <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0"

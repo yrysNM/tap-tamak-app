@@ -1,15 +1,30 @@
 <script setup lang="ts">
 const { t } = useI18n()
-import { useDebounceFn } from "@vueuse/core";
+import { useDebounceFn, watchDebounced } from "@vueuse/core";
+import {
+    usePhoton,
+    type GeocodedAddress,
+} from "~/composables/usePhoton";
 import { usePageToast } from "~/composables/usePageToast";
 import { apiMessage } from "~/utils/apiMessage";
 import { fetchBasket, updateBasketItemQuantity } from "~/utils/basketApi";
+import { isWithinDeliveryRadius } from "~/utils/geoUtils";
 import {
     createOrderFromCart,
     prepareOrderFromCart,
     type CheckoutOrderPayload,
     type PrepareOrderResponse,
 } from "~/utils/ordersApi";
+
+interface AddressCandidate extends GeocodedAddress {
+    withinDeliveryRadius: boolean;
+}
+
+/** Delivery center used for the 2 km radius check (Almaty center). */
+const DELIVERY_CENTER = {
+    lat: 43.238949,
+    lng: 76.889709,
+};
 
 definePageMeta({
     hideBottomNav: true,
@@ -28,20 +43,19 @@ const {
 } = useAsyncData("basket", async () => await fetchBasket(api), { immediate: true });
 
 const form = reactive({
-    district: "Ауэзовский",
-    addressLine: "",
+    district: "Ауэзовский район",
+    address: "",
     entrance: "",
     intercom: "",
     floor: "",
-    apartment: "",
     contactPhone: "+7",
     courierComment: "",
     saveAddress: false,
 });
 
 const districtOptions = [
-    { value: "Ауэзовский", label: "Ауэзовский" },
-    { value: "Бостандыкский", label: "Бостандыкский" },
+    { value: "Ауэзовский район", label: "Ауэзовский" },
+    { value: "Бостандыкский район", label: "Бостандыкский" },
 ];
 
 const promoInput = ref("");
@@ -53,6 +67,14 @@ const clearing = ref(false);
 const manualDiscount = ref(0);
 const phoneTouched = ref(false);
 const addressTouched = ref(false);
+const addressCoords = ref<{ lat: number; lng: number } | null>(null);
+const addressOutOfRange = ref(false);
+const addressCandidates = ref<AddressCandidate[]>([]);
+const selectedAddress = ref<AddressCandidate | null>(null);
+const syncingAddressFromSelection = ref(false);
+const addressSearchPending = ref(false);
+const ADDRESS_SEARCH_DEBOUNCE_MS = 500;
+const { geocoding, geocodeError, geocodeAddress } = usePhoton();
 
 const paymentOptions = [
     { value: "card", label: t("l_Payment_card") },
@@ -72,8 +94,12 @@ function phoneLooksValid(phone: string): boolean {
     return d.length === 11;
 }
 
-function addressLooksValid(line: string): boolean {
-    return line.trim().length >= 4;
+function buildAddressLine(): string {
+    return (selectedAddress.value?.displayName ?? form.address).trim();
+}
+
+function addressLooksValid(): boolean {
+    return form.address.trim().length >= 3;
 }
 
 const phoneError = computed(() => {
@@ -84,17 +110,134 @@ const phoneError = computed(() => {
     return t("l_Enter_10_digits_after_7");
 });
 
+const deliverableCandidates = computed(() =>
+    addressCandidates.value.filter((c) => c.withinDeliveryRadius),
+);
+
 const addressError = computed(() => {
     if (!addressTouched.value) return "";
-    if (addressLooksValid(form.addressLine)) return "";
-    return t("l_Enter_delivery_address");
+    if (!addressLooksValid()) return t("l_Enter_delivery_address");
+    if (geocoding.value) return "";
+    if (addressCandidates.value.length > 1 && !selectedAddress.value) {
+        if (!deliverableCandidates.value.length) {
+            return t("l_Address_outside_delivery_zone");
+        }
+        return t("l_Select_matched_address");
+    }
+    if (addressOutOfRange.value) return t("l_Address_outside_delivery_zone");
+    if (geocodeError.value === "address_not_found") return t("l_Address_geocode_not_found");
+    if (geocodeError.value === "geocode_failed") return t("l_Address_geocode_failed");
+    return "";
 });
 
-function validateRequiredFields(): boolean {
+function withDeliveryRadius(result: GeocodedAddress): AddressCandidate {
+    const withinDeliveryRadius = isWithinDeliveryRadius(
+        result.lat,
+        result.lng,
+        DELIVERY_CENTER.lat,
+        DELIVERY_CENTER.lng,
+    );
+    return { ...result, withinDeliveryRadius };
+}
+
+function applySelectedAddress(result: AddressCandidate): boolean {
+    syncingAddressFromSelection.value = true;
+    selectedAddress.value = result;
+    form.address = result.displayName;
+    addressCoords.value = { lat: result.lat, lng: result.lng };
+    addressOutOfRange.value = !result.withinDeliveryRadius;
+    nextTick(() => {
+        syncingAddressFromSelection.value = false;
+    });
+    return result.withinDeliveryRadius;
+}
+
+function resetAddressRadiusState(): void {
+    addressCoords.value = null;
+    addressOutOfRange.value = false;
+    addressCandidates.value = [];
+    selectedAddress.value = null;
+    geocodeError.value = "";
+}
+
+async function validateAddressRadius(): Promise<boolean> {
+    if (!addressLooksValid()) {
+        resetAddressRadiusState();
+        return false;
+    }
+
+    const results = (await geocodeAddress({
+        address: form.address,
+        district: form.district,
+    })).map(withDeliveryRadius);
+
+    addressCandidates.value = results;
+
+    if (!results.length) {
+        addressCoords.value = null;
+        selectedAddress.value = null;
+        addressOutOfRange.value = false;
+        return false;
+    }
+
+    // Single match — apply automatically
+    if (results.length === 1) {
+        return applySelectedAddress(results[0]!);
+    }
+
+    // Multiple matches — wait for user selection
+    if (selectedAddress.value) {
+        const match = results.find(
+            (r) =>
+                r.lat === selectedAddress.value!.lat
+                && r.lng === selectedAddress.value!.lng
+                && r.displayName === selectedAddress.value!.displayName,
+        );
+        if (match) {
+            return applySelectedAddress(match);
+        }
+    }
+
+    selectedAddress.value = null;
+    addressCoords.value = null;
+    addressOutOfRange.value = false;
+    return false;
+}
+
+function selectAddressCandidate(result: AddressCandidate): void {
+    if (!result.withinDeliveryRadius) return;
+    addressTouched.value = true;
+    applySelectedAddress(result);
+}
+
+async function onAddressBlur(): Promise<void> {
+    addressTouched.value = true;
+    if (syncingAddressFromSelection.value) return;
+    addressSearchPending.value = false;
+    await runAddressSearch();
+}
+
+async function validateRequiredFields(): Promise<boolean> {
     addressTouched.value = true;
     phoneTouched.value = true;
-    return addressLooksValid(form.addressLine) && phoneLooksValid(form.contactPhone);
+    if (!addressLooksValid() || !phoneLooksValid(form.contactPhone)) {
+        return false;
+    }
+    return await validateAddressRadius();
 }
+
+const canPlaceOrder = computed(() => {
+    return (
+        !submitting.value
+        && !geocoding.value
+        && !addressSearchPending.value
+        && addressLooksValid()
+        && phoneLooksValid(form.contactPhone)
+        && !!selectedAddress.value
+        && !addressOutOfRange.value
+        && !geocodeError.value
+    );
+});
 
 function onPhoneSectionFocusOut(ev: FocusEvent): void {
     const rel = ev.relatedTarget as Node | null;
@@ -110,11 +253,10 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
             ? prepareSnapshot.value.discountAmount
             : manualDiscount.value;
     return {
-        addressLine: form.addressLine.trim(),
+        addressLine: buildAddressLine(),
         entrance: form.entrance.trim() || undefined,
         intercom: form.intercom.trim() || undefined,
         floor: form.floor.trim() || undefined,
-        apartment: form.apartment.trim() || undefined,
         contactPhone: form.contactPhone.trim(),
         courierComment: form.courierComment.trim() || undefined,
         saveAddress: form.saveAddress,
@@ -124,7 +266,7 @@ function buildCheckoutPayload(): CheckoutOrderPayload {
 
 function canQuotePrepare(): boolean {
     return (
-        addressLooksValid(form.addressLine)
+        addressLooksValid()
         && phoneLooksValid(form.contactPhone)
         && (basket.value?.items.length ?? 0) > 0
     );
@@ -138,11 +280,10 @@ async function runPrepare(): Promise<void> {
     preparePending.value = true;
     try {
         const payload: CheckoutOrderPayload = {
-            addressLine: form.addressLine.trim(),
+            addressLine: buildAddressLine(),
             entrance: form.entrance.trim() || undefined,
             intercom: form.intercom.trim() || undefined,
             floor: form.floor.trim() || undefined,
-            apartment: form.apartment.trim() || undefined,
             contactPhone: form.contactPhone.trim(),
             courierComment: form.courierComment.trim() || undefined,
             saveAddress: form.saveAddress,
@@ -159,13 +300,47 @@ async function runPrepare(): Promise<void> {
 
 const debouncedPrepare = useDebounceFn(() => void runPrepare(), 650);
 
+async function runAddressSearch(): Promise<void> {
+    if (syncingAddressFromSelection.value) return;
+
+    resetAddressRadiusState();
+
+    if (!addressLooksValid()) {
+        addressSearchPending.value = false;
+        return;
+    }
+
+    await validateAddressRadius();
+    addressSearchPending.value = false;
+}
+
+watchDebounced(
+    () => [form.address, form.district] as const,
+    () => {
+        if (syncingAddressFromSelection.value) return;
+        addressSearchPending.value = addressLooksValid();
+        void runAddressSearch();
+    },
+    { debounce: ADDRESS_SEARCH_DEBOUNCE_MS },
+);
+
+watch(
+    () => form.address,
+    () => {
+        if (syncingAddressFromSelection.value) return;
+        if (!addressLooksValid()) {
+            addressSearchPending.value = false;
+            resetAddressRadiusState();
+        }
+    },
+);
+
 watch(
     () => [
-        form.addressLine,
+        form.address,
         form.entrance,
         form.intercom,
         form.floor,
-        form.apartment,
         form.contactPhone,
         form.courierComment,
         form.saveAddress,
@@ -244,7 +419,12 @@ async function submitOrder(): Promise<void> {
         toast.show(t("l_Basket_empty"), "error");
         return;
     }
-    if (!validateRequiredFields()) {
+    if (geocoding.value || addressSearchPending.value) {
+        toast.show(t("l_Address_verifying"), "error");
+        return;
+    }
+    if (!(await validateRequiredFields())) {
+        toast.show(addressError.value || t("l_Enter_delivery_address"), "error");
         return;
     }
     if (!form.district.trim()) {
@@ -283,13 +463,13 @@ function retryBasket(): void {
                     :aria-label="t('l_Back')" @click="router.back()">
                     <Icon name="material-symbols:chevron-left-rounded" class="size-5 text-icon-secondary" />
                 </button>
-                <h1 class="min-w-0 flex-1 text-center text-[23px] font-bold leading-[26px] text-heading">
+                <h1 class="min-w-0 flex-1 text-center text-[23px] font-bold leading-6.5 text-heading">
                     {{ t("l_Checkout") }}
                 </h1>
             </div>
         </header>
 
-        <div class="space-y-3 px-[18px] pt-4">
+        <div class="space-y-3 px-4.5 pt-4">
             <div v-if="basketPending"
                 class="rounded-2xl border border-soft-border bg-white p-4 shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
                 <div class="h-4 w-24 animate-pulse rounded bg-black/10" />
@@ -311,7 +491,7 @@ function retryBasket(): void {
             <template v-else-if="!isEmpty">
                 <!-- Сумма -->
                 <section
-                    class="rounded-2xl border border-soft-border bg-white p-[15px] shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
+                    class="rounded-2xl border border-soft-border bg-white p-4 shadow-[0_10px_12px_rgba(0,0,0,0.08)]">
                     <p class="text-[15px] font-bold text-section">
                         {{ t("l_Amount") }}
                     </p>
@@ -320,27 +500,27 @@ function retryBasket(): void {
                             <span>{{ t("l_Dish_amount") }}</span>
                             <span class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(dishesAmount)
-                                }}</span>
+                            }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>{{ t("l_Delivery") }}</span>
                             <span v-if="deliveryAmount != null" class="shrink-0 text-[15px] text-body">{{
                                 formatPrice(deliveryAmount) }}</span>
                             <span v-else class="shrink-0 text-[13px] text-caption">{{ preparePending ? "…" : "—"
-                                }}</span>
+                            }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>{{ t("l_Discount") }}</span>
                             <span class="shrink-0 text-[15px] text-body">− {{
                                 formatPrice(discountShown)
-                                }}</span>
+                            }}</span>
                         </div>
                     </div>
                     <div class="mt-2.5 flex items-center justify-between border-t border-black/10 pt-3">
                         <span class="text-[15px] font-bold text-body">{{ t("l_Total") }}</span>
                         <span class="text-[20px] font-bold text-section">{{
                             formatPrice(totalAmount)
-                            }}</span>
+                        }}</span>
                     </div>
                     <p v-if="!prepareSnapshot && !preparePending" class="mt-2 text-[11px] leading-relaxed text-caption">
                         {{ t("l_Checkout_address_hint") }}
@@ -349,7 +529,7 @@ function retryBasket(): void {
 
                 <!-- Адрес доставки -->
                 <section
-                    class="rounded-[20px] border border-soft-border bg-white p-[19px] shadow-[0_10px_12.5px_rgba(0,0,0,0.08)]">
+                    class="rounded-[20px] border border-soft-border bg-white p-4.75 shadow-[0_10px_12.5px_rgba(0,0,0,0.08)]">
                     <h2 class="text-[20px] font-semibold text-[#5e7d1a]">
                         {{ t("l_Delivery_address") }}
                     </h2>
@@ -361,24 +541,66 @@ function retryBasket(): void {
 
                     <div class="mt-4">
                         <UiSelect v-model="form.district" :label="t('l_District')" :options="districtOptions" required
-                            class="[&_button]:rounded-[14px] [&_button]:border-[#d4d4d4] [&_button]:px-[15px] [&_button]:py-3 [&_button]:text-[13px] [&_label]:text-[13px] [&_label]:text-[#555555]" />
+                            class="[&_button]:rounded-[14px] [&_button]:border-[#d4d4d4] [&_button]:px-3.75 [&_button]:py-3 [&_button]:text-[13px] [&_label]:text-[13px] [&_label]:text-[#555555]" />
                     </div>
 
-                    <div class="mt-5">
-                        <label class="block text-[13px] text-[#555555]">
-                            {{ t("l_Address") }}
-                            <span class="text-red-600">*</span>
-                        </label>
-                        <input v-model="form.addressLine" type="text" autocomplete="street-address"
-                            :placeholder="t('l_Address_placeholder')"
-                            :class="[
-                                'mt-1.5 w-full rounded-[14px] border bg-white px-[15px] py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
-                                addressError
-                                    ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
-                                    : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
-                            ]"
-                            @blur="addressTouched = true">
-                        <p v-if="addressError" class="mt-1 text-[12px] text-red-600">
+                    <div class="mt-5 space-y-4">
+                        <div>
+                            <label class="block text-[13px] text-[#555555]">
+                                {{ t("l_Address") }}
+                                <span class="text-red-600">*</span>
+                            </label>
+                            <input
+                                v-model="form.address"
+                                type="text"
+                                autocomplete="street-address"
+                                :placeholder="t('l_Address_placeholder')"
+                                :class="[
+                                    'mt-1.5 w-full rounded-[14px] border bg-white px-3.75 py-3 text-[13px] text-body outline-none placeholder:text-[#767676] focus:ring-2',
+                                    addressError
+                                        ? 'border-red-500 ring-red-300/40 focus:ring-red-300/40'
+                                        : 'border-[#d4d4d4] ring-[#FF7A00]/30 focus:ring-[#FF7A00]/30',
+                                ]"
+                                @blur="onAddressBlur"
+                            >
+                        </div>
+                        <p v-if="geocoding || addressSearchPending" class="text-[12px] text-caption">
+                            {{ t("l_Address_verifying") }}
+                        </p>
+                        <div v-else-if="addressCandidates.length > 1" class="space-y-2">
+                            <p class="text-[12px] font-medium text-[#555555]">
+                                {{ t("l_Select_matched_address") }}
+                            </p>
+                            <ul class="space-y-1.5">
+                                <li v-for="(candidate, idx) in addressCandidates"
+                                    :key="`${candidate.lat}-${candidate.lng}-${idx}`">
+                                    <button type="button"
+                                        class="w-full rounded-[14px] border px-3 py-2.5 text-left transition-colors"
+                                        :disabled="!candidate.withinDeliveryRadius" :class="selectedAddress
+                                            && selectedAddress.lat === candidate.lat
+                                            && selectedAddress.lng === candidate.lng
+                                            && selectedAddress.displayName === candidate.displayName
+                                            ? 'border-primary bg-transparent  text-body'
+                                            : candidate.withinDeliveryRadius
+                                                ? 'border-[#d4d4d4] bg-white text-[#555555] hover:border-[#FF7A00]/60'
+                                                : 'cursor-not-allowed border-red-200 bg-red-50/60 text-[#767676] opacity-80'
+                                            " @click="selectAddressCandidate(candidate)">
+                                        <span class="block text-[12px] leading-snug">
+                                            {{ candidate.displayName }}
+                                        </span>
+                                        <span class="mt-1 block text-[11px] font-medium"
+                                            :class="candidate.withinDeliveryRadius ? 'text-[#5e7d1a]' : 'text-red-600'">
+                                            {{
+                                                candidate.withinDeliveryRadius
+                                                    ? t("l_Address_in_delivery_zone")
+                                                    : t("l_Address_outside_delivery_zone")
+                                            }}
+                                        </span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <p v-else-if="addressError" class="text-[12px] text-red-600">
                             {{ addressError }}
                         </p>
                     </div>
@@ -408,20 +630,14 @@ function retryBasket(): void {
                         </label>
                         <UiInput v-model="form.contactPhone" type="tel" phone-mask autocomplete="tel"
                             placeholder="+7 (700) 000-00-00" :error="phoneError"
-                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-[15px] [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
-                    </div>
-
-                    <div class="mt-5">
-                        <label class="block text-[13px] text-[#555555]">{{ t("l_Apartment_office") }}</label>
-                        <input v-model="form.apartment" type="text" autocomplete="address-line2"
-                            class="mt-1.5 w-full rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[13px] text-body outline-none focus:ring-2 focus:ring-[#FF7A00]/25">
+                            class="mt-1.5 [&_input]:rounded-[14px] [&_input]:border-[#d4d4d4] [&_input]:px-3.75 [&_input]:py-3 [&_input]:text-[13px] [&_input]:text-body [&_input]:placeholder:text-[#767676] [&_input]:focus:border-[#d4d4d4] [&_input]:focus:ring-[#FF7A00]/25" />
                     </div>
 
                     <div class="mt-5">
                         <label class="block text-[13px] text-[#555555]">{{ t("l_Courier_comment") }}</label>
                         <textarea v-model="form.courierComment" rows="3"
                             :placeholder="t('l_Courier_comment_placeholder')"
-                            class="mt-1.5 min-h-[70px] w-full resize-none rounded-[14px] border border-[#d4d4d4] bg-white px-[15px] py-3 text-[14px] text-body outline-none placeholder:text-[#767676] focus:ring-2 focus:ring-[#FF7A00]/25" />
+                            class="mt-1.5 min-h-17.5 w-full resize-none rounded-[14px] border border-[#d4d4d4] bg-white px-3.75 py-3 text-[14px] text-body outline-none placeholder:text-[#767676] focus:ring-2 focus:ring-[#FF7A00]/25" />
                     </div>
 
                     <!-- <label class="mt-5 flex cursor-pointer items-start gap-2">
@@ -458,8 +674,8 @@ function retryBasket(): void {
             <div class="pointer-events-auto mx-auto w-full max-w-md">
                 <button type="button"
                     class="flex h-14 w-full items-center justify-center rounded-[18px] bg-[#FF7A00] text-[17.5px] font-bold text-white shadow-[0_10px_12px_rgba(255,122,0,0.28)] disabled:opacity-50"
-                    :disabled="submitting" @click="submitOrder">
-                    {{ submitting ? t("l_Submitting") : t("l_Place_order") }}
+                    :disabled="!canPlaceOrder" @click="submitOrder">
+                    {{ submitting || geocoding || addressSearchPending ? t("l_Submitting") : t("l_Place_order") }}
                 </button>
             </div>
         </div>

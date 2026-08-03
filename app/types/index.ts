@@ -337,4 +337,6 @@ export interface RegisterDto {
   phone: string
   password: string
   role: 'USER' | 'COOK'
+  acceptedTermsVersion: string
+  acceptedPrivacyVersion: string
 }

@@ -1,6 +1,6 @@
 <template>
-  <div class="safe-x safe-t safe-b flex min-h-dvh flex-col bg-primary-light">
-    <header class="flex shrink-0 items-center justify-between px-4 py-3">
+  <div class="safe-x safe-b flex min-h-dvh flex-col bg-primary-light">
+    <header class="safe-app-header flex shrink-0 items-center justify-between px-4 pb-3">
       <button type="button" v-if="showBackButton"
         class="flex size-11 items-center justify-center rounded-[14px] border border-black/6 bg-white/96 shadow-[0_8px_10px_rgba(0,0,0,0.1)]"
         :aria-label="$t('l_Back')" @click="onBack">
@@ -14,8 +14,8 @@
     </header>
 
     <div class="flex min-h-0 flex-1 px-4 pb-4"
-      :class="isOfferPage ? 'items-start pt-1' : 'items-center justify-center'">
-      <div class="flex w-full max-w-md min-h-0 flex-col" :class="isOfferPage ? 'flex-1' : ''">
+      :class="isLegalDocPage ? 'items-start pt-1' : 'items-center justify-center'">
+      <div class="flex w-full max-w-md min-h-0 flex-col" :class="isLegalDocPage ? 'flex-1' : ''">
         <slot />
       </div>
     </div>
@@ -35,7 +35,10 @@ function onBack() {
 }
 
 const isRolePage = computed(() => router.currentRoute.value.path.includes('/role'))
-const isOfferPage = computed(() => router.currentRoute.value.path.includes('/legal/offer'))
+const isLegalDocPage = computed(() => {
+  const path = router.currentRoute.value.path
+  return path.includes('/legal/offer') || path.includes('/legal/privacy') || path.includes('/legal/terms')
+})
 const isRegisterPage = computed(() => router.currentRoute.value.path.includes('/register'))
-const showBackButton = computed(() => isRolePage.value || isOfferPage.value || isRegisterPage.value)
+const showBackButton = computed(() => isRolePage.value || isLegalDocPage.value || isRegisterPage.value)
 </script>

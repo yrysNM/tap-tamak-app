@@ -90,6 +90,17 @@
 
     <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
       <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
+        {{ t("l_Legal_section") }}
+      </h2>
+      <div class="mt-4 space-y-2 text-sm font-semibold">
+        <NuxtLink to="/legal/privacy" class="block text-primary underline underline-offset-2">{{ t("l_Legal_privacy") }}</NuxtLink>
+        <NuxtLink to="/legal/terms" class="block text-primary underline underline-offset-2">{{ t("l_Legal_terms") }}</NuxtLink>
+        <NuxtLink to="/legal/offer?role=cook" class="block text-primary underline underline-offset-2">{{ t("l_Legal_offer") }}</NuxtLink>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
         {{ t("l_Account") }}
       </h2>
 
@@ -127,6 +138,12 @@
 
         <button type="button"
           class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
+          @click="deleteAccountOpen = true">
+          {{ t("l_Delete_account") }}
+        </button>
+
+        <button type="button"
+          class="w-full rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-semibold text-error transition hover:bg-error/10"
           @click="onLogout">
           {{ t("l_Log_out") }}
         </button>
@@ -135,6 +152,7 @@
 
     <UiLanguagePickerModal v-model="languagePickerOpen" />
     <UiChangePasswordModal v-model="changePasswordOpen" @success="onPasswordChanged" />
+    <UiDeleteAccountModal v-model="deleteAccountOpen" @success="onAccountDeleted" />
   </div>
 </template>
 
@@ -171,6 +189,7 @@ const uploadingAvatar = ref(false);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const languagePickerOpen = ref(false);
 const changePasswordOpen = ref(false);
+const deleteAccountOpen = ref(false);
 
 const user = computed(() => auth.user);
 const cook = computed(
@@ -309,5 +328,11 @@ async function onPasswordChanged() {
   toast.show(t("l_Password_changed"), "success");
   auth.logout();
   await navigateTo("/login");
+}
+
+async function onAccountDeleted() {
+  auth.logout();
+  await navigateTo("/login");
+  toast.show(t("l_Account_deleted"), "success");
 }
 </script>

@@ -3,9 +3,9 @@ import tailwindcss from '@tailwindcss/vite'
 const productionApiBaseUrl =
   'https://tap-tamak-production.up.railway.app/api/v1'
 const defaultApiBaseUrl =
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production' 
     ? productionApiBaseUrl
-    : 'http://localhost:3000/api/v1'
+    : 'http://192.168.50.120:3000/api/v1'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -38,13 +38,15 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss() as any],
   },
-  css: ['~/assets/css/main.css', 'leaflet/dist/leaflet.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/safe-area.css', 'leaflet/dist/leaflet.css'],
   runtimeConfig: {
     public: {
       apiBaseUrl: defaultApiBaseUrl,
-      wsUrl:  process.env.NODE_ENV === 'production' || true ? 'https://tap-tamak-production.up.railway.app' : 'http://localhost:3000',
+      wsUrl:  process.env.NODE_ENV === 'production' ? 'https://tap-tamak-production.up.railway.app' : 'http://192.168.50.120:3000',
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
-      supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE ?? '+77001234567',
+      supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE ?? '+77064080244',
+      legalTermsVersion: process.env.NUXT_PUBLIC_LEGAL_TERMS_VERSION ?? '2026-06-28',
+      legalPrivacyVersion: process.env.NUXT_PUBLIC_LEGAL_PRIVACY_VERSION ?? '2026-06-28',
     },
   },
   ssr: false,
@@ -56,6 +58,13 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      meta: [
+        {
+          name: 'viewport',
+          content:
+            'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no',
+        },
+      ],
       link: [
         {
           rel: 'stylesheet',

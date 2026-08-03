@@ -1,18 +1,18 @@
 <template>
-  <section class="relative mx-auto h-[calc(100vh-8.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
+  <section class="relative mx-auto h-[calc(100vh-4.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
     <ClientOnly>
-      <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full"
-        :options="{ zoomControl: false }" @ready="onMapReady">
+      <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full" :options="{ zoomControl: false }"
+        @ready="onMapReady">
         <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" layer-type="base" name="OpenStreetMap" />
 
-        <LCircle v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]"
-          :radius="locationAccuracy" color="#2aa4ff" :fill-color="'#2aa4ff'" :fill-opacity="0.12" :weight="1" />
+        <LCircle v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]" :radius="locationAccuracy"
+          color="#2aa4ff" :fill-color="'#2aa4ff'" :fill-opacity="0.12" :weight="1" />
 
         <LMarker v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]" :icon="userMarkerIcon"
           :z-index-offset="1000" />
 
         <LMarker v-for="cook in filteredCooks" :key="cook.id" :lat-lng="[cook.latitude!, cook.longitude!]"
-          :icon="cookMarkerIcon" @click="selectCook(cook.id)" />
+          :icon="cookMarkerIcon(cook)" @click="selectCook(cook.id)" />
       </LMap>
     </ClientOnly>
 
@@ -98,9 +98,26 @@
             class="mt-3 flex h-11 items-center justify-center rounded-[16px] bg-primary text-[14px] font-bold text-white shadow-[0_10px_16px_rgba(255,122,0,0.24)]">
             {{ t("l_View_dishes") }}
           </NuxtLink>
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button type="button"
+              class="rounded-[14px] border border-black/10 bg-white px-3 py-2 text-[11px] font-bold text-dark"
+              @click="openReportSelectedCook">
+              {{ t('l_Report_cook') }}
+            </button>
+            <button type="button"
+              class="rounded-[14px] border border-error/25 bg-error/10 px-3 py-2 text-[11px] font-bold text-error"
+              @click="openBlockSelectedCook">
+              {{ t('l_Block_cook') }}
+            </button>
+          </div>
         </template>
       </div>
     </div>
+
+    <UiReportContentModal v-model="reportOpen" :target-type="reportTargetType" :target-id="reportTargetId"
+      :target-label="reportTargetLabel" />
+    <UiBlockUserModal v-if="selectedCook" v-model="blockOpen" :cook-id="selectedCook.id"
+      :target-label="selectedCook.businessName" @blocked="onCookBlocked" />
   </section>
 </template>
 
@@ -141,18 +158,50 @@ const userMarkerIcon = computed(
     }) as L.Icon,
 );
 
-const cookMarkerIcon = computed(
-  (): L.Icon =>
-    L.divIcon({
-      html: `<img src="https://api.iconify.design/glyphs-poly/map-marker-1.svg?color=%23ff7a00&width=32&height=32" alt="" />`,
-      className: "cook-map-marker",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -32],
-    }) as L.Icon,
-);
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function cookAvatarSrc(cook: Cook): string | undefined {
+  return dishImageSrc(cook.profileImageUrl, apiBase.value);
+}
+
+function cookMarkerIcon(cook: Cook): L.Icon {
+  const avatarSrc = cookAvatarSrc(cook);
+  const fallbackInitial = escapeHtml(cookInitials(cook.businessName));
+  const status = cook.isAvailable ? t("l_Online") : t("l_Offline");
+  const avatarHtml = avatarSrc
+    ? `<img class="cook-marker__avatar-img" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cook.businessName)}" />`
+    : `<span class="cook-marker__avatar-fallback">${fallbackInitial}</span>`;
+
+  return L.divIcon({
+    html: `
+      <div class="cook-marker">
+        <div class="cook-marker__avatar">${avatarHtml}</div>
+        <div class="cook-marker__rating ${cook.isAvailable ? "" : "cook-marker__rating--offline"}">
+          <span class="cook-marker__status">${escapeHtml(status)}</span>
+        </div>
+      </div>
+    `,
+    className: "cook-map-marker",
+    iconSize: [112, 78],
+    iconAnchor: [44, 62],
+    popupAnchor: [0, -62],
+  }) as L.Icon;
+}
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
+const moderation = useModerationStore();
+const reportOpen = ref(false);
+const blockOpen = ref(false);
+const reportTargetType = ref<import('~/types/moderation').ReportTargetType>('COOK');
+const reportTargetId = ref('');
+const reportTargetLabel = ref('');
 
 const {
   coords: userCoords,
@@ -212,6 +261,7 @@ function matchesCategory(cook: Cook): boolean {
 const filteredCooks = computed(() => {
   const query = search.value.trim().toLowerCase();
   return cooksWithCoords.value.filter((cook) => {
+    if (moderation.isCookBlocked(cook.id)) return false;
     if (!matchesCategory(cook)) return false;
     if (!query) return true;
     const hay = [cook.businessName, ...(cook.specialties ?? [])]
@@ -257,7 +307,7 @@ function cookInitials(name: string | undefined): string {
     .filter(Boolean);
   if (!words.length) return t("l_Initial_fallback");
   const initials = words.slice(0, 2).map((word) => word[0] ?? "").join("");
-  return (initials || words[0][0] || t("l_Initial_fallback")).toUpperCase();
+  return (initials || words[0]?.[0] || t("l_Initial_fallback")).toUpperCase();
 }
 
 function selectCook(cookId: string) {
@@ -266,6 +316,22 @@ function selectCook(cookId: string) {
   if (cook?.latitude && cook?.longitude) {
     centerMapOn(cook.latitude, cook.longitude);
   }
+}
+
+function openReportSelectedCook() {
+  if (!selectedCook.value) return;
+  reportTargetType.value = 'COOK';
+  reportTargetId.value = selectedCook.value.id;
+  reportTargetLabel.value = selectedCook.value.businessName;
+  reportOpen.value = true;
+}
+
+function openBlockSelectedCook() {
+  blockOpen.value = true;
+}
+
+function onCookBlocked() {
+  selectedCookId.value = '';
 }
 
 function distanceLabel(cook: Cook): string {
@@ -298,6 +364,82 @@ onMounted(async () => {
 :deep(.cook-map-marker) {
   background: transparent;
   border: none;
+}
+
+:deep(.cook-marker) {
+  position: relative;
+  width: 104px;
+  height: 72px;
+  pointer-events: none;
+}
+
+:deep(.cook-marker__avatar) {
+  display: flex;
+  position: absolute;
+  left: 16px;
+  top: 0;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  background: #f2f2f2;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+:deep(.cook-marker__avatar-img) {
+  width: 100% !important;
+  height: 100%;
+  object-fit: cover;
+}
+
+:deep(.cook-marker__avatar-fallback) {
+  text-align: center;
+  line-height: 1;
+  font-size: 16px;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+:deep(.cook-marker__rating) {
+  display: inline-flex;
+  position: absolute;
+  left: 4px;
+  top: 35px;
+  align-items: center;
+  gap: 4px;
+  max-width: 104px;
+  padding: 5px 10px;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  background: #ff8a00;
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(255, 122, 0, 0.34);
+  white-space: nowrap;
+}
+
+:deep(.cook-marker__rating--offline) {
+  background: #959595;
+  box-shadow: 0 8px 16px rgba(60, 60, 60, 0.28);
+}
+
+:deep(.cook-marker__score) {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+:deep(.cook-marker__star) {
+  font-size: 15px;
+  line-height: 1;
+}
+
+:deep(.cook-marker__status) {
+  opacity: 0.95;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 :deep(.user-location-marker-wrap) {

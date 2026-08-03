@@ -28,11 +28,28 @@
           </template>
         </UiInput>
 
+        <label class="mt-2 flex cursor-pointer ml-1 items-start gap-2.5 text-left">
+          <input v-model="acceptedLegal" type="checkbox"
+            class="mt-0.5 size-4 shrink-0 rounded border-black/20 text-primary focus:ring-primary" />
+          <span class="text-[11px] font-semibold leading-snug text-black/55">
+            {{ $t('l_Login_legal_prefix') }}
+            <button type="button" class="font-bold text-primary underline underline-offset-2"
+              @click.prevent="navigateTo('/legal/privacy')">
+              {{ $t('l_Login_legal_privacy_link') }}
+            </button>
+            {{ $t('l_Login_legal_and') }}
+            <button type="button" class="font-bold text-primary underline underline-offset-2"
+              @click.prevent="navigateTo('/legal/terms')">
+              {{ $t('l_Login_legal_terms_link') }}
+            </button>{{ $t('l_Login_legal_suffix') }}
+          </span>
+        </label>
+
         <p v-if="error" class="mt-3 text-center text-xs text-red-500">
           {{ error }}
         </p>
 
-        <UiButton variant="primary" size="md" fullWidth :disabled="loading"
+        <UiButton variant="primary" size="md" fullWidth :disabled="loading || !acceptedLegal"
           class="mt-5 rounded-[20px] text-[15px] font-bold shadow-[0_16px_32px_rgba(244,123,32,0.22)]"
           @click="onSubmit">
           {{ loading ? $t('l_Loading') : $t('l_Sign_in') }}
@@ -54,14 +71,19 @@ const auth = useAuthStore();
 const { normalizePhone } = useNormalizationPhone();
 const { t } = useI18n();
 
-const phone = ref("");
+const phone = ref("+7");
 const password = ref("");
 const showPassword = ref(false);
+const acceptedLegal = ref(true);
 const error = ref("");
 const loading = ref(false);
 
 async function onSubmit() {
   if (!phone.value || !password.value) return;
+  if (!acceptedLegal.value) {
+    error.value = t("l_Login_legal_required");
+    return;
+  }
   loading.value = true;
   error.value = "";
   let redirectTo = "/";
@@ -81,7 +103,14 @@ async function onSubmit() {
 
     await navigateTo(redirectTo);
   } catch (e: any) {
-    error.value = e?.data?.message ?? t("l_Invalid_phone_or_password");
+    const message = String(e?.data?.message ?? "");
+    if (message.includes("not found user")) {
+      error.value = t("l_User_not_found");
+    } else if (message.includes("not valid password")) {
+      error.value = t("l_Incorrect_password");
+    } else {
+      error.value = message || t("l_Invalid_phone_or_password");
+    }
   } finally {
     loading.value = false;
   }
