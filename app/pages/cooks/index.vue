@@ -1,5 +1,6 @@
 <template>
-  <section class="relative mx-auto h-[calc(100vh-4.5rem)] w-full max-w-md overflow-hidden rounded-[26px] bg-page-cream">
+  <section
+    class="fixed inset-x-0 top-0 bottom-[calc(var(--app-bottom-nav-height)+env(safe-area-inset-bottom,0px))] z-1 w-full overflow-hidden bg-page-cream">
     <ClientOnly>
       <LMap :zoom="mapZoom" :center="mapCenter" class="h-full w-full" :options="{ zoomControl: false }"
         @ready="onMapReady">
@@ -16,7 +17,7 @@
       </LMap>
     </ClientOnly>
 
-    <div class="pointer-events-none absolute inset-x-0 top-0 p-3 z-1000">
+    <div class="pointer-events-none absolute inset-x-0 top-0 z-1000 p-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
       <div class="pointer-events-auto rounded-[16px] border border-black/10 bg-white/92 p-3 shadow-xl backdrop-blur-sm">
         <h1 class="text-[27px] font-bold leading-none text-heading">
           {{ t("l_Cooks_map_title") }}
@@ -228,6 +229,9 @@ const { data: list } = await useAsyncData(
 
 function onMapReady(map: L.Map) {
   leafletMap.value = map;
+  nextTick(() => {
+    map.invalidateSize();
+  });
 }
 
 function centerMapOn(lat: number, lng: number, animate = true) {
