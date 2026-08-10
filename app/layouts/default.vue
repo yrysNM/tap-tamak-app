@@ -1,5 +1,5 @@
 <template>
-  <div class="safe-x flex min-h-dvh flex-col bg-page-cream safe-app-header">
+  <div class="safe-x flex min-h-dvh flex-col bg-page-cream">
     <!-- <header
       class="safe-app-header sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3">
       <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
