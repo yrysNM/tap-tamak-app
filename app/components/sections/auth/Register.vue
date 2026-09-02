@@ -117,16 +117,24 @@ async function onSubmit() {
   loading.value = true;
   error.value = "";
   try {
+    const normalizedPhone = normalizePhone(phone.value).e164;
     await auth.register({
       firstName: name.value,
-      phone: normalizePhone(phone.value).e164,
+      phone: normalizedPhone,
       password: password.value,
       role: props.role,
       acceptedTermsVersion: config.public.legalTermsVersion as string,
       acceptedPrivacyVersion: config.public.legalPrivacyVersion as string,
     });
-    const redirect = props.role === "COOK" ? "/cook/verify" : "/";
-    await navigateTo({ path: "/login", query: { redirect } });
+    await auth.login({
+      phone: normalizedPhone,
+      password: password.value,
+    });
+
+    const redirect = auth.user?.role === "COOK"
+      ? getCookHomePath(auth.user, auth.verificationStatus)
+      : "/cooks";
+    await navigateTo(redirect);
   } catch (e: any) {
     error.value = e?.data?.message ?? t("l_Register_error");
   } finally {
