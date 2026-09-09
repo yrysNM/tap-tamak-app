@@ -45,7 +45,7 @@ const historyLoading = ref(false);
 
 const todayYmd = utcTodayYmd();
 const todayMenu = ref<CookMenuPayload | null>(null);
-const todayLoading = ref(true);
+const todayLoading = ref(false);
 const todayError = ref("");
 
 const dishes = ref<CookDish[]>([]);
@@ -118,13 +118,14 @@ watch([activeTab, historyFrom, historyTo, dishSearch, dishPage], () => {
   syncRoute();
 });
 
-watch([historyFrom, historyTo], async () => {
-  historyPage.value = 1;
-  await loadHistory(false);
-});
-
-watch(activeTab, (t) => {
-  if (t === "dishes") void loadDishes();
+watch(activeTab, (tab) => {
+  if (tab === "dishes") {
+    void loadDishes();
+  } else if (tab === "menus") {
+    void loadTodayMenu();
+    void loadHistory(false);
+    void loadSchedule();
+  }
 });
 
 watch(dishPage, () => {
@@ -138,6 +139,12 @@ watch(debouncedDishSearch, () => {
 
 watch(dishSearch, (q) => {
   updateDishSearchDebounced(q);
+});
+
+watch([historyFrom, historyTo], async () => {
+  if (activeTab.value !== "menus") return;
+  historyPage.value = 1;
+  await loadHistory(false);
 });
 
 async function loadHistory(append: boolean) {
@@ -330,10 +337,13 @@ const canDishNext = computed(() => {
 
 onMounted(() => {
   readQuery();
-  void loadTodayMenu();
-  void loadHistory(false);
-  void loadDishes();
-  void loadSchedule();
+  if (activeTab.value === "menus") {
+    void loadTodayMenu();
+    void loadHistory(false);
+    void loadSchedule();
+  } else {
+    void loadDishes();
+  }
 });
 </script>
 

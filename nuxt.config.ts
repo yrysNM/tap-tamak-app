@@ -13,7 +13,6 @@ export default defineNuxtConfig({
   modules: [
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
-    'nuxt-icon',
     '@vueuse/nuxt',
     '@nuxtjs/i18n',
   ],
@@ -37,13 +36,32 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss() as any],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/leaflet') || id.includes('node_modules/@vue-leaflet')) {
+              return 'leaflet'
+            }
+            if (id.includes('node_modules/leaflet.markercluster')) {
+              return 'leaflet-cluster'
+            }
+            if (id.includes('node_modules/v-calendar') || id.includes('node_modules/@popperjs')) {
+              return 'v-calendar'
+            }
+            if (id.includes('node_modules/docx-preview')) {
+              return 'docx-preview'
+            }
+          },
+        },
+      },
+    },
   },
-  css: ['~/assets/css/main.css', '~/assets/css/safe-area.css', 'leaflet/dist/leaflet.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/safe-area.css'],
   runtimeConfig: {
     public: {
       apiBaseUrl: defaultApiBaseUrl,
       wsUrl: process.env.NODE_ENV === 'production' ? 'https://tap-tamak-production.up.railway.app' : 'http://192.168.50.118:3000',
-      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
       supportPhone: process.env.NUXT_PUBLIC_SUPPORT_PHONE ?? '+77064080244',
       legalTermsVersion: process.env.NUXT_PUBLIC_LEGAL_TERMS_VERSION ?? '2026-06-28',
       legalPrivacyVersion: process.env.NUXT_PUBLIC_LEGAL_PRIVACY_VERSION ?? '2026-06-28',
@@ -65,12 +83,6 @@ export default defineNuxtConfig({
             'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no',
         },
       ],
-      link: [
-        {
-          rel: 'stylesheet',
-          href: 'https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'
-        }
-      ]
     }
   }
 })

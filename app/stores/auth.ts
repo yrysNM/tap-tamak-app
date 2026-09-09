@@ -36,11 +36,11 @@ export const useAuthStore = defineStore('auth', {
         cook?: { verificationStatus?: VerificationStatus }
       }
       this.verificationStatus = loginUser.cook?.verificationStatus ?? null
+      const tasks: Promise<unknown>[] = [useModerationStore().refreshBlocks()]
       if (this.user?.role === 'COOK') {
-        await this.fetchVerificationStatus()
+        tasks.unshift(this.fetchVerificationStatus())
       }
-      const moderation = useModerationStore()
-      await moderation.refreshBlocks()
+      await Promise.all(tasks)
     },
 
     async fetchVerificationStatus() {

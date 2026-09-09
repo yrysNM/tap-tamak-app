@@ -1,13 +1,5 @@
 <template>
  <div class="safe-x flex min-h-dvh flex-col bg-page-cream safe-app-header">
-    <!-- <header
-      class="safe-app-header sticky top-0 z-100 flex items-center justify-between border-b border-border bg-primary-light px-4 pb-3">
-      <NuxtLink to="/" class="flex items-center gap-1.5 text-xl font-semibold text-primary">
-        <span>TapTamaq</span>
-      </NuxtLink>
-      <div class="flex items-center gap-3" />
-    </header> -->
-
     <main class="min-h-0 flex-1 overflow-auto" :class="showBottomNav ? 'safe-pb-bottom-nav' : 'safe-b'">
       <slot />
     </main>
@@ -16,25 +8,25 @@
       class="safe-fixed-bottom-nav fixed bottom-0 left-0 w-full z-100 flex items-center justify-around border-t border-border bg-white py-2 shadow-bottom">
       <NuxtLink to="/" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <Icon name="material-symbols:home-outline" class="size-6" />
+        <NavIcon name="home" />
         <span class="text-xs">{{ $t('l_Home') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/orders" class="relative flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <Icon name="material-symbols:receipt-long-outline" class="size-6" />
+        <NavIcon name="orders" />
         <span class="text-xs">{{ $t('l_Orders') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/cooks" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <Icon name="material-symbols:map-outline" class="size-6" />
+        <NavIcon name="map" />
         <span class="text-xs">{{ $t('l_Map') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/profile" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <Icon name="material-symbols:person-outline" class="size-6" />
+        <NavIcon name="profile" />
         <span class="text-xs">{{ $t('l_Profile') }}</span>
       </NuxtLink>
     </nav>

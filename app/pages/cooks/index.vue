@@ -11,9 +11,6 @@
 
         <LMarker v-if="hasExactLocation" :lat-lng="[userCoords.lat, userCoords.lng]" :icon="userMarkerIcon"
           :z-index-offset="1000" />
-
-        <LMarker v-for="cook in filteredCooks" :key="cook.id" :lat-lng="[cook.latitude!, cook.longitude!]"
-          :icon="cookMarkerIcon(cook)" @click="selectCook(cook.id)" />
       </LMap>
     </ClientOnly>
 
@@ -34,23 +31,6 @@
           </div>
         </div>
       </div>
-
-      <!-- <div class="mt-2 flex gap-2 overflow-x-auto pb-1">
-        <button
-          v-for="category in categories"
-          :key="category"
-          type="button"
-          class="rounded-full border px-3 py-2 text-[12px] font-bold whitespace-nowrap"
-          :class="
-            activeCategory === category
-              ? 'border-primary bg-primary/15 text-heading'
-              : 'border-black/10 bg-white/90 text-body'
-          "
-          @click="activeCategory = category"
-        >
-          {{ category }}
-        </button>
-      </div> -->
     </div>
 
     <button type="button"
@@ -64,15 +44,13 @@
       <div
         class="pointer-events-auto rounded-[22px] border border-black/10 bg-white/94 p-3 shadow-2xl backdrop-blur-md">
         <div class="mx-auto mb-3 h-[5px] w-[52px] rounded-full bg-black/15" />
-        <!-- <p v-if="listError" class="text-[12px] font-semibold text-red-600"> -->
-        <!-- {{ listError }} -->
-        <!-- </p> -->
         <p v-if="!selectedCook" class="text-[13px] text-subtle">
           {{ t("l_No_cooks_with_coords") }}
         </p>
         <template v-else>
           <div class="flex items-center gap-3">
             <img v-if="selectedCookImage" :src="selectedCookImage" :alt="selectedCook.businessName"
+              loading="lazy" decoding="async"
               class="size-14 rounded-[16px] border-2 border-white object-cover shadow-md" />
             <div v-else
               class="flex size-14 items-center justify-center rounded-[16px] border-2 border-white bg-black/5 text-lg font-bold text-muted shadow-md">
@@ -86,11 +64,8 @@
                 {{ specialtiesLine(selectedCook.specialties) }}
               </p>
               <p class="mt-1 text-[12px] font-semibold text-subtle">
-                <!-- <span class="text-primary"
-                  >{{ selectedCook.rating.toFixed(1) }} ★</span
-                > -->
                 <span class="mx-1 text-black/25">•</span>
-                {{ distanceLabel(selectedCook) }}
+                {{ selectedCookDistance }}
               </p>
             </div>
           </div>
@@ -129,22 +104,32 @@ import {
   LMarker,
   LTileLayer,
 } from "@vue-leaflet/vue-leaflet";
-import * as L from "leaflet";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import type { Cook } from "~/types";
 import { fetchCooksPage } from "~/utils/cookApi";
 import { dishImageSrc } from "~/utils/dishApi";
+import { ensureLeafletDefaultIcons, L } from "~/utils/leafletSetup";
+
+ensureLeafletDefaultIcons();
+
+defineOptions({ name: "CustomerCooksMap" });
 
 definePageMeta({
   layout: "default",
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const categories = computed(() => [t("l_Category_all"), t("l_Category_snacks"), t("l_Category_desserts"), t("l_Category_hot"), t("l_Category_kids"), t("l_Category_soups")]);
 const search = ref("");
 const activeCategory = ref("");
 const mapZoom = ref(14);
 const mapCenter = ref<[number, number]>([43.238949, 76.889709]);
 const leafletMap = shallowRef<L.Map | null>(null);
+const cookClusterGroup = shallowRef<L.MarkerClusterGroup | null>(null);
+const cookMarkerIconCache = new Map<string, L.DivIcon>();
+let flyToTimer: ReturnType<typeof setTimeout> | null = null;
 
 const { $api } = useNuxtApp();
 const config = useRuntimeConfig();
@@ -172,15 +157,29 @@ function cookAvatarSrc(cook: Cook): string | undefined {
   return dishImageSrc(cook.profileImageUrl, apiBase.value);
 }
 
-function cookMarkerIcon(cook: Cook): L.Icon {
+function cookMarkerCacheKey(cook: Cook): string {
+  return [
+    cook.id,
+    cook.isAvailable ? "1" : "0",
+    cook.profileImageUrl ?? "",
+    cook.businessName,
+    locale.value,
+  ].join("|");
+}
+
+function getCookMarkerIcon(cook: Cook): L.DivIcon {
+  const key = cookMarkerCacheKey(cook);
+  const cached = cookMarkerIconCache.get(key);
+  if (cached) return cached;
+
   const avatarSrc = cookAvatarSrc(cook);
   const fallbackInitial = escapeHtml(cookInitials(cook.businessName));
   const status = cook.isAvailable ? t("l_Online") : t("l_Offline");
   const avatarHtml = avatarSrc
-    ? `<img class="cook-marker__avatar-img" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cook.businessName)}" />`
+    ? `<img class="cook-marker__avatar-img" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cook.businessName)}" loading="lazy" decoding="async" />`
     : `<span class="cook-marker__avatar-fallback">${fallbackInitial}</span>`;
 
-  return L.divIcon({
+  const icon = L.divIcon({
     html: `
       <div class="cook-marker">
         <div class="cook-marker__avatar">${avatarHtml}</div>
@@ -193,8 +192,12 @@ function cookMarkerIcon(cook: Cook): L.Icon {
     iconSize: [112, 78],
     iconAnchor: [44, 62],
     popupAnchor: [0, -62],
-  }) as L.Icon;
+  });
+
+  cookMarkerIconCache.set(key, icon);
+  return icon;
 }
+
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
 const moderation = useModerationStore();
@@ -220,15 +223,45 @@ const locationAccuracy = computed(() => {
 });
 
 const { data: list } = await useAsyncData(
-  "map-cooks",
+  "cooks-list",
   async () => {
     const result = await fetchCooksPage(api, 1, 100);
     return result.items;
   },
 );
 
+function syncCookClusterMarkers() {
+  const group = cookClusterGroup.value;
+  if (!group) return;
+
+  group.clearLayers();
+  for (const cook of filteredCooks.value) {
+    const lat = cook.latitude;
+    const lng = cook.longitude;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const marker = L.marker([lat as number, lng as number], {
+      icon: getCookMarkerIcon(cook),
+    });
+    marker.on("click", () => {
+      selectCook(cook.id);
+    });
+    group.addLayer(marker);
+  }
+}
+
 function onMapReady(map: L.Map) {
   leafletMap.value = map;
+  if (!cookClusterGroup.value) {
+    const group = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 56,
+      spiderfyOnMaxZoom: true,
+      disableClusteringAtZoom: 17,
+    });
+    cookClusterGroup.value = group;
+    map.addLayer(group);
+  }
+  syncCookClusterMarkers();
   nextTick(() => {
     map.invalidateSize();
   });
@@ -237,7 +270,11 @@ function onMapReady(map: L.Map) {
 function centerMapOn(lat: number, lng: number, animate = true) {
   mapCenter.value = [lat, lng];
   if (leafletMap.value && animate) {
-    leafletMap.value.flyTo([lat, lng], mapZoom.value, { duration: 0.75 });
+    if (flyToTimer) clearTimeout(flyToTimer);
+    flyToTimer = setTimeout(() => {
+      leafletMap.value?.flyTo([lat, lng], mapZoom.value, { duration: 0.75 });
+      flyToTimer = null;
+    }, 80);
   }
 }
 
@@ -287,6 +324,14 @@ const selectedCookImage = computed(() =>
   dishImageSrc(selectedCook.value?.profileImageUrl, apiBase.value) ??
   dishImageSrc(selectedCook.value?.kitchenPhotoUrls?.[0], apiBase.value),
 );
+
+const selectedCookDistance = computed(() =>
+  selectedCook.value ? distanceLabel(selectedCook.value) : "",
+);
+
+watch(filteredCooks, () => {
+  syncCookClusterMarkers();
+});
 
 watch(selectedCook, (cook) => {
   if (!cook) return;
@@ -361,6 +406,17 @@ function distanceLabel(cook: Cook): string {
 onMounted(async () => {
   activeCategory.value = categories.value[0] ?? "";
   await locateUser();
+});
+
+onBeforeUnmount(() => {
+  if (flyToTimer) clearTimeout(flyToTimer);
+  const map = leafletMap.value;
+  const group = cookClusterGroup.value;
+  if (map && group) {
+    map.removeLayer(group);
+  }
+  cookClusterGroup.value = null;
+  cookMarkerIconCache.clear();
 });
 </script>
 
@@ -494,5 +550,19 @@ onMounted(async () => {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.35);
   }
+}
+
+:deep(.marker-cluster-small),
+:deep(.marker-cluster-medium),
+:deep(.marker-cluster-large) {
+  background-color: rgba(244, 123, 32, 0.22);
+}
+
+:deep(.marker-cluster-small div),
+:deep(.marker-cluster-medium div),
+:deep(.marker-cluster-large div) {
+  background-color: rgba(244, 123, 32, 0.88);
+  color: #fff;
+  font-weight: 700;
 }
 </style>

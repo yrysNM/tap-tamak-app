@@ -44,6 +44,15 @@ function imageSrc(url: string | undefined) {
   return dishImageSrc(url, apiBase.value)
 }
 
+const dishImageById = computed(() => {
+  const map = new Map<string, string>()
+  for (const dish of dishes.value) {
+    const src = imageSrc(dish.imageUrl)
+    if (src) map.set(dish.id, src)
+  }
+  return map
+})
+
 function isSelected(id: string) {
   return selected.value.has(id)
 }
@@ -202,8 +211,8 @@ function caloriesOf(d: CookDish) {
               <button type="button"
                 class="relative size-16 shrink-0 overflow-hidden rounded-xl bg-primary-light text-left outline-none ring-primary focus-visible:ring-2"
                 @click="toggle(dish.id)">
-                <img v-if="imageSrc(dish.imageUrl)" :src="imageSrc(dish.imageUrl)" :alt="dish.name"
-                  class="size-full object-cover">
+                <img v-if="dishImageById.get(dish.id)" :src="dishImageById.get(dish.id)" :alt="dish.name"
+                  loading="lazy" decoding="async" class="size-full object-cover">
                 <div v-else class="flex size-full items-center justify-center text-icon-muted">
                   <Icon name="material-symbols:restaurant-outline" class="size-8" />
                 </div>

@@ -17,6 +17,8 @@ import {
 import { useOrderStatusLabel } from "~/composables/useOrderStatusLabel";
 import { VueEasyPullRefresh } from "vue-easy-pull-refresh";
 
+defineOptions({ name: "CustomerOrders" });
+
 const toast = usePageToast();
 const { t } = useI18n();
 const orderStatusLabel = useOrderStatusLabel();
@@ -28,9 +30,7 @@ const kaspiPaymentNumber = useKaspiPaymentNumber();
 const api = $api as (url: string, opts?: object) => Promise<unknown>;
 const apiBase = computed(() => config.public.apiBaseUrl as string);
 const cancellingOrderIds = ref<Set<string>>(new Set());
-const paymentSecondsByOrderId = ref<Record<string, number>>({});
 const paymentAutoCancelTriggered = ref<Set<string>>(new Set());
-let paymentCountdownTimer: ReturnType<typeof setInterval> | null = null;
 const respondedOrderIds = ref<Set<string>>(new Set());
 
 type DeliveryModalKind = "accepting" | "accept" | "reject" | null;
@@ -155,49 +155,21 @@ function clearPaymentDeadline(orderId: string): void {
   sessionStorage.removeItem(paymentDeadlineStorageKey(orderId));
 }
 
-function stopPaymentCountdown(): void {
-  if (paymentCountdownTimer) {
-    clearInterval(paymentCountdownTimer);
-    paymentCountdownTimer = null;
-  }
+function paymentDeadlineMs(order: Order): number {
+  return readPaymentDeadline(order);
 }
 
-function paymentTimerLabel(orderId: string): string {
-  const sec = Math.max(0, paymentSecondsByOrderId.value[orderId] ?? 0);
-  const mm = Math.floor(sec / 60)
-    .toString()
-    .padStart(2, "0");
-  const ss = (sec % 60).toString().padStart(2, "0");
-  return `${mm}:${ss}`;
-}
-
-function syncPaymentCountdowns(): void {
-  const next: Record<string, number> = { ...paymentSecondsByOrderId.value };
-  for (const order of orders.value ?? []) {
-    if (!isOrderAwaitingPayment(order)) {
-      clearPaymentDeadline(order.id);
-      delete next[order.id];
-      continue;
+watch(
+  orders,
+  (list) => {
+    for (const order of list ?? []) {
+      if (!isOrderAwaitingPayment(order)) {
+        clearPaymentDeadline(order.id);
+      }
     }
-    const deadline = readPaymentDeadline(order);
-    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-    next[order.id] = secondsLeft;
-    if (secondsLeft <= 0) {
-      void onPaymentTimeout(order);
-    }
-  }
-  paymentSecondsByOrderId.value = next;
-}
-
-function startPaymentCountdown(): void {
-  stopPaymentCountdown();
-  syncPaymentCountdowns();
-  const hasAwaiting = (orders.value ?? []).some((o) => isOrderAwaitingPayment(o));
-  if (!hasAwaiting) return;
-  paymentCountdownTimer = setInterval(() => {
-    syncPaymentCountdowns();
-  }, 1000);
-}
+  },
+  { immediate: true },
+);
 
 async function onPaymentTimeout(order: Order): Promise<void> {
   if (paymentAutoCancelTriggered.value.has(order.id) || !isOrderAwaitingPayment(order)) return;
@@ -298,18 +270,6 @@ function closeDeliveryThankYou(): void {
   closeDeliveryModal();
 }
 
-watch(
-  orders,
-  () => {
-    startPaymentCountdown();
-  },
-  { immediate: true },
-);
-
-onBeforeUnmount(() => {
-  stopPaymentCountdown();
-});
-
 async function confirmDeliveryReject(): Promise<void> {
   const order = deliveryModalOrder.value;
   if (!order || deliverySubmitting.value) return;
@@ -400,7 +360,7 @@ async function confirmDeliveryReject(): Promise<void> {
                   <div
                     class="size-11 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-surface-muted shadow-[0_10px_18px_rgba(0,0,0,0.1)]">
                     <img v-if="cookPhotoSrc(order.cook)" :src="cookPhotoSrc(order.cook)" :alt="order.cook?.businessName"
-                      class="size-full object-cover" />
+                      loading="lazy" decoding="async" class="size-full object-cover" />
                     <div v-else class="flex size-full items-center justify-center text-[12px] font-bold text-subtle">
                       {{ cookInitials(order.cook?.businessName) }}
                     </div>
@@ -457,7 +417,7 @@ async function confirmDeliveryReject(): Promise<void> {
                 <span v-if="isOrderAwaitingPayment(order)"
                   class="inline-flex items-center gap-1 rounded-full border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2.5 py-1 text-[11.6px] font-bold leading-none text-[#FF7A00]">
                   <Icon name="material-symbols:timer-outline" class="size-3.5" />
-                  {{ paymentTimerLabel(order.id) }}
+                  <OrderCountdown :deadline-ms="paymentDeadlineMs(order)" @timeout="onPaymentTimeout(order)" />
                 </span>
                 <span v-else-if="order.estimatedMinutes && orderStatusTone(order.status) === 'warning'"
                   class="text-[11.8px] font-bold leading-none text-subtle">
@@ -492,7 +452,7 @@ async function confirmDeliveryReject(): Promise<void> {
               <div v-if="showHero(order)" class="flex gap-3 pt-0.5">
                 <div class="size-23 shrink-0 overflow-hidden rounded-2xl border border-black/6 bg-surface-muted">
                   <img v-if="itemPhotoSrc(showHero(order)!)" :src="itemPhotoSrc(showHero(order)!)"
-                    :alt="itemName(showHero(order)!)" class="size-full object-cover" />
+                    :alt="itemName(showHero(order)!)" loading="lazy" decoding="async" class="size-full object-cover" />
                   <div v-else class="flex size-full items-center justify-center text-[10px] font-semibold text-subtle">
                     {{ t("l_No_photo") }}
                   </div>

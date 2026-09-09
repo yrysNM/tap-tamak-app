@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 
 @theme {
   /* TapTamaq design tokens */
@@ -38,7 +42,7 @@
   --shadow-floating: 0 10px 20px rgba(0, 0, 0, 0.12);
   --shadow-primary-cta: 0 14px 24px rgba(244, 123, 32, 0.22);
 
-  --font-sans: "Flaticon Regular", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 html {

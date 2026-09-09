@@ -61,6 +61,15 @@ function imageSrc(url: string | undefined) {
   return dishImageSrc(url, apiBase.value);
 }
 
+const previewDishImageById = computed(() => {
+  const map = new Map<string, string>();
+  for (const d of previewDishes.value) {
+    const src = imageSrc(d.imageUrl);
+    if (src) map.set(d.id, src);
+  }
+  return map;
+});
+
 async function openPreview(id: string) {
   previewOpen.value = true;
   previewLoading.value = true;
@@ -313,8 +322,8 @@ function formatTime(iso?: string) {
             <ul v-else-if="previewDishes.length" class="space-y-3">
               <li v-for="d in previewDishes" :key="d.id" class="flex gap-3 rounded-xl border border-border p-2">
                 <div class="size-14 shrink-0 overflow-hidden rounded-lg bg-primary-light">
-                  <img v-if="imageSrc(d.imageUrl)" :src="imageSrc(d.imageUrl)" :alt="d.name"
-                    class="size-full object-cover" />
+                  <img v-if="previewDishImageById.get(d.id)" :src="previewDishImageById.get(d.id)" :alt="d.name"
+                    loading="lazy" decoding="async" class="size-full object-cover" />
                   <div v-else class="flex size-full items-center justify-center text-icon-muted">
                     <Icon name="material-symbols:restaurant-outline" class="size-7" />
                   </div>

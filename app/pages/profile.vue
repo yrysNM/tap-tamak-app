@@ -13,7 +13,7 @@
         data-name="Profile card">
         <div class="flex items-center gap-3">
           <div class="relative size-16 shrink-0 overflow-hidden rounded-[18px] border border-black/8 bg-surface-muted">
-            <img v-if="user?.avatarUrl" :src="user.avatarUrl" :alt="displayName" class="size-full object-cover" />
+            <img v-if="user?.avatarUrl" :src="user.avatarUrl" :alt="displayName" loading="lazy" decoding="async" class="size-full object-cover" />
             <div v-else class="flex size-full items-center justify-center bg-primary/90 text-lg font-bold text-white">
               {{ initials }}
             </div>
@@ -56,7 +56,7 @@
         <div class="flex items-center gap-3 border-b border-black/8 py-3">
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
-            <i class="fi fi-rr-lock text-[15px] text-primary" />
+            <Icon name="material-symbols:lock-outline" class="text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[14.5px] font-bold text-body">{{ t("l_Password") }}</p>
@@ -72,7 +72,7 @@
         <div class="flex items-center gap-3 pt-3">
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
-            <i class="fi fi-rr-world text-[15px] text-primary" />
+            <Icon name="material-symbols:language" class="text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[14.5px] font-bold text-body">{{ t("l_Language") }}</p>
@@ -125,13 +125,13 @@
           @click="supportOpen = true">
           <div
             class="flex size-[34px] shrink-0 items-center justify-center rounded-xl border border-black/[0.07] bg-primary/10">
-            <i class="fi fi-rr-headset text-[15px] text-primary" />
+            <Icon name="material-symbols:headset-mic-outline" class="text-[15px] text-primary" />
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[13.8px] font-bold text-body">{{ $t("l_Support") }}</p>
             <p class="mt-1 text-[11.1px] text-subtle">{{ $t("l_Support_hint") }}</p>
           </div>
-          <i class="fi fi-rr-angle-small-right shrink-0 text-xl text-subtle/70" />
+          <Icon name="material-symbols:chevron-right-rounded" class="shrink-0 text-xl text-subtle/70" />
         </button>
 
 
@@ -180,6 +180,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "CustomerProfile" });
+
 definePageMeta({
   layout: "default",
 });

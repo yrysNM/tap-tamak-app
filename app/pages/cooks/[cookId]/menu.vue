@@ -159,6 +159,15 @@ function dishImage(dish: PublicCookMenuDish): string | undefined {
   return dishImageSrc(dish.imageUrl, apiBase.value);
 }
 
+const dishImageById = computed(() => {
+  const map = new Map<string, string>();
+  for (const dish of dishes.value) {
+    const src = dishImage(dish);
+    if (src) map.set(dish.id, src);
+  }
+  return map;
+});
+
 function clearCookCartCache(): void {
   const cid = cookId.value;
   if (cid) cartStore.clearForCook(cid);
@@ -244,7 +253,7 @@ const checkoutDisabled = computed(
     <div v-else-if="cook" class="rounded-[22px] border border-black/6 bg-white/90 p-4 shadow-elevated">
       <div class="flex items-center gap-3">
         <div class="size-14 overflow-hidden rounded-2xl border border-white/70 bg-surface-muted">
-          <img v-if="cookPhoto" :src="cookPhoto" :alt="cook.businessName" class="size-full object-cover" />
+          <img v-if="cookPhoto" :src="cookPhoto" :alt="cook.businessName" loading="lazy" decoding="async" class="size-full object-cover" />
           <div v-else class="flex size-full items-center justify-center text-lg font-bold text-muted">
             {{ cookInitials }}
           </div>
@@ -327,7 +336,7 @@ const checkoutDisabled = computed(
       <article v-for="dish in dishes" :key="dish.id"
         class="overflow-hidden rounded-[22px] border border-black/8 bg-white/95 shadow-md">
         <div class="relative h-28 bg-surface-muted">
-          <img v-if="dishImage(dish)" :src="dishImage(dish)" :alt="dish.name" class="size-full object-cover" />
+          <img v-if="dishImageById.get(dish.id)" :src="dishImageById.get(dish.id)" :alt="dish.name" loading="lazy" decoding="async" class="size-full object-cover" />
           <!-- <button type="button"
             class="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[9px] font-bold text-dark shadow"
             @click="openReportDish(dish)">
