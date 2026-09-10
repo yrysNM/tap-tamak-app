@@ -8,25 +8,25 @@
       class="safe-fixed-bottom-nav fixed bottom-0 left-0 w-full z-100 flex items-center justify-around border-t border-border bg-white py-2 shadow-bottom">
       <NuxtLink to="/" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <NavIcon name="home" />
+        <Icon name="material-symbols:home-outline" class="size-6" />
         <span class="text-xs">{{ $t('l_Home') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/orders" class="relative flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <NavIcon name="orders" />
+        <Icon name="material-symbols:receipt-long-outline" class="size-6" />
         <span class="text-xs">{{ $t('l_Orders') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/cooks" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <NavIcon name="map" />
+        <Icon name="material-symbols:map-outline" class="size-6" />
         <span class="text-xs">{{ $t('l_Map') }}</span>
       </NuxtLink>
 
       <NuxtLink to="/profile" class="flex flex-col items-center gap-0.5 px-4 py-1 text-muted transition-colors"
         active-class="!text-primary">
-        <NavIcon name="profile" />
+        <Icon name="material-symbols:person-outline" class="size-6" />
         <span class="text-xs">{{ $t('l_Profile') }}</span>
       </NuxtLink>
     </nav>
