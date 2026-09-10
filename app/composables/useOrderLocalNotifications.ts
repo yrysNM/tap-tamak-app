@@ -28,12 +28,27 @@ function loadSeenIds(userId: string): Set<string> {
   }
 }
 
-function saveSeenIds(userId: string, ids: Set<string>): void {
+let pendingSeenWrite: { userId: string; ids: Set<string> } | null = null
+let seenWriteTimer: ReturnType<typeof setTimeout> | null = null
+
+function flushSeenIds(): void {
+  if (!pendingSeenWrite) return
+  const { userId, ids } = pendingSeenWrite
+  pendingSeenWrite = null
   try {
     sessionStorage.setItem(seenStorageKey(userId), JSON.stringify([...ids]))
   } catch {
     // Ignore quota / private mode failures.
   }
+}
+
+function saveSeenIds(userId: string, ids: Set<string>): void {
+  pendingSeenWrite = { userId, ids: new Set(ids) }
+  if (seenWriteTimer) return
+  seenWriteTimer = setTimeout(() => {
+    seenWriteTimer = null
+    flushSeenIds()
+  }, 250)
 }
 
 function notificationIdForOrder(orderId: string): number {
@@ -88,6 +103,7 @@ export function useOrderLocalNotifications() {
   let timer: ReturnType<typeof setInterval> | null = null
   let seeded = false
   let polling = false
+  let paused = false
   let activeUserId: string | null = null
   let actionListener: PluginListenerHandle | null = null
 
@@ -102,7 +118,7 @@ export function useOrderLocalNotifications() {
   }
 
   async function pollOnce(): Promise<void> {
-    if (polling) return
+    if (polling || paused) return
     const userId = auth.user?.id
     if (!userId) return
     if (!auth.isCook && !auth.isAdmin) return
@@ -153,6 +169,32 @@ export function useOrderLocalNotifications() {
     }
   }
 
+  function startTimer(): void {
+    if (timer) return
+    timer = setInterval(() => {
+      void pollOnce()
+    }, POLL_INTERVAL_MS)
+  }
+
+  function stopTimer(): void {
+    if (timer) {
+      clearInterval(timer)
+      timer = null
+    }
+  }
+
+  function onVisibilityChange(): void {
+    const hidden = typeof document !== 'undefined' && document.hidden
+    paused = hidden
+    if (hidden) {
+      stopTimer()
+      flushSeenIds()
+      return
+    }
+    void pollOnce()
+    startTimer()
+  }
+
   async function start(): Promise<void> {
     if (!Capacitor.isNativePlatform()) return
     stop()
@@ -164,6 +206,7 @@ export function useOrderLocalNotifications() {
     }
 
     seeded = false
+    paused = typeof document !== 'undefined' ? document.hidden : false
     activeUserId = auth.user?.id ?? null
 
     actionListener = await LocalNotifications.addListener(
@@ -174,22 +217,32 @@ export function useOrderLocalNotifications() {
       },
     )
 
-    await pollOnce()
-    timer = setInterval(() => {
-      void pollOnce()
-    }, POLL_INTERVAL_MS)
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange)
+    }
+
+    if (!paused) {
+      await pollOnce()
+      startTimer()
+    }
   }
 
   function stop(): void {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
+    stopTimer()
+    if (seenWriteTimer) {
+      clearTimeout(seenWriteTimer)
+      seenWriteTimer = null
+    }
+    flushSeenIds()
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
     if (actionListener) {
       void actionListener.remove()
       actionListener = null
     }
     seeded = false
+    paused = false
     activeUserId = null
     polling = false
   }

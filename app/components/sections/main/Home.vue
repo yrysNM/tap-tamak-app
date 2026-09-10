@@ -46,7 +46,7 @@
         class="cursor-pointer overflow-hidden rounded-[16px] border border-black/8 p-0!" role="link" tabindex="0"
         @click="navigateTo(`/cooks/${chef.id}/menu`)" @keydown.enter.prevent="navigateTo(`/cooks/${chef.id}/menu`)">
         <div class="relative">
-          <img v-if="chef.image" :src="chef.image" :alt="chef.name" class="h-[104px] w-full object-cover" />
+          <img v-if="chef.image" :src="chef.image" :alt="chef.name" loading="lazy" decoding="async" class="h-[104px] w-full object-cover" />
           <div v-else
             class="flex h-[104px] w-full items-center justify-center bg-surface-muted text-xl font-bold text-muted">
             {{ chef.initials }}
@@ -103,18 +103,14 @@ const {
   pending,
   error,
 } = useAsyncData(
-  "home-cooks",
+  "cooks-list",
   async () => {
-    const cooksPack = await fetchCooksPage(api, 1, 20);
+    const cooksPack = await fetchCooksPage(api, 1, 100);
 
-    return {
-      cooks: cooksPack.items,
-    };
+    return cooksPack.items;
   },
   {
-    default: () => ({
-      cooks: [] as Cook[],
-    }),
+    default: () => [] as Cook[],
   },
 );
 
@@ -144,7 +140,7 @@ function businessInitials(name: string | undefined): string {
 
 const cookCards = computed(() => {
   const base = apiBase.value;
-  return (feed.value?.cooks ?? []).map((c) => ({
+  return (feed.value ?? []).map((c) => ({
     id: c.id,
     name: c.businessName,
     image:

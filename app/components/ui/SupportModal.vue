@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
 
           <a v-if="telHref" :href="telHref"
             class="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-[15px] font-bold text-white transition hover:bg-primary/90">
-            <i class="fi fi-rr-phone-call text-[15px]" aria-hidden />
+            <Icon name="material-symbols:call" class="text-[15px]" aria-hidden />
             {{ t("l_Call_support") }}
           </a>
         </div>

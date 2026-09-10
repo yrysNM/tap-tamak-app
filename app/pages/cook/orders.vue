@@ -90,9 +90,7 @@ const rejectReason = ref('')
 const acceptError = ref('')
 const rejectError = ref('')
 const submitting = ref(false)
-const acceptanceSecondsByOrderId = ref<Record<string, number>>({})
 const acceptanceAutoRejectTriggered = ref<Set<string>>(new Set())
-let acceptanceCountdownTimer: ReturnType<typeof setInterval> | null = null
 
 function acceptanceDeadlineStorageKey(orderId: string): string {
   return `tap-tamak-cook-accept-deadline-${orderId}`
@@ -119,49 +117,21 @@ function clearAcceptanceDeadline(orderId: string): void {
   sessionStorage.removeItem(acceptanceDeadlineStorageKey(orderId))
 }
 
-function stopAcceptanceCountdown(): void {
-  if (acceptanceCountdownTimer) {
-    clearInterval(acceptanceCountdownTimer)
-    acceptanceCountdownTimer = null
-  }
+function acceptanceDeadlineMs(order: Order): number {
+  return readAcceptanceDeadline(order)
 }
 
-function acceptanceTimerLabel(orderId: string): string {
-  const sec = Math.max(0, acceptanceSecondsByOrderId.value[orderId] ?? 0)
-  const mm = Math.floor(sec / 60)
-    .toString()
-    .padStart(2, '0')
-  const ss = (sec % 60).toString().padStart(2, '0')
-  return `${mm}:${ss}`
-}
-
-function syncAcceptanceCountdowns(): void {
-  const next: Record<string, number> = { ...acceptanceSecondsByOrderId.value }
-  for (const order of orders.value ?? []) {
-    if (!isOrderAwaitingCookAcceptance(order)) {
-      clearAcceptanceDeadline(order.id)
-      delete next[order.id]
-      continue
+watch(
+  orders,
+  (list) => {
+    for (const order of list ?? []) {
+      if (!isOrderAwaitingCookAcceptance(order)) {
+        clearAcceptanceDeadline(order.id)
+      }
     }
-    const deadline = readAcceptanceDeadline(order)
-    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
-    next[order.id] = secondsLeft
-    if (secondsLeft <= 0) {
-      void onAcceptanceTimeout(order)
-    }
-  }
-  acceptanceSecondsByOrderId.value = next
-}
-
-function startAcceptanceCountdown(): void {
-  stopAcceptanceCountdown()
-  syncAcceptanceCountdowns()
-  const hasAwaiting = (orders.value ?? []).some((o) => isOrderAwaitingCookAcceptance(o))
-  if (!hasAwaiting) return
-  acceptanceCountdownTimer = setInterval(() => {
-    syncAcceptanceCountdowns()
-  }, 1000)
-}
+  },
+  { immediate: true },
+)
 
 async function onAcceptanceTimeout(order: Order): Promise<void> {
   if (acceptanceAutoRejectTriggered.value.has(order.id) || !isOrderAwaitingCookAcceptance(order)) {
@@ -180,18 +150,6 @@ async function onAcceptanceTimeout(order: Order): Promise<void> {
     toast.show(apiMessage(err, 'l_Failed_reject_order'), 'error')
   }
 }
-
-watch(
-  orders,
-  () => {
-    startAcceptanceCountdown()
-  },
-  { immediate: true },
-)
-
-onBeforeUnmount(() => {
-  stopAcceptanceCountdown()
-})
 
 function openAccept(order: Order): void {
   modalOrder.value = order
@@ -404,7 +362,7 @@ function openBlockClient(order: Order) {
                 <span v-if="isAwaitingCook(order.status)"
                   class="inline-flex items-center gap-1 rounded-full border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2.5 py-1 text-[11px] font-bold leading-none text-[#FF7A00]">
                   <Icon name="material-symbols:timer-outline" class="size-3.5" />
-                  {{ acceptanceTimerLabel(order.id) }}
+                  <OrderCountdown :deadline-ms="acceptanceDeadlineMs(order)" @timeout="onAcceptanceTimeout(order)" />
                 </span>
                 <span class="inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[11px] font-bold"
                   :class="statusPillClass(order.status)">
@@ -437,7 +395,7 @@ function openBlockClient(order: Order) {
               <div v-for="(item, idx) in order.items" :key="item.id || `${order.id}-${idx}`" class="flex gap-3">
                 <div class="size-14 shrink-0 overflow-hidden rounded-[14px] border border-black/6 bg-surface-muted">
                   <img v-if="itemPhotoSrc(item)" :src="itemPhotoSrc(item)" :alt="itemName(item)"
-                    class="size-full object-cover" />
+                    loading="lazy" decoding="async" class="size-full object-cover" />
                   <div v-else class="flex size-full items-center justify-center text-[9px] font-semibold text-subtle">
                     {{ t("l_No_photo") }}
                   </div>

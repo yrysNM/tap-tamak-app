@@ -328,11 +328,14 @@
 <script setup lang="ts">
 const { t } = useI18n();
 import { LCircleMarker, LMap, LTileLayer } from "@vue-leaflet/vue-leaflet";
+import { ensureLeafletDefaultIcons } from "~/utils/leafletSetup";
 import type {
   CookVerificationGetResponse,
   CookVerificationSubmitPayload,
   VerificationStatus,
 } from "~/types";
+
+ensureLeafletDefaultIcons();
 
 const imgCamera =
   "https://tap-tamak-production.up.railway.app/api/v1/uploads/gallery/8e334890-6a0d-43aa-9f68-547c511445bd.png";

@@ -52,6 +52,26 @@ function dishPhoto(line: BasketLineItem): string | undefined {
   return dishImageSrc(line.dish.imageUrl, apiBase.value);
 }
 
+const cookPhotoById = computed(() => {
+  const map = new Map<string, string>();
+  for (const group of cookGroups.value) {
+    const src = cookPhoto(group.cook);
+    if (src) map.set(group.cookId, src);
+  }
+  return map;
+});
+
+const dishPhotoByLineId = computed(() => {
+  const map = new Map<string, string>();
+  for (const group of cookGroups.value) {
+    for (const item of group.items) {
+      const src = dishPhoto(item);
+      if (src) map.set(item.id, src);
+    }
+  }
+  return map;
+});
+
 function dishSubtitle(line: BasketLineItem): string {
   const parts: string[] = [];
   const desc = line.dish.description?.trim();
@@ -176,8 +196,8 @@ function retryLoad(): void {
           <div class="mb-4 flex gap-2.5">
             <div
               class="size-[70px] shrink-0 overflow-hidden rounded-2xl border-2 border-white shadow-[0_10px_18px_rgba(0,0,0,0.1)]">
-              <img v-if="cookPhoto(group.cook)" :src="cookPhoto(group.cook)" :alt="group.cook.businessName"
-                class="size-full object-cover" />
+              <img v-if="cookPhotoById.get(group.cookId)" :src="cookPhotoById.get(group.cookId)" :alt="group.cook.businessName"
+                loading="lazy" decoding="async" class="size-full object-cover" />
               <div v-else
                 class="flex size-full items-center justify-center bg-surface-muted text-[10px] font-bold text-subtle">
                 {{ $t('l_Photo') }}
@@ -205,8 +225,8 @@ function retryLoad(): void {
             <div class="flex flex-col gap-6 py-3.5">
               <div class="flex gap-3">
                 <div class="size-[76px] shrink-0 overflow-hidden rounded-[14px] border border-black/6">
-                  <img v-if="dishPhoto(item)" :src="dishPhoto(item)" :alt="item.dish.name"
-                    class="size-full object-cover" />
+                  <img v-if="dishPhotoByLineId.get(item.id)" :src="dishPhotoByLineId.get(item.id)" :alt="item.dish.name"
+                    loading="lazy" decoding="async" class="size-full object-cover" />
                   <div v-else
                     class="flex size-full items-center justify-center bg-surface-muted text-[10px] text-subtle">
                     {{ $t('l_No_photo') }}

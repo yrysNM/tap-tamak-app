@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 import { DatePicker } from 'v-calendar'
+import 'v-calendar/style.css'
 import { ymdFromLocalDate } from '~/composables/useUtcMenuDates'
 
 const props = defineProps<{

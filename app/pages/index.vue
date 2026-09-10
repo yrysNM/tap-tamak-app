@@ -3,6 +3,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'CustomerHome' })
+
 definePageMeta({
   layout: 'default',
 })

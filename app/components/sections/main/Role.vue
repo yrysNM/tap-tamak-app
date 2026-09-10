@@ -32,7 +32,7 @@
               </span>
               <div
                 class="h-6 w-6 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
-                <i class="fi fi-rr-check flex text-sm" v-show="selectedRole === 'client'" />
+                <Icon name="material-symbols:check" class="flex text-sm" v-show="selectedRole === 'client'" />
               </div>
             </div>
 
@@ -79,7 +79,7 @@
               </span>
               <div
                 class="h-6 w-6 shrink-0 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
-                <i class="fi fi-rr-check flex text-sm" v-show="selectedRole === 'cook'" />
+                <Icon name="material-symbols:check" class="flex text-sm" v-show="selectedRole === 'cook'" />
               </div>
             </div>
 

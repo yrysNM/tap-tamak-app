@@ -5,7 +5,7 @@ import { dishImageSrc } from "~/utils/dishApi";
 
 const search = defineModel<string>("search", { default: "" });
 
-defineProps<{
+const props = defineProps<{
   dishes: CookDish[];
   loading: boolean;
   listError: string;
@@ -20,9 +20,14 @@ const emit = defineEmits<{
 const config = useRuntimeConfig();
 const apiBase = computed(() => config.public.apiBaseUrl as string);
 
-function imageSrc(url: string | undefined) {
-  return dishImageSrc(url, apiBase.value);
-}
+const dishImageById = computed(() => {
+  const map = new Map<string, string>();
+  for (const dish of props.dishes) {
+    const src = dishImageSrc(dish.imageUrl, apiBase.value);
+    if (src) map.set(dish.id, src);
+  }
+  return map;
+});
 
 function prepLabel(t: PreparationType | string | undefined) {
   if (t === "FAST" || t === "Fast") return appT("l_Fast_prep");
@@ -97,8 +102,8 @@ function caloriesOf(d: CookDish) {
       <article v-for="dish in dishes" :key="dish.id"
         class="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:border-primary/30 hover:shadow-md">
         <div class="relative aspect-4/3 bg-primary-light">
-          <img v-if="imageSrc(dish.imageUrl)" :src="imageSrc(dish.imageUrl)" :alt="dish.name"
-            class="size-full object-cover" />
+          <img v-if="dishImageById.get(dish.id)" :src="dishImageById.get(dish.id)" :alt="dish.name"
+            loading="lazy" decoding="async" class="size-full object-cover" />
           <div v-else class="flex size-full items-center justify-center text-icon-muted">
             <Icon name="material-symbols:restaurant-outline" class="size-14" />
           </div>
